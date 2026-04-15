@@ -1,0 +1,717 @@
+﻿using backend.Dtos;
+using backend.Interfaces;
+using backend.Models;
+using Microsoft.AspNetCore.Identity;
+
+namespace backend.Services
+{
+    public class ItemService : IItemService
+    {
+        private readonly IItemRepository _itemRepository;
+        private readonly ICategoryRepository _categoryRepository;
+        private readonly IUserRepository _userRepository;
+        private readonly IItemReviewRepository _itemReviewRepository;
+        private readonly ILoanRepository _loanRepository;
+        private readonly INotificationService _notificationService;
+        private readonly IUserFavoriteRepository _userFavoriteRepository;
+
+        private readonly UserManager<ApplicationUser> _userManager;
+
+        public ItemService(
+            IItemRepository itemRepository,
+            ICategoryRepository categoryRepository,
+            IUserRepository userRepository,
+            IItemReviewRepository itemReviewRepository,
+            ILoanRepository loanRepository,
+            INotificationService notificationService,
+            UserManager<ApplicationUser> userManager,
+            IUserFavoriteRepository userFavoriteRepository)
+        {
+            _itemRepository = itemRepository;
+            _categoryRepository = categoryRepository;
+            _userRepository = userRepository;
+            _itemReviewRepository = itemReviewRepository;
+            _loanRepository = loanRepository;
+            _notificationService = notificationService;
+            _userManager = userManager;
+            _userFavoriteRepository = userFavoriteRepository;
+        }
+
+        //User
+        public async Task<ItemDto> GetByIdAsync(int itemId, string? currentUserId)
+        {
+            var item = await _itemRepository.GetByIdWithDetailsAsync(itemId)
+                ?? throw new KeyNotFoundException($"Item {itemId} not found");
+
+            //Check if the item is in the specific user's wishlist
+            bool isFavorited = currentUserId != null &&
+                await _userFavoriteRepository.ExistsAsync(currentUserId, itemId);
+
+            var dto = MapToItemDto(item, currentUserId);
+            dto.IsFavoritedByCurrentUser = isFavorited;
+            return dto;
+        }
+
+        public async Task<ItemDto> GetBySlugAsync(string slug, string? currentUserId)
+        {
+            var item = await _itemRepository.GetBySlugAsync(slug)
+                ?? throw new KeyNotFoundException($"Item not found");
+
+            return MapToItemDto(item, currentUserId);
+        }
+
+        public async Task<PagedResult<ItemListDto>> GetAllApprovedAsync(ItemFilter? filter, PagedRequest request, string? currentUserId)
+        {
+            var result = await _itemRepository.GetAllApprovedAsync(filter, request);
+            return MapToPagedListDto(result, currentUserId);
+        }
+
+        public async Task<PagedResult<ItemListDto>> GetAvailableItemsAsync(ItemFilter? filter, PagedRequest request, string? currentUserId)
+        {
+            var result = await _itemRepository.GetAvailableItemsAsync(filter, request);
+            return MapToPagedListDto(result, currentUserId);
+        }
+
+        public async Task<PagedResult<ItemListDto>> GetByCategoryAsync(int categoryId, ItemFilter? filter, PagedRequest request, string? currentUserId)
+        {
+            var result = await _itemRepository.GetByCategoryAsync(categoryId, filter, request);
+            return MapToPagedListDto(result, currentUserId);
+        }
+
+        public async Task<PagedResult<ItemListDto>> GetNearbyItemsAsync(double lat, double lon, double radiusKm, ItemFilter? filter, PagedRequest request, string? currentUserId)
+        {
+            var result = await _itemRepository.GetNearbyItemsAsync(lat, lon, radiusKm, filter, request);
+            return MapToPagedListDto(result, currentUserId);
+        }
+
+        public async Task<PagedResult<ItemListDto>> GetPublicByOwnerAsync(string ownerId, ItemFilter? filter, PagedRequest request, string? currentUserId)
+        {
+            var result = await _itemRepository.GetPublicByOwnerAsync(ownerId, filter, request);
+            return MapToPagedListDto(result, currentUserId);
+        }
+
+        public async Task<PagedResult<ItemListDto>> GetMyItemsAsync(string ownerId, ItemFilter? filter, PagedRequest request)
+        {
+            var result = await _itemRepository.GetByOwnerIdAsync(ownerId, filter, request);
+            return MapToPagedListDto(result, ownerId);
+        }
+
+
+
+        //CRUD
+
+        public async Task<ItemDto> CreateItemAsync(string ownerId, CreateItemDto dto)
+        {
+            var owner = await _userRepository.GetByIdAsync(ownerId);
+            if (owner == null)
+                throw new KeyNotFoundException("Owner not found.");
+
+            var category = await _categoryRepository.GetByIdAsync(dto.CategoryId);
+            if (category == null)
+                throw new ArgumentException($"Category with ID {dto.CategoryId} does not exist.");
+
+            if (dto.CurrentValue < 0)
+                throw new ArgumentException("Current value cant be negative");
+
+            //Normalize dates early
+            var availableFrom = dto.AvailableFrom.ToUniversalTime();
+            var availableUntil = dto.AvailableUntil.ToUniversalTime();
+
+            if (availableFrom.Date < DateTime.UtcNow.Date)
+                throw new ArgumentException("The availability start date cannot be in the past.");
+
+            if (availableFrom >= availableUntil)
+                throw new ArgumentException("AvailableFrom must be before AvailableUntil.");
+
+            //Loan constraints consistency
+            if (dto.MinLoanDays.HasValue && dto.MaxLoanDays.HasValue &&
+                dto.MinLoanDays > dto.MaxLoanDays)
+                throw new ArgumentException("MinLoanDays cannot exceed MaxLoanDays.");
+
+            var availableDays = (availableUntil - availableFrom).TotalDays;
+
+
+            if (availableDays <= 0)
+                throw new ArgumentException("Availability window must be at least 1 day.");
+
+            if (dto.MinLoanDays.HasValue && availableDays < dto.MinLoanDays.Value)
+                throw new ArgumentException(
+                    $"Availability window ({availableDays:0} days) must be at least equal to MinLoanDays ({dto.MinLoanDays}).");
+
+            if (dto.MaxLoanDays.HasValue && availableDays < dto.MaxLoanDays.Value)
+                throw new ArgumentException(
+                    $"Availability window ({availableDays:0} days) must allow MaxLoanDays ({dto.MaxLoanDays}).");
+
+
+
+            var item = new Item
+            {
+                OwnerId = ownerId,
+                CategoryId = dto.CategoryId,
+                Title = dto.Title.Trim(),
+                Slug = await GenerateUniqueSlugAsync(dto.Title),//URL-friendly unique identifier
+                Description = dto.Description.Trim(),
+                CurrentValue = dto.CurrentValue,
+                PricePerDay = dto.IsFree ? 0 : dto.PricePerDay,
+                IsFree = dto.IsFree,
+                Condition = dto.Condition,
+                QrCode = await GenerateUniqueQrCodeAsync(),//Unique string for physical item tracking
+                MinLoanDays = dto.MinLoanDays,
+                MaxLoanDays = dto.MaxLoanDays,
+                RequiresVerification = dto.RequiresVerification,
+                PickupAddress = dto.PickupAddress.Trim(),
+                PickupLatitude = dto.PickupLatitude,
+                PickupLongitude = dto.PickupLongitude,
+                AvailableFrom = dto.AvailableFrom.ToUniversalTime(),
+                AvailableUntil = dto.AvailableUntil.ToUniversalTime(),
+                Status = ItemStatus.Pending,//Items must be reviewed by admin before becoming public
+                Availability = ItemAvailability.Available,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _itemRepository.AddAsync(item);
+            await _itemRepository.SaveChangesAsync();
+
+            await _notificationService.SendToAdminsAsync(
+                NotificationType.ItemPendingReview,
+                $"New item '{item.Title}' is pending approval.",
+                item.Id,
+                NotificationReferenceType.Item);
+
+            return await GetByIdAsync(item.Id, ownerId);
+        }
+
+        public async Task<ItemDto> UpdateItemAsync(string ownerId, int itemId, UpdateItemDto dto)
+        {
+            var item = await _itemRepository.GetByIdAsync(itemId)
+                ?? throw new KeyNotFoundException($"Item {itemId} not found.");
+
+            var user = await _userManager.FindByIdAsync(ownerId);
+            bool isAdmin = user != null && await _userManager.IsInRoleAsync(user, "Admin");
+
+
+            if (item.OwnerId != ownerId && !isAdmin)
+                throw new UnauthorizedAccessException("You do not have permission to edit this item");
+
+            var categoryId = dto.CategoryId ?? item.CategoryId;
+
+            if (dto.CategoryId.HasValue)
+            {
+                var category = await _categoryRepository.GetByIdAsync(dto.CategoryId.Value);
+                if (category == null)
+                    throw new ArgumentException($"Category with ID {dto.CategoryId} does not exist.");
+            }
+
+            if (dto.CurrentValue.HasValue && dto.CurrentValue.Value < 0)
+                throw new ArgumentException("Current value cannot be negative");
+
+
+            var availableFrom = dto.AvailableFrom ?? item.AvailableFrom;
+            var availableUntil = dto.AvailableUntil ?? item.AvailableUntil;
+
+            if (availableFrom >= availableUntil)
+                throw new ArgumentException("AvailableFrom must be before AvailableUntil.");
+
+
+            //minimum loan days must be smaller than the whole loan window
+            if (dto.MinLoanDays.HasValue)
+            {
+                var availableDays = (int)(availableUntil - availableFrom).TotalDays;
+
+                if (availableDays < dto.MinLoanDays.Value)
+                    throw new ArgumentException(
+                        $"Availability window ({availableDays} days) must be >= MinLoanDays ({dto.MinLoanDays}).");
+            }
+
+            if (dto.MaxLoanDays.HasValue)
+            {
+                var availableDays = (int)(availableUntil - availableFrom).TotalDays;
+
+                if (availableDays < dto.MaxLoanDays.Value)
+                    throw new ArgumentException(
+                        $"Availability window ({availableDays} days) must allow MaxLoanDays ({dto.MaxLoanDays}).");
+            }
+
+
+            if (!isAdmin && item.Status == ItemStatus.Approved && HasSignificantChanges(dto))
+            {
+                item.Status = ItemStatus.Pending;
+                item.ReviewedAt = null;
+                item.ReviewedByAdminId = null;
+            }
+
+            if (dto.Title != null)
+            {
+                item.Title = dto.Title.Trim();
+                item.Slug = await GenerateUniqueSlugAsync(dto.Title, itemId);
+            }
+
+            item.CategoryId = categoryId;
+            if (dto.Description != null) item.Description = dto.Description.Trim();
+            if (dto.CurrentValue.HasValue) item.CurrentValue = dto.CurrentValue.Value;
+            if (dto.Condition.HasValue) item.Condition = dto.Condition.Value;
+            if (dto.MinLoanDays.HasValue) item.MinLoanDays = dto.MinLoanDays;
+            if (dto.MaxLoanDays.HasValue) item.MaxLoanDays = dto.MaxLoanDays;
+            if (dto.RequiresVerification.HasValue) item.RequiresVerification = dto.RequiresVerification.Value;
+            if (dto.PickupAddress != null) item.PickupAddress = dto.PickupAddress.Trim();
+            if (dto.PickupLatitude.HasValue) item.PickupLatitude = dto.PickupLatitude.Value;
+            if (dto.PickupLongitude.HasValue) item.PickupLongitude = dto.PickupLongitude.Value;
+            if (dto.AvailableFrom.HasValue) item.AvailableFrom = dto.AvailableFrom.Value.ToUniversalTime();
+            if (dto.AvailableUntil.HasValue) item.AvailableUntil = dto.AvailableUntil.Value.ToUniversalTime();
+            if (dto.IsActive.HasValue) item.IsActive = dto.IsActive.Value;
+            if (dto.Availability.HasValue) item.Availability = dto.Availability.Value;
+
+            if (dto.IsFree.HasValue)
+            {
+                item.IsFree = dto.IsFree.Value;
+                item.PricePerDay = item.IsFree ? 0 : (dto.PricePerDay ?? item.PricePerDay);
+            }
+            else if (dto.PricePerDay.HasValue)
+            {
+                item.PricePerDay = dto.PricePerDay.Value;
+            }
+
+            item.UpdatedAt = DateTime.UtcNow;
+            _itemRepository.Update(item);
+            await _itemRepository.SaveChangesAsync();
+
+            return await GetByIdAsync(item.Id, ownerId);
+        }
+
+
+        //SoftDelete
+        public async Task DeleteItemAsync(string userId, int itemId)
+        {
+            var item = await _itemRepository.GetByIdAsync(itemId)
+                ?? throw new KeyNotFoundException($"Item {itemId} not found");
+
+            var user = await _userManager.FindByIdAsync(userId);
+            bool isAdmin = user != null && await _userManager.IsInRoleAsync(user, "Admin");
+
+            if (item.OwnerId != userId && !isAdmin)
+                throw new UnauthorizedAccessException("You do not have permission to delete this item");
+
+            if (await _loanRepository.HasActiveOrApprovedLoansByItemIdAsync(itemId))
+                throw new InvalidOperationException("Cannot delete an item with active or approved loans.");
+
+            //Get all users who favorited this item before removing
+            var favorites = await _userFavoriteRepository.GetAllByItemIdAsync(itemId);
+            var userIdsToNotify = favorites
+                .Select(f => f.UserId)
+                .ToList();
+
+            await using var transaction = await _itemRepository.BeginTransactionAsync();
+            try
+            {
+                foreach (var photo in item.Photos.ToList())
+                {
+                    _itemRepository.DeletePhoto(photo);
+                }
+
+
+                _itemReviewRepository.MarkReviewsDeletedByItemId(itemId);
+                _userFavoriteRepository.RemoveRange(favorites);
+
+                SoftDelete(item, user!);
+                _itemRepository.Update(item);
+
+                await _itemRepository.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+
+
+            var notifyTasks = userIdsToNotify.Select(favUserId =>
+                _notificationService.SendAsync(
+                    favUserId,
+                    NotificationType.ItemDeleted,
+                    $"An item {item.Title} you saved is no longer available.",
+                    itemId,
+                    NotificationReferenceType.Item));
+
+            await Task.WhenAll(notifyTasks);
+        
+        }
+
+        public async Task<ItemDto> ToggleActiveStatusAsync(string ownerId, int itemId, bool isActive)
+        {
+            var item = await _itemRepository.GetByIdAsync(itemId)
+                ?? throw new KeyNotFoundException($"Item {itemId} not found");
+
+            var user = await _userManager.FindByIdAsync(ownerId);
+            bool isAdmin = user != null && await _userManager.IsInRoleAsync(user, "Admin");
+
+
+            if (item.OwnerId != ownerId && !isAdmin)
+                throw new UnauthorizedAccessException("You do not have permission to modify this item.");
+
+            item.IsActive = isActive;
+            item.UpdatedAt = DateTime.UtcNow;
+
+            _itemRepository.Update(item);
+            await _itemRepository.SaveChangesAsync();
+
+            return await GetByIdAsync(item.Id, ownerId);
+        }
+
+        public async Task<ItemQrCodeDto> GetQrCodeAsync(string requesterId, int itemId)
+        {
+            var item = await _itemRepository.GetByIdAsync(itemId)
+                ?? throw new KeyNotFoundException($"Item {itemId} not found");
+
+            var user = await _userManager.FindByIdAsync(requesterId);
+            bool isAdmin = user != null && await _userManager.IsInRoleAsync(user, "Admin");
+
+            if (item.OwnerId != requesterId && !isAdmin)
+                throw new UnauthorizedAccessException("Only the owner or an admin can view the QR code");
+
+            return new ItemQrCodeDto { ItemId = item.Id, QrCode = item.QrCode };
+        }
+
+
+        //Photo management
+        public async Task<ItemDto> AddPhotoAsync(string ownerId, int itemId, AddItemPhotoDto dto)
+        {
+            var item = await _itemRepository.GetByIdWithDetailsAsync(itemId)
+                ?? throw new KeyNotFoundException($"Item {itemId} not found.");
+
+            var user = await _userManager.FindByIdAsync(ownerId);
+            bool isAdmin = user != null && await _userManager.IsInRoleAsync(user, "Admin");
+
+            if (item.OwnerId != ownerId && !isAdmin)
+                throw new UnauthorizedAccessException("You do not have permission to modify this item");
+
+
+            if (dto.IsPrimary)
+            {
+                foreach (var p in item.Photos.Where(x => x.IsPrimary)) p.IsPrimary = false;
+            }
+
+            bool isFirstPhoto = !item.Photos.Any();
+
+            var photo = new ItemPhoto
+            {
+                ItemId = itemId,
+                PhotoUrl = dto.PhotoUrl,
+                IsPrimary = dto.IsPrimary || isFirstPhoto,
+                DisplayOrder = dto.DisplayOrder,
+                UploadedAt = DateTime.UtcNow
+            };
+
+            await _itemRepository.AddPhotoAsync(photo);
+            await _itemRepository.SaveChangesAsync();
+
+            return await GetByIdAsync(itemId, ownerId);
+        }
+
+        public async Task<ItemDto> DeletePhotoAsync(string ownerId, int itemId, int photoId)
+        {
+            var item = await _itemRepository.GetByIdWithDetailsAsync(itemId)
+                ?? throw new KeyNotFoundException($"Item {itemId} not found.");
+
+            var user = await _userManager.FindByIdAsync(ownerId);
+            bool isAdmin = user != null && await _userManager.IsInRoleAsync(user, "Admin");
+
+            if (item.OwnerId != ownerId && !isAdmin)
+                throw new UnauthorizedAccessException("You do not have permission to modify this item");
+
+
+            var photo = item.Photos.FirstOrDefault(p => p.Id == photoId)
+                ?? throw new KeyNotFoundException("Photo not found");
+
+            bool wasPrimary = photo.IsPrimary;
+
+            item.Photos.Remove(photo);
+
+            _itemRepository.DeletePhoto(photo);
+
+            if (wasPrimary && item.Photos.Any())
+            {
+                var nextPrimary = item.Photos
+                    .OrderBy(p => p.DisplayOrder)
+                    .First();
+
+                nextPrimary.IsPrimary = true;
+            }
+
+            await _itemRepository.SaveChangesAsync();
+
+            return await GetByIdAsync(itemId, ownerId);
+        }
+
+        public async Task<ItemDto> SetPrimaryPhotoAsync(string ownerId, int itemId, int photoId)
+        {
+            var item = await _itemRepository.GetByIdWithDetailsAsync(itemId)
+                ?? throw new KeyNotFoundException($"Item {itemId} not found.");
+
+            var user = await _userManager.FindByIdAsync(ownerId);
+            bool isAdmin = user != null && await _userManager.IsInRoleAsync(user, "Admin");
+
+            if (item.OwnerId != ownerId && !isAdmin)
+                throw new UnauthorizedAccessException("You do not have permission to modify this item");
+
+
+            foreach (var p in item.Photos)
+            {
+                p.IsPrimary = (p.Id == photoId);
+            }
+
+            await _itemRepository.SaveChangesAsync();
+            return await GetByIdAsync(itemId, ownerId);
+        }
+
+        //ADmin
+        public async Task<ItemDto> AdminGetByIdAsync(int itemId)
+        {
+            var item = await _itemRepository.GetByIdWithDetailsAsync(itemId)
+                ?? throw new KeyNotFoundException($"Item {itemId} not found");
+
+            return MapToItemDto(item, null);
+        }
+
+        public async Task<PagedResult<ItemListDto>> AdminGetAllAsync(ItemFilter? filter, PagedRequest request)
+        {
+            var result = await _itemRepository.GetAllAsAdminAsync(filter, request);
+            return MapToPagedListDto(result, null);
+        }
+
+        public async Task<PagedResult<ItemListDto>> GetPendingApprovalsAsync(ItemFilter? filter, PagedRequest request)
+        {
+            var result = await _itemRepository.GetPendingApprovalsAsync(filter, request);
+            return MapToPagedListDto(result, null);
+        }
+
+        public async Task<ItemDto> DecideItemAsync(string adminId, int itemId, AdminDecideItemDto dto)
+        {
+            var item = await _itemRepository.GetByIdAsync(itemId)
+                ?? throw new KeyNotFoundException($"Item {itemId} not found");
+
+            if (item.Status != ItemStatus.Pending)
+                throw new InvalidOperationException("Only pending items can be approved or rejected");
+
+            item.Status = dto.IsApproved ? ItemStatus.Approved : ItemStatus.Rejected;
+            item.AdminNote = dto.AdminNote;
+            item.ReviewedByAdminId = adminId;
+            item.ReviewedAt = DateTime.UtcNow;
+
+            _itemRepository.Update(item);
+            await _itemRepository.SaveChangesAsync();
+
+            await _notificationService.SendAsync(
+                item.OwnerId,
+                dto.IsApproved ? NotificationType.ItemApproved : NotificationType.ItemRejected,
+                dto.IsApproved ? $"Item '{item.Title}' approved." : $"Item '{item.Title}' rejected: {dto.AdminNote}",
+                item.Id,
+                NotificationReferenceType.Item);
+
+            return await AdminGetByIdAsync(itemId);
+        }
+
+        public async Task<ItemDto> AdminUpdateStatusAsync(string adminId, int itemId, AdminUpdateItemStatusDto dto)
+        {
+            var item = await _itemRepository.GetByIdAsync(itemId) ??
+                throw new KeyNotFoundException($"Item {itemId} not found");
+
+            item.Status = dto.Status;
+            item.AdminNote = dto.AdminNote;
+            item.ReviewedByAdminId = adminId;
+            item.ReviewedAt = DateTime.UtcNow;
+
+            _itemRepository.Update(item);
+            await _itemRepository.SaveChangesAsync();
+
+            return await AdminGetByIdAsync(itemId);
+        }
+
+        public async Task<int> GetPendingApprovalsCountAsync()
+        {
+            return await _itemRepository.GetPendingApprovalsCountAsync();
+        }
+
+        public async Task<bool> SlugExistsAsync(string slug)
+        {
+            return (await _itemRepository.GetBySlugAsync(slug)) != null;
+        }
+
+
+        //Helpers
+        private async Task<string> GenerateUniqueSlugAsync(string title, int? excludeId = null)
+        {
+            var slug = title.ToLower().Trim().Replace(" ", "-");
+            slug = System.Text.RegularExpressions.Regex.Replace(slug, @"[^a-z0-9\-]", "");
+            var baseSlug = slug;
+            int counter = 1;
+
+            while (true)
+            {
+                var existing = await _itemRepository.GetBySlugAsync(slug);
+                if (existing == null || existing.Id == excludeId) return slug;
+                slug = $"{baseSlug}-{counter++}";
+            }
+        }
+
+        private async Task<string> GenerateUniqueQrCodeAsync()
+        {
+            string qr;
+            do { qr = Guid.NewGuid().ToString("N")[..12].ToUpper(); }
+            while (await _itemRepository.QrCodeExistsAsync(qr));
+            return qr;
+        }
+
+        private static bool HasSignificantChanges(UpdateItemDto dto)
+        {
+            return
+                dto.Title != null ||
+                dto.Description != null ||
+                dto.PricePerDay.HasValue ||
+                dto.IsFree.HasValue ||
+                dto.CurrentValue.HasValue ||
+                dto.Condition.HasValue ||
+                dto.RequiresVerification.HasValue ||
+                dto.CategoryId.HasValue;
+        }
+
+
+
+        private static ItemDto MapToItemDto(Item item, string? currentUserId)
+        {
+            return new ItemDto
+            {
+                Id = item.Id,
+                Title = item.Title,
+                Slug = item.Slug,
+                Description = item.Description,
+                CurrentValue = item.CurrentValue,
+                PricePerDay = item.PricePerDay,
+                IsFree = item.IsFree,
+                Condition = item.Condition,
+                IsCurrentlyOnLoan = item.Loans.Any(l => l.Status == LoanStatus.Active),
+                IsMine = currentUserId != null && item.OwnerId == currentUserId,
+                CategoryId = item.CategoryId,
+                CategoryName = item.Category?.Name ?? "",
+                CategorySlug = item.Category?.Slug ?? "",
+                CategoryIcon = item.Category?.Icon ?? "",
+                OwnerId = item.OwnerId,
+                OwnerName = item.Owner?.FullName ?? "",
+                OwnerUserName = item.Owner?.UserName ?? "",
+                OwnerAvatarUrl = item.Owner?.AvatarUrl,
+                OwnerScore = item.Owner?.Score ?? 0,
+                IsOwnerVerified = item.Owner?.IsVerified ?? false,
+                PickupAddress = item.PickupAddress,
+                PickupLatitude = item.PickupLatitude,
+                PickupLongitude = item.PickupLongitude,
+                AvailableFrom = item.AvailableFrom,
+                AvailableUntil = item.AvailableUntil,
+                Status = item.Status,
+                Availability = item.Availability,
+                IsActive = item.IsActive,
+                AdminNote = item.AdminNote,
+                ReviewedByAdminId = item.ReviewedByAdminId,
+                ReviewedByAdminName = item.ReviewedByAdmin?.FullName,
+                ReviewedByAdminUserName = item.ReviewedByAdmin?.UserName,
+                ReviewedByAdminAvatarUrl = item.ReviewedByAdmin?.AvatarUrl,
+                MinLoanDays = item.MinLoanDays,
+                MaxLoanDays = item.MaxLoanDays,
+                ReviewedAt = item.ReviewedAt,
+                CreatedAt = item.CreatedAt,
+                UpdatedAt = item.UpdatedAt,
+                AverageRating = item.Reviews.Any() ? Math.Round(item.Reviews.Average(r => r.Rating), 1) : null,
+                ReviewCount = item.Reviews.Count,
+                TotalLoans = item.Loans.Count,
+                Photos = item.Photos.OrderBy(p => p.DisplayOrder).Select(p => new ItemPhotoDto
+                {
+                    Id = p.Id,
+                    PhotoUrl = p.PhotoUrl,
+                    IsPrimary = p.IsPrimary,
+                    DisplayOrder = p.DisplayOrder
+                }).ToList()
+            };
+        }
+
+        private static ItemListDto MapToItemListDto(Item item, string? currentUserId)
+        {
+            var primary = item.Photos.FirstOrDefault(p => p.IsPrimary) ?? item.Photos.FirstOrDefault();
+            return new ItemListDto
+            {
+                Id = item.Id,
+                Title = item.Title,
+                Slug = item.Slug,
+                MainPhotoUrl = primary?.PhotoUrl,
+                PricePerDay = item.PricePerDay,
+                IsFree = item.IsFree,
+                CategoryId = item.CategoryId,
+                CategoryName = item.Category?.Name ?? "",
+                CategorySlug = item.Category?.Slug ?? "",
+                Condition = item.Condition,
+                Availability = item.Availability,
+                IsActive = item.IsActive,
+                AverageRating = item.Reviews?.Any() == true
+                            ? Math.Round(item.Reviews.Average(r => r.Rating), 1)
+                            : null,
+                TotalReviews = item.Reviews?.Count ?? 0,
+                OwnerId = item.OwnerId,
+                OwnerName = item.Owner?.FullName ?? "",
+                OwnerUsername = item.Owner?.UserName ?? "",
+                OwnerAvatarUrl = item.Owner?.AvatarUrl,
+                OwnerScore = item.Owner?.Score ?? 0,
+                IsOwnerVerified = item.Owner?.IsVerified ?? false,
+                AvailableFrom = item.AvailableFrom,
+                AvailableUntil = item.AvailableUntil,
+                MaxLoanDays = item.MaxLoanDays,
+                MinLoanDays = item.MinLoanDays,
+                CreatedAt = item.CreatedAt
+            };
+        }
+
+        private static PagedResult<ItemListDto> MapToPagedListDto(PagedResult<Item> result, string? currentUserId)
+        {
+            return new PagedResult<ItemListDto>
+            {
+                Items = result.Items.Select(i => MapToItemListDto(i, currentUserId)).ToList(),
+                TotalCount = result.TotalCount,
+                Page = result.Page,
+                PageSize = result.PageSize
+            };
+        }
+
+        private static void SoftDelete(Item item, ApplicationUser user)
+        {
+            var suffix = DateTime.UtcNow.Ticks.ToString();
+
+            item.Title = $"deleted_item_{suffix}";
+            item.Description = "This item has been deleted.";
+
+            item.IsActive = false;
+            item.IsDeleted = true;
+            item.DeletedAt = DateTime.UtcNow;
+            item.DeletedByUserId = user.Id;
+
+            item.Status = ItemStatus.Deleted;
+            item.Availability = ItemAvailability.Unavailable;
+
+            item.PickupAddress = "Deleted";
+            item.PickupLatitude = 0;
+            item.PickupLongitude = 0;
+
+            item.PricePerDay = 0;
+            item.CurrentValue = 0;
+
+            item.Slug = $"deleted_item_slug-{suffix}";
+            item.QrCode = $"D{suffix}"[..12];
+
+            item.MinLoanDays = null;
+            item.MaxLoanDays = null;
+
+            item.AvailableFrom = DateTime.UtcNow;  //Not nullable so
+            item.AvailableUntil = DateTime.UtcNow; 
+        }
+
+
+    }
+}
