@@ -1,0 +1,478 @@
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { AuthService } from '../../services/auth-service';
+import { ItemDTO } from '../../dtos/itemDTO';
+import { UserDTO } from '../../dtos/userDTO';
+import { LoanDTO } from '../../dtos/loanDTO';
+import { UserService } from '../../services/user-service';
+import { ItemService } from '../../services/item-service';
+import { LoanService } from '../../services/loan-service';
+import { FineDTO } from '../../dtos/fineDTO';
+import { FineService } from '../../services/fine-service';
+import { VerificationService } from '../../services/verification-service';
+import { Navbar } from "../navbar/navbar";
+
+@Component({
+  selector: 'app-profile',
+  imports: [CommonModule, RouterLink, FormsModule, Navbar],
+  templateUrl: './profile.html',
+  styleUrl: './profile.css',
+})
+export class Profile implements OnInit {
+
+  // Data
+  profile: UserDTO.UserProfileDTO | null = null;
+  myItems: ItemDTO.ItemSummaryDTO[] = [];
+  myLoans: LoanDTO.LoanSummaryDTO[] = [];
+  scoreHistory: UserDTO.ScoreHistoryDTO[] = [];
+  myFines: FineDTO.FineResponseDTO[] = [];
+  showAvatarModal = false;
+
+  // Stats
+  //!!! REWRITE IT!!!
+  stats: { icon: string; value: string | number; label: string; currency?: string }[] = [];
+
+  // Tabs
+  activeTab: 'items' | 'loans' | 'score' = 'items';
+  tabs = [
+    { key: 'items' as const, label: 'My Items' },
+    { key: 'loans' as const, label: 'Loans' },
+    { key: 'score' as const, label: 'Score History' },
+  ];
+
+  addressSuggestions: any[] = [];
+  showAddressSuggestions = false;
+  private addressSearchTimeout: any;
+
+  //tracking
+  private loadedFlags = { profile: false, items: false, loans: false, fines: false };
+
+
+  // Edit profile
+  editMode = false;
+  isSaving = false;
+  updateSuccess = false;
+  updateError = '';
+  editForm: UserDTO.UpdateProfileDTO = {
+    fullName: '',
+    userName: '',
+    address: '',
+    gender: '',
+    avatarUrl: '',
+    latitude: undefined,
+    longitude: undefined,
+  };
+
+  // Change password
+  passwordMode = false;
+  isSavingPassword = false;
+  passwordSuccess = false;
+  passwordError = '';
+  passwordForm = { currentPassword: '', newPassword: '', confirmPassword: '' };
+
+  // Delete account
+  showDeleteConfirm = false;
+  deletePassword = '';
+  isDeletingAccount = false;
+  deleteError = '';
+
+
+  ownedLoans: LoanDTO.LoanSummaryDTO[] = [];
+  loanView: 'borrowed' | 'lent' = 'borrowed';
+
+
+  //Verification modal
+  showVerifyModal = false;
+  verificationStatus: string | null = null; // 'Pending' | 'Approved' | 'Rejected' | null
+  isSubmittingVerify = false;
+  verifyError = '';
+  verifyForm = { documentUrl: '', documentType: '' };
+  documentTypes = [
+    { label: '🪪 National ID', value: 'NationalId' },
+    { label: '🛂 Passport',    value: 'Passport' },
+    { label: '🚗 Driving License', value: 'DrivingLicense' },
+  ];
+
+  resetPasswordForm() {
+    this.passwordForm = { currentPassword: '', newPassword: '', confirmPassword: '' };
+    this.passwordError = '';
+    this.passwordSuccess = false;
+  }
+
+  private emojiMap: Record<string, string> = {
+    electronics: '📱', tools: '🔧', sports: '⚽', music: '🎸',
+    books: '📚', camping: '⛺', photography: '📷', gaming: '🎮',
+    gardening: '🌱', biking: '🚲', kitchen: '🍳', cleaning: '🧹',
+    fashion: '👗', art: '🎨', baby: '👶', events: '🎉', auto: '🚗', other: '📦',
+  };
+
+  constructor(
+    private authService: AuthService,
+    private userService: UserService,
+    private itemService: ItemService,
+    private loanService: LoanService,
+    private fineService: FineService,
+    private verificationService: VerificationService,
+    private router: Router,
+    private http: HttpClient,
+    private cdr: ChangeDetectorRef,
+  ) { }
+
+  ngOnInit() {
+    if (!this.authService.isLoggedIn()) {
+      this.router.navigate(['/']);
+      return;
+    }
+    this.loadProfile();
+    this.loadVerificationStatus()
+    this.loadItems();
+    this.loadLoans();
+    this.loadScoreHistory();
+    this.loadFines();
+    this.loadOwnedLoans();
+
+  }
+
+  openAvatarModal(): void {
+    this.showAvatarModal = true;
+  }
+
+  private loadProfile() {
+    this.userService.getMe().subscribe({
+      next: (profile) => {
+        this.profile = profile;
+        this.editForm = {
+          fullName: profile.fullName,
+          userName: profile.username,
+          address: profile.address,
+          gender: profile.gender ?? '',
+          avatarUrl: profile.avatarUrl ?? '',
+          latitude: profile.latitude,
+          longitude: profile.longitude,
+        };
+        this.loadedFlags.profile = true;
+        this.checkAndBuildStats();
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private loadItems() {
+    this.itemService.getMyItems().subscribe({
+      next: (items) => {
+        this.myItems = items;
+        this.loadedFlags.items = true;
+        this.checkAndBuildStats();
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private loadLoans() {
+    this.loanService.getBorrowedLoans().subscribe({
+      next: (loans) => {
+        this.myLoans = loans;
+        this.loadedFlags.loans = true;
+        this.checkAndBuildStats();
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.loadedFlags.loans = true; //still mark done so stats aren't blocked
+        this.checkAndBuildStats();
+      },
+    });
+  }
+
+  private loadScoreHistory() {
+    this.userService.getScoreHistory().subscribe({
+      next: (history) => {
+        this.scoreHistory = history;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private loadFines() {
+    this.fineService.getMyFines().subscribe({
+      next: (fines) => {
+        this.myFines = fines;
+        this.loadedFlags.fines = true;
+        this.checkAndBuildStats();
+        this.cdr.detectChanges();
+        console.log(fines);
+      },
+      error: () => {
+        this.loadedFlags.fines = true;
+        this.checkAndBuildStats();
+      },
+    });
+  }
+
+  private loadOwnedLoans() {
+  this.loanService.getOwnedLoans().subscribe({
+    next: (loans) => {
+      this.ownedLoans = loans;
+      this.cdr.detectChanges();
+    },
+    error: () => {}
+  });
+  }
+
+  private loadVerificationStatus(): void {
+    
+    if (this.profile?.isVerified) {
+      return;
+    }
+
+    this.verificationService.getMyRequest().subscribe({
+      next: (request) => {
+        this.verificationStatus = request.status;
+        console.log('Verification status:', request);
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.verificationStatus = null;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  submitVerification(): void {
+    
+    if (!this.verifyForm.documentUrl || !this.verifyForm.documentType){
+
+      return;
+
+    }
+
+    this.isSubmittingVerify = true;
+    this.verifyError = '';
+
+    this.verificationService.submitRequest(this.verifyForm).subscribe({
+      next: () => {
+        this.verificationStatus = 'Pending';
+        this.isSubmittingVerify = false;
+        this.showVerifyModal = false;
+        this.verifyForm = { documentUrl: '', documentType: '' };
+        this.cdr.detectChanges();
+
+      },
+      error: (err) => {
+        this.verifyError = err.error?.message ?? 'Something went wrong.';
+        this.isSubmittingVerify = false;
+      }
+    });
+  }
+
+
+  
+  private checkAndBuildStats(): void {
+    
+    const profileLoaded = this.loadedFlags.profile;
+    const itemsLoaded = this.loadedFlags.items;
+    const finesLoaded = this.loadedFlags.fines;
+
+    if (profileLoaded && itemsLoaded && finesLoaded) {
+      this.buildStats();
+      this.cdr.detectChanges();
+    }
+
+  }
+
+  private buildStats() {
+
+    const activeItems = this.myItems.filter((item) => {
+      return item.status === "Approved";
+    }).length;
+
+    const activeLoans = this.myLoans.filter((loan) => {
+      return loan.status === 'Active' || loan.status === 'Approved';
+    }).length;
+
+    const completedLoans = this.myLoans.filter((loan) => {
+      return loan.status === 'Returned';
+    }).length;
+
+    const paidFines = this.myFines.filter((fine) => {
+      return fine.status === 'Paid';
+    });
+
+    const totalFinesPaid = paidFines.reduce((total, fine) => {
+      return total + fine.amount;
+    }, 0);
+
+    this.stats = [
+      { icon: '📦', value: activeItems, label: 'Active items' },
+      { icon: '🤝', value: activeLoans, label: 'Active loans' },
+      { icon: '✅', value: completedLoans, label: 'Completed loans' },
+      { icon: '💸', value: totalFinesPaid, currency: 'kr', label: 'Total fines paid' }
+    ];
+  }
+
+  goToLoan(id: number): void {
+    this.router.navigate(['/loans', id]);
+  }
+
+  saveProfile() {
+    this.isSaving = true;
+    this.updateSuccess = false;
+    this.updateError = '';
+
+    this.userService.updateProfile(this.editForm).subscribe({
+      next: (updated) => {
+        this.profile = updated;
+        this.isSaving = false;
+        this.updateSuccess = true;
+        this.editMode = false;
+        this.cdr.detectChanges();
+        setTimeout(() => { 
+
+          this.updateSuccess = false; 
+          this.cdr.detectChanges(); 
+
+        }, 3000);
+      },
+      error: (err) => {
+        this.updateError = err.error?.message ?? 'Failed to update profile.';
+        this.isSaving = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  changePassword() {
+    if (!this.passwordForm.currentPassword || !this.passwordForm.newPassword) {
+      this.passwordError = 'All fields are required.';
+      return;
+    }
+    if (this.passwordForm.newPassword !== this.passwordForm.confirmPassword) {
+      this.passwordError = 'Passwords do not match.';
+      return;
+    }
+    if (this.passwordForm.newPassword.length < 6) {
+      this.passwordError = 'Password must be at least 6 characters.';
+      return;
+    }
+
+    this.isSavingPassword = true;
+    this.passwordSuccess = false;
+    this.passwordError = '';
+
+    this.authService.changePassword(this.passwordForm.currentPassword, this.passwordForm.newPassword)
+      .subscribe({
+        next: () => {
+          this.isSavingPassword = false;
+          this.passwordSuccess = true;
+          this.resetPasswordForm();
+          this.passwordMode = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.passwordError = err.error?.message ?? 'Failed to update password.';
+          this.isSavingPassword = false;
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  deleteAccount() {
+    if (!this.deletePassword){ 
+      return;
+    };
+    this.isDeletingAccount = true;
+    this.deleteError = '';
+
+    this.userService.deleteAccount({ password: this.deletePassword }).subscribe({
+      next: () => {
+        this.authService.clearTokens();
+        this.router.navigate(['/']);
+      },
+      error: (err) => {
+        this.deleteError = err.error?.message ?? 'Failed to delete account.';
+        this.isDeletingAccount = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  onAddressInput(value: string) {
+    clearTimeout(this.addressSearchTimeout);
+    this.showAddressSuggestions = false;
+
+    if (!value || value.length < 3) {
+      this.addressSuggestions = [];
+      return;
+    }
+
+    this.addressSearchTimeout = setTimeout(() => {
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(value)}&limit=5`)
+        .then(res => res.json())
+        .then(data => {
+          this.addressSuggestions = data;
+          this.showAddressSuggestions = true;
+          this.cdr.detectChanges();
+        });
+    }, 400);
+  }
+
+  selectAddress(place: any) {
+    const a = place.address;
+    const road = a?.road ?? '';
+    const houseNumber = a?.house_number ?? '';
+    const neighbourhood = a?.neighbourhood ?? a?.suburb ?? '';
+    const city = a?.city ?? a?.town ?? a?.village ?? '';
+
+    const parts = [
+      [road, houseNumber].filter(Boolean).join(' '),
+      neighbourhood,
+      city,
+    ].filter(Boolean);
+
+    this.editForm.address = parts.join(', ') || place.display_name;
+    this.editForm.latitude = parseFloat(place.lat);
+    this.editForm.longitude = parseFloat(place.lon);
+    this.addressSuggestions = [];
+    this.showAddressSuggestions = false;
+    this.cdr.detectChanges();
+  }
+
+  goToItem(id: number) {
+    this.router.navigate(['/items', id]);
+  }
+
+  
+  getInitials(name: string): string {
+    const parts =  name.split(' ');
+    const firtsLetters = parts.map((part) => part[0]);
+    const initials = firtsLetters.join('').toUpperCase();
+
+    return initials.slice(0, 2);
+  } 
+
+  getCategoryEmoji(categoryName: string): string {
+    
+    const lowerCategoryName = categoryName.toLowerCase();
+    const emoji = this.emojiMap[lowerCategoryName];
+
+    if (emoji) {
+      return emoji;
+    }
+    
+    return '📦';
+
+  }
+
+  getLoanStatusClass(status: string): string {
+    switch (status.toLowerCase()) {
+      case 'active': return 'bg-emerald-400/10 text-emerald-400';
+      case 'approved': return 'bg-blue-400/10 text-blue-400';
+      case 'returned': return 'bg-zinc-300/10 text-zinc-200';
+      case 'overdue': return 'bg-red-400/10 text-red-400';
+      case 'pending': return 'bg-amber-400/10 text-amber-400';
+      default: return 'bg-zinc-700 text-zinc-400';
+    }
+  }
+}
