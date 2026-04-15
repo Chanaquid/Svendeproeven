@@ -1,0 +1,207 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|c:\\users\\subar\\desktop\\rentit\\backend\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|solutionrelative:services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|c:\\users\\subar\\desktop\\rentit\\backend\\datas\\applicationdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|solutionrelative:datas\\applicationdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|c:\\users\\subar\\desktop\\rentit\\backend\\models\\userreview.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|solutionrelative:models\\userreview.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|c:\\users\\subar\\desktop\\rentit\\backend\\models\\fine.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|solutionrelative:models\\fine.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|c:\\users\\subar\\desktop\\rentit\\backend\\controllers\\itemreviewcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|solutionrelative:controllers\\itemreviewcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|c:\\users\\subar\\desktop\\rentit\\backend\\controllers\\adminusercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|solutionrelative:controllers\\adminusercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|c:\\users\\subar\\desktop\\rentit\\backend\\controllers\\finecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|solutionrelative:controllers\\finecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|c:\\users\\subar\\desktop\\rentit\\backend\\dtos\\disputedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|solutionrelative:dtos\\disputedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|c:\\users\\subar\\desktop\\rentit\\backend\\services\\disputeservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|solutionrelative:services\\disputeservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|c:\\users\\subar\\desktop\\rentit\\backend\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|c:\\users\\subar\\desktop\\rentit\\backend\\models\\enum.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|solutionrelative:models\\enum.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 298,
+          "SelectedChildIndex": 4,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ApplicationDbContext.cs",
+              "DocumentMoniker": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Datas\\ApplicationDbContext.cs",
+              "RelativeDocumentMoniker": "Datas\\ApplicationDbContext.cs",
+              "ToolTip": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Datas\\ApplicationDbContext.cs",
+              "RelativeToolTip": "Datas\\ApplicationDbContext.cs",
+              "ViewState": "AgIAALECAAAAAAAAAAAmwOoCAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-14T20:39:16.771Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "UserReview.cs",
+              "DocumentMoniker": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Models\\UserReview.cs",
+              "RelativeDocumentMoniker": "Models\\UserReview.cs",
+              "ToolTip": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Models\\UserReview.cs",
+              "RelativeToolTip": "Models\\UserReview.cs",
+              "ViewState": "AgIAABgAAAAAAAAAAAAYwCYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-14T20:43:34.77Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Fine.cs",
+              "DocumentMoniker": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Models\\Fine.cs",
+              "RelativeDocumentMoniker": "Models\\Fine.cs",
+              "ToolTip": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Models\\Fine.cs",
+              "RelativeToolTip": "Models\\Fine.cs",
+              "ViewState": "AgIAACUAAAAAAAAAAAAkwDQAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-14T20:42:23.976Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "ItemReviewController.cs",
+              "DocumentMoniker": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Controllers\\ItemReviewController.cs",
+              "RelativeDocumentMoniker": "Controllers\\ItemReviewController.cs",
+              "ToolTip": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Controllers\\ItemReviewController.cs",
+              "RelativeToolTip": "Controllers\\ItemReviewController.cs",
+              "ViewState": "AgIAABIAAAAAAAAAAAAWwBoAAAAtAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-14T20:38:20.939Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "AuthService.cs",
+              "DocumentMoniker": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Services\\AuthService.cs",
+              "RelativeDocumentMoniker": "Services\\AuthService.cs",
+              "ToolTip": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Services\\AuthService.cs",
+              "RelativeToolTip": "Services\\AuthService.cs",
+              "ViewState": "AgIAADgBAAAAAAAAAAAQwFABAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-14T20:38:02.149Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "FineController.cs",
+              "DocumentMoniker": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Controllers\\FineController.cs",
+              "RelativeDocumentMoniker": "Controllers\\FineController.cs",
+              "ToolTip": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Controllers\\FineController.cs",
+              "RelativeToolTip": "Controllers\\FineController.cs",
+              "ViewState": "AgIAAFAAAAAAAAAAAAASwF8AAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-14T20:37:19.381Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "DisputeService.cs",
+              "DocumentMoniker": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Services\\DisputeService.cs",
+              "RelativeDocumentMoniker": "Services\\DisputeService.cs",
+              "ToolTip": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Services\\DisputeService.cs",
+              "RelativeToolTip": "Services\\DisputeService.cs",
+              "ViewState": "AgIAAFYBAAAAAAAAAIA6wHABAAA3AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-14T20:17:45.215Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "DisputeDto.cs",
+              "DocumentMoniker": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Dtos\\DisputeDto.cs",
+              "RelativeDocumentMoniker": "Dtos\\DisputeDto.cs",
+              "ToolTip": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Dtos\\DisputeDto.cs",
+              "RelativeToolTip": "Dtos\\DisputeDto.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAAG8AAAAfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-14T20:14:33.616Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "AdminUserController.cs",
+              "DocumentMoniker": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Controllers\\AdminUserController.cs",
+              "RelativeDocumentMoniker": "Controllers\\AdminUserController.cs",
+              "ToolTip": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Controllers\\AdminUserController.cs",
+              "RelativeToolTip": "Controllers\\AdminUserController.cs",
+              "ViewState": "AgIAALgAAAAAAAAAAAD4v8EAAAAtAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-14T20:14:13.615Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "Enum.cs",
+              "DocumentMoniker": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Models\\Enum.cs",
+              "RelativeDocumentMoniker": "Models\\Enum.cs",
+              "ToolTip": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Models\\Enum.cs",
+              "RelativeToolTip": "Models\\Enum.cs",
+              "ViewState": "AgIAAHwAAAAAAAAAAAAkwIoAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-14T20:07:15.352Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AgIAAGIAAAAAAAAAAAAmwIoAAABDAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-14T19:58:00.832Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

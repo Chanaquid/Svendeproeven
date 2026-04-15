@@ -1,0 +1,105 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|c:\\users\\subar\\desktop\\rentit\\backend\\services\\verificationrequestservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|solutionrelative:services\\verificationrequestservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|c:\\users\\subar\\desktop\\rentit\\backend\\services\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|solutionrelative:services\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|c:\\users\\subar\\desktop\\rentit\\backend\\services\\userreviewservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|solutionrelative:services\\userreviewservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|c:\\users\\subar\\desktop\\rentit\\backend\\services\\userfavoriteservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|solutionrelative:services\\userfavoriteservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|c:\\users\\subar\\desktop\\rentit\\backend\\services\\userblockservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{73FC1A86-6BCA-4566-8716-BAB6AD0ABA59}|backend.csproj|solutionrelative:services\\userblockservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 298,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "VerificationRequestService.cs",
+              "DocumentMoniker": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Services\\VerificationRequestService.cs",
+              "RelativeDocumentMoniker": "Services\\VerificationRequestService.cs",
+              "ToolTip": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Services\\VerificationRequestService.cs",
+              "RelativeToolTip": "Services\\VerificationRequestService.cs",
+              "ViewState": "AgIAAJgAAAAAAAAAAAAuwKYAAAAiAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-15T18:24:21.037Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "UserService.cs",
+              "DocumentMoniker": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Services\\UserService.cs",
+              "RelativeDocumentMoniker": "Services\\UserService.cs",
+              "ToolTip": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Services\\UserService.cs",
+              "RelativeToolTip": "Services\\UserService.cs",
+              "ViewState": "AgIAACgAAAAAAAAAAAAYwB0BAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-15T18:01:25.214Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "UserReviewService.cs",
+              "DocumentMoniker": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Services\\UserReviewService.cs",
+              "RelativeDocumentMoniker": "Services\\UserReviewService.cs",
+              "ToolTip": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Services\\UserReviewService.cs",
+              "RelativeToolTip": "Services\\UserReviewService.cs",
+              "ViewState": "AgIAABMAAAAAAAAAAAAgwGUAAAAeAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-15T17:56:57.627Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "UserFavoriteService.cs",
+              "DocumentMoniker": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Services\\UserFavoriteService.cs",
+              "RelativeDocumentMoniker": "Services\\UserFavoriteService.cs",
+              "ToolTip": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Services\\UserFavoriteService.cs",
+              "RelativeToolTip": "Services\\UserFavoriteService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-15T17:55:14.719Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "UserBlockService.cs",
+              "DocumentMoniker": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Services\\UserBlockService.cs",
+              "RelativeDocumentMoniker": "Services\\UserBlockService.cs",
+              "ToolTip": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\Services\\UserBlockService.cs",
+              "RelativeToolTip": "Services\\UserBlockService.cs",
+              "ViewState": "AgIAAGMAAAAAAAAAAAAmwBcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-15T17:52:01.912Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
