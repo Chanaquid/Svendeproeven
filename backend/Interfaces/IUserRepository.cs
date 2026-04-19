@@ -15,6 +15,10 @@ namespace backend.Interfaces
         Task<bool> EmailExistsAsync(string email);
         Task<bool> UsernameExistsAsync(string username);
 
+        //For landing
+        Task<int> GetTotalUsersCountAsync();
+
+
         //CRUD
         void Add(ApplicationUser user);
         void Delete(ApplicationUser user);

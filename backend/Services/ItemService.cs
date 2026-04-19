@@ -14,6 +14,7 @@ namespace backend.Services
         private readonly ILoanRepository _loanRepository;
         private readonly INotificationService _notificationService;
         private readonly IUserFavoriteRepository _userFavoriteRepository;
+        private readonly IUserBlockRepository _userBlockRepository;
 
         private readonly UserManager<ApplicationUser> _userManager;
 
@@ -25,7 +26,8 @@ namespace backend.Services
             ILoanRepository loanRepository,
             INotificationService notificationService,
             UserManager<ApplicationUser> userManager,
-            IUserFavoriteRepository userFavoriteRepository)
+            IUserFavoriteRepository userFavoriteRepository,
+            IUserBlockRepository userBlockRepository)
         {
             _itemRepository = itemRepository;
             _categoryRepository = categoryRepository;
@@ -35,6 +37,7 @@ namespace backend.Services
             _notificationService = notificationService;
             _userManager = userManager;
             _userFavoriteRepository = userFavoriteRepository;
+            _userBlockRepository = userBlockRepository;
         }
 
         //User
@@ -57,35 +60,61 @@ namespace backend.Services
             var item = await _itemRepository.GetBySlugAsync(slug)
                 ?? throw new KeyNotFoundException($"Item not found");
 
-            return MapToItemDto(item, currentUserId);
+
+            //Check if the item is in the specific user's wishlist
+            bool isFavorited = currentUserId != null &&
+                await _userFavoriteRepository.ExistsAsync(currentUserId, item.Id);
+
+            var dto = MapToItemDto(item, currentUserId);
+            dto.IsFavoritedByCurrentUser = isFavorited;
+            return dto;
         }
 
+        //Use the block check helpers and filters
         public async Task<PagedResult<ItemListDto>> GetAllApprovedAsync(ItemFilter? filter, PagedRequest request, string? currentUserId)
         {
             var result = await _itemRepository.GetAllApprovedAsync(filter, request);
-            return MapToPagedListDto(result, currentUserId);
+            var mapped = MapToPagedListDto(result, currentUserId);
+            var blocked = await GetBlockedOwnerIdsAsync(currentUserId);
+            return FilterBlockedOwners(mapped, blocked);
         }
 
         public async Task<PagedResult<ItemListDto>> GetAvailableItemsAsync(ItemFilter? filter, PagedRequest request, string? currentUserId)
         {
             var result = await _itemRepository.GetAvailableItemsAsync(filter, request);
-            return MapToPagedListDto(result, currentUserId);
+            var mapped = MapToPagedListDto(result, currentUserId);
+            var blocked = await GetBlockedOwnerIdsAsync(currentUserId);
+            return FilterBlockedOwners(mapped, blocked);
         }
 
         public async Task<PagedResult<ItemListDto>> GetByCategoryAsync(int categoryId, ItemFilter? filter, PagedRequest request, string? currentUserId)
         {
             var result = await _itemRepository.GetByCategoryAsync(categoryId, filter, request);
-            return MapToPagedListDto(result, currentUserId);
+            var mapped = MapToPagedListDto(result, currentUserId);
+            var blocked = await GetBlockedOwnerIdsAsync(currentUserId);
+            return FilterBlockedOwners(mapped, blocked);
         }
 
         public async Task<PagedResult<ItemListDto>> GetNearbyItemsAsync(double lat, double lon, double radiusKm, ItemFilter? filter, PagedRequest request, string? currentUserId)
         {
             var result = await _itemRepository.GetNearbyItemsAsync(lat, lon, radiusKm, filter, request);
-            return MapToPagedListDto(result, currentUserId);
+            var mapped = MapToPagedListDto(result, currentUserId);
+            var blocked = await GetBlockedOwnerIdsAsync(currentUserId);
+            return FilterBlockedOwners(mapped, blocked);
         }
 
         public async Task<PagedResult<ItemListDto>> GetPublicByOwnerAsync(string ownerId, ItemFilter? filter, PagedRequest request, string? currentUserId)
         {
+            var blocked = await GetBlockedOwnerIdsAsync(currentUserId);
+            if (blocked.Contains(ownerId))
+                return new PagedResult<ItemListDto>
+                {
+                    Items = new List<ItemListDto>(),
+                    TotalCount = 0,
+                    Page = request.Page,
+                    PageSize = request.PageSize
+                };
+
             var result = await _itemRepository.GetPublicByOwnerAsync(ownerId, filter, request);
             return MapToPagedListDto(result, currentUserId);
         }
@@ -94,6 +123,13 @@ namespace backend.Services
         {
             var result = await _itemRepository.GetByOwnerIdAsync(ownerId, filter, request);
             return MapToPagedListDto(result, ownerId);
+        }
+
+        public async Task<List<ItemListDto>> GetNewestListedAsync(int count = 4)
+        {
+            var items = await _itemRepository.GetNewestListedAsync(count);
+
+            return items.Select(i => MapToItemListDto(i, null)).ToList();
         }
 
 
@@ -538,7 +574,10 @@ namespace backend.Services
         {
             return (await _itemRepository.GetBySlugAsync(slug)) != null;
         }
-
+        public async Task<int> GetAvailableCountAsync()
+        {
+            return await _itemRepository.GetAvailableCountAsync();
+        }
 
         //Helpers
         private async Task<string> GenerateUniqueSlugAsync(string title, int? excludeId = null)
@@ -575,6 +614,34 @@ namespace backend.Services
                 dto.Condition.HasValue ||
                 dto.RequiresVerification.HasValue ||
                 dto.CategoryId.HasValue;
+        }
+
+        //Dont show items listed by blocked users
+        private async Task<HashSet<string>> GetBlockedOwnerIdsAsync(string? currentUserId)
+        {
+            if (string.IsNullOrEmpty(currentUserId))
+                return new HashSet<string>();
+
+            return await _userBlockRepository.GetBlockedUserIdsAsync(currentUserId);
+        }
+
+        private static PagedResult<ItemListDto> FilterBlockedOwners(
+        PagedResult<ItemListDto> result,
+        HashSet<string> blockedIds)
+        {
+            if (blockedIds.Count == 0) return result;
+
+            var filtered = result.Items
+                .Where(i => !blockedIds.Contains(i.OwnerId))
+                .ToList();
+
+            return new PagedResult<ItemListDto>
+            {
+                Items = filtered,
+                TotalCount = filtered.Count, //recount after filter
+                Page = result.Page,
+                PageSize = result.PageSize
+            };
         }
 
 
@@ -642,6 +709,7 @@ namespace backend.Services
                 Id = item.Id,
                 Title = item.Title,
                 Slug = item.Slug,
+                Description = item.Description,
                 MainPhotoUrl = primary?.PhotoUrl,
                 PricePerDay = item.PricePerDay,
                 IsFree = item.IsFree,
@@ -650,6 +718,7 @@ namespace backend.Services
                 CategorySlug = item.Category?.Slug ?? "",
                 Condition = item.Condition,
                 Availability = item.Availability,
+                PickUpAddress = item.PickupAddress,
                 IsActive = item.IsActive,
                 AverageRating = item.Reviews?.Any() == true
                             ? Math.Round(item.Reviews.Average(r => r.Rating), 1)

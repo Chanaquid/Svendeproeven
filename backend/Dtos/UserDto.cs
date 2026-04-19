@@ -117,6 +117,7 @@ namespace backend.Dtos
         public decimal UnpaidFinesTotal { get; set; }
         public bool IsVerified { get; set; }
         public bool IsBanned { get; set; }
+        public int TotalCompletedLoans { get; set; }
         public BorrowingStatus BorrowingStatus { get; set; } 
         public DateTime MembershipDate { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -158,6 +159,7 @@ namespace backend.Dtos
         public int Score { get; set; }
         public DateTime MembershipDate { get; set; }
         public string? GeneralAddress { get; set; } //NOt full address
+        public int TotalCompletedLoans { get; set; }
 
         public int TotalItems { get; set; }
         public int TotalReviewsReceived { get; set; }

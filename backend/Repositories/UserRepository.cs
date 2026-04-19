@@ -170,10 +170,22 @@ namespace backend.Repositories
                 MembershipDate = u.MembershipDate,
 
                 TotalItems = u.OwnedItems.Count(),
-                TotalReviewsReceived = u.ReviewsReceived.Count()
+                TotalReviewsReceived = u.ReviewsReceived.Count(),
+                TotalCompletedLoans = _context.Loans.Count(l =>
+                (l.BorrowerId == u.Id || l.LenderId == u.Id) &&
+                l.Status == LoanStatus.Completed)
+
             })
             .FirstOrDefaultAsync();
             }
+
+        //For landing page 
+        public async Task<int> GetTotalUsersCountAsync()
+        {
+            return await _context.Users
+                .CountAsync(u => !u.IsDeleted); //redundant?
+        }
+
 
         //Wrap the db transactions in a transaction so if it fails midway, it rollbacks 
         public async Task ExecuteInTransactionAsync(Func<Task> action)

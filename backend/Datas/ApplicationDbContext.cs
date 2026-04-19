@@ -111,6 +111,8 @@ namespace backend.Data
 
                 entity.Property(i => i.CurrentValue).HasPrecision(18, 2);
                 entity.Property(i => i.PricePerDay).HasPrecision(18, 2);
+                entity.Property(i => i.AverageRating).HasPrecision(4, 2);
+
 
                 entity.HasQueryFilter(i => !i.IsDeleted);
 
@@ -224,6 +226,7 @@ namespace backend.Data
                 entity.HasIndex(l => l.DisputeDeadline);
                 entity.HasIndex(l => new { l.Status, l.DisputeDeadline });
 
+                entity.Property(l => l.PricePerDaySnapshot).HasPrecision(18, 2);
                 entity.Property(l => l.TotalPrice).HasPrecision(18, 2);
 
                 entity.HasOne(l => l.Item)

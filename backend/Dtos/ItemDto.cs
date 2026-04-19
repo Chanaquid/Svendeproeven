@@ -229,7 +229,7 @@ namespace backend.Dtos
 
         public string Slug { get; set; } = string.Empty;
         public string? MainPhotoUrl { get; set; }
-
+        public string PickUpAddress { get; set; } = string.Empty;
 
         //Category
         public int CategoryId { get; set; }

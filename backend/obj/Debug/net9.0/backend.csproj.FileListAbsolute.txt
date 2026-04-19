@@ -174,4 +174,5 @@ C:\Users\subar\Desktop\RentIt\backend\obj\Debug\net9.0\ref\backend.dll
 C:\Users\subar\Desktop\RentIt\backend\bin\Debug\net9.0\BouncyCastle.Cryptography.dll
 C:\Users\subar\Desktop\RentIt\backend\bin\Debug\net9.0\MailKit.dll
 C:\Users\subar\Desktop\RentIt\backend\bin\Debug\net9.0\MimeKit.dll
+C:\Users\subar\Desktop\RentIt\backend\obj\Debug\net9.0\backend.sourcelink.json
 C:\Users\subar\Desktop\RentIt\backend\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt

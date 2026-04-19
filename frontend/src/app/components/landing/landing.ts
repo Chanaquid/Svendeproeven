@@ -1,17 +1,19 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
-import { AuthService } from '../../services/auth-service';
-import { ItemService } from '../../services/item-service';
-import { UserService } from '../../services/user-service';
+import { AuthService } from '../../services/authService';
+import { ItemService } from '../../services/itemService';
+import { UserService } from '../../services/userService';
+import { ItemAvailability } from '../../dtos/enums';
+import { Navbar } from '../navbar/navbar';
 
 @Component({
   selector: 'app-landing',
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, Navbar],
   templateUrl: './landing.html',
   styleUrl: './landing.css',
 })
-export class Landing implements OnInit {
+export class Landing implements OnInit{
 
   featuredItems: any[] = [];
   stats = {
@@ -20,14 +22,15 @@ export class Landing implements OnInit {
     cities: '1000+',
   };
 
-  constructor(private authService: AuthService,
+
+   constructor(private authService: AuthService,
      private router: Router,
       private itemService: ItemService,
        private userService : UserService,
       private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
-    // Redirect logged-in users straight to the home/dashboard
+    //Redirect logged-in users straight to the home/dashboard
     if (this.authService.isLoggedIn()) {
       this.router.navigate(['/home']);
     }
@@ -35,15 +38,28 @@ export class Landing implements OnInit {
     this.loadStats();
   }
 
-
   private loadStats() {
-    this.itemService.getAll().subscribe({
-      next: (items) => {
-        this.stats.activeItems = items.length.toString() + '+';
-          console.log(items);
-          console.log(this.stats.members)
-        // Take the 4 most recent and map to template shape
-        this.featuredItems = items.slice(0, 4).map(item => ({
+
+    this.itemService.getAvailableCount().subscribe({
+      next: (res) => {
+        this.stats.activeItems = res.data + '+';
+        console.log('Available items count:', res.data);
+        this.cdr.detectChanges(); 
+
+      },
+      error : (err) => {
+        this.stats.activeItems = '250+';
+        this.cdr.detectChanges();
+      }
+  });
+
+    this.itemService.getLatest(4).subscribe({
+      next: (res) => {
+        const items = res.data ?? []; 
+        console.log(items);
+        console.log(this.stats.members)
+
+        this.featuredItems = items.map(item => ({
           id: item.id,
           emoji: this.getCategoryEmoji(item.categoryName),
           category: item.categoryName,
@@ -51,31 +67,23 @@ export class Landing implements OnInit {
           location: item.pickupAddress,
           owner: item.ownerName,
           ownerInitials: item.ownerName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
-          rating: item.averageRating > 0 ? `${item.averageRating.toFixed(1)} (${item.reviewCount})` : 'New',
-          available: !item.isCurrentlyOnLoan,
-          primaryPhotoUrl: item.primaryPhotoUrl,
+          rating: item.averageRating && item.averageRating > 0 ? `${item.averageRating.toFixed(1)} (${item.totalReviews})`
+          : 'New', 
+          available: item.availability === ItemAvailability.Available,          
+          primaryPhotoUrl: item.mainPhotoUrl,
         }));
-
-
-
-
-
-
         this.cdr.detectChanges(); //Manually tell Angular to update the UI NOW
       },
       error: (err) => {
-        this.stats.activeItems = '2500+',
         this.cdr.detectChanges(); //Manually tell Angular to update the UI NOW
-
       }
 
     });
 
-    this.userService.getAllUsers().subscribe({
+    this.userService.getTotalUsersCount().subscribe({
       next: (users) => {
         
-        this.stats.members = users.length.toString() + '+';
-        console.log(users)
+        this.stats.members = users.data + '+';
         this.cdr.detectChanges(); //Manually tell Angular to update the UI NOW
 
       },
@@ -173,4 +181,8 @@ export class Landing implements OnInit {
       desc: 'Verified members unlock higher-value items and get a badge on their profile.',
     },
   ];
+
+
+
+
 }

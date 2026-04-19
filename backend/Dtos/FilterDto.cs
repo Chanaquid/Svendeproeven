@@ -30,11 +30,15 @@ namespace backend.Dtos
         //Mains
         public bool? IsFree { get; set; }
         public bool? RequiresVerification { get; set; }
+        public ItemAvailability? Availability { get; set; }
         public decimal? MinPrice { get; set; }
         public decimal? MaxPrice { get; set; }
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
         public double? RadiusKm { get; set; }
+
+        public double? MinRating { get; set; }
+        public double? MaxRating { get; set; }
 
         public string? Search { get; set; }
 

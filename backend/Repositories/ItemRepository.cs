@@ -85,7 +85,9 @@ namespace backend.Repositories
                 .Include(i => i.Category)
                 .Include(i => i.Photos)
                 .Include(i => i.Reviews)
-                .Where(i => i.Status == ItemStatus.Approved && i.IsActive)
+                .Where(i => i.Status == ItemStatus.Approved
+                         && i.IsActive
+                         && i.Availability != ItemAvailability.Unavailable)
                 .AsQueryable();
 
             query = ApplyFilter(query, filter, publicOnly: true);
@@ -316,6 +318,34 @@ namespace backend.Repositories
             return await _context.Items.CountAsync(i => i.Status == ItemStatus.Pending);
         }
 
+
+        //for landing page (frontend)
+        public async Task<List<Item>> GetNewestListedAsync(int count = 4)
+        {
+            return await _context.Items
+                .AsNoTracking()
+                .Include(i => i.Owner)
+                .Include(i => i.Category)
+                .Include(i => i.Photos)
+                .Include(i => i.Reviews)
+                .Where(i => i.Status == ItemStatus.Approved
+                         && i.IsActive
+                         && i.Availability == ItemAvailability.Available)
+                .OrderByDescending(i => i.CreatedAt)
+                .Take(count)
+                .ToListAsync();
+        }
+
+        public async Task<int> GetAvailableCountAsync()
+        {
+            return await _context.Items
+                .CountAsync(i => i.Status == ItemStatus.Approved
+                              && i.IsActive
+                              && i.Availability == ItemAvailability.Available
+                              && !i.IsDeleted);
+        }
+
+
         //Item Photos
         public async Task AddPhotoAsync(ItemPhoto photo)
         {
@@ -410,6 +440,15 @@ namespace backend.Repositories
 
             if (filter.MaxLoanDays.HasValue)
                 query = query.Where(i => !i.MaxLoanDays.HasValue || i.MaxLoanDays >= filter.MaxLoanDays.Value);
+
+            if (filter.MinRating.HasValue)
+                query = query.Where(i => i.AverageRating.HasValue && i.AverageRating >= filter.MinRating.Value);
+
+            if (filter.MaxRating.HasValue)
+                query = query.Where(i => i.AverageRating.HasValue && i.AverageRating <= filter.MaxRating.Value);
+            
+            if (filter.Availability.HasValue)
+                query = query.Where(i => i.Availability == filter.Availability.Value);
 
             if (!string.IsNullOrWhiteSpace(filter.Search))
             {

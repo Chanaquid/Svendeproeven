@@ -54,6 +54,7 @@ namespace backend.Services
 
             //Total debt is calculated in real-time to ensure profile accuracy
             var unpaid = await _fineRepository.GetOutstandingTotalByUserAsync(userId);
+            var totalCompletedLoans = await _loanRepository.GetAllCompletedLoansCountByUserIdAsync(userId);
 
             return new UserProfileDto
             {
@@ -75,6 +76,7 @@ namespace backend.Services
                 UnpaidFinesTotal = unpaid,
                 IsVerified = user.IsVerified,
                 IsBanned = user.IsBanned,
+                TotalCompletedLoans = totalCompletedLoans,
                 BorrowingStatus = GetBorrowingStatus(user), 
                 MembershipDate = user.MembershipDate,
                 CreatedAt = user.CreatedAt,
@@ -284,7 +286,13 @@ namespace backend.Services
             if (user.IsBanned) throw new InvalidOperationException("Account is banned.");
         }
 
-  
+        //For landing page
+        public async Task<int> GetTotalUsersCountAsync()
+        {
+            return await _userRepository.GetTotalUsersCountAsync();
+        }
+
+
         private static void SoftDelete(ApplicationUser user)
         {
             var suffix = DateTime.UtcNow.Ticks.ToString();
@@ -325,6 +333,8 @@ namespace backend.Services
             return BorrowingStatus.Free;
         }
    
+
+
 
         //Mapper unused
         private UserProfileDto MapToUserProfileDto(ApplicationUser user, string? role)

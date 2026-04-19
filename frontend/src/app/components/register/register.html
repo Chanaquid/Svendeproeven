@@ -1,152 +1,183 @@
-<div class="min-h-screen bg-zinc-950 flex items-center justify-center px-4 py-12">
+<div class="register-page">
 
-    <!-- Background grid texture -->
-    <div
-        class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:48px_48px]">
+  <!-- Background grid -->
+  <div class="grid-bg"></div>
+
+  <!-- Glow -->
+  <div class="glow"></div>
+
+  <div class="register-wrapper">
+
+    <!-- Brand -->
+    <div class="brand">
+      <div class="logo">
+ <img src="logo.svg" />
+</div>
+      <p>Create your account</p>
     </div>
 
-    <!-- Glow blob -->
-    <div
-        class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none">
-    </div>
+    <!-- Card -->
+    <div class="card">
 
-    <div class="relative w-full max-w-md">
+      <h2>Register</h2>
 
-        <!-- Logo / brand mark -->
-        <div class="mb-8 text-center">
-            <span class="inline-block w-10 h-10 rounded-xl bg-amber-400 mb-4"></span>
-            <p class="text-zinc-400 text-sm tracking-widest uppercase font-mono">Create your account</p>
+      <form (ngSubmit)="register()" #registerForm="ngForm" class="form">
+
+        <!-- Name + Username -->
+        <div class="grid-2">
+          <div class="field">
+            <label>Full Name</label>
+            <input type="text" name="fullName" [(ngModel)]="dto.fullName" required />
+          </div>
+
+          <div class="field">
+            <label>Username</label>
+            <input type="text" name="username" [(ngModel)]="dto.username" required />
+          </div>
         </div>
 
-        <!-- Card -->
-        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl shadow-black/60">
-
-            <h2 class="text-white text-2xl font-semibold tracking-tight mb-6">Register</h2>
-
-            <form (ngSubmit)="register()" #registerForm="ngForm" class="space-y-5">
-
-                <!-- Full Name + Username -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="space-y-1.5">
-                        <label class="text-zinc-400 text-xs tracking-widest uppercase font-mono">Full Name</label>
-                        <input type="text" name="fullName" [(ngModel)]="dto.fullName" required placeholder="Jane Doe"
-                            class="w-full bg-zinc-800 border border-zinc-700 text-white text-sm rounded-lg px-4 py-3
-                     placeholder-zinc-600 outline-none
-                     focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30
-                     transition-all duration-200" />
-                    </div>
-                    <div class="space-y-1.5">
-                        <label class="text-zinc-400 text-xs tracking-widest uppercase font-mono">Username</label>
-                        <input type="text" name="username" [(ngModel)]="dto.username" required placeholder="janedoe"
-                            class="w-full bg-zinc-800 border border-zinc-700 text-white text-sm rounded-lg px-4 py-3
-                     placeholder-zinc-600 outline-none
-                     focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30
-                     transition-all duration-200" />
-                    </div>
-                </div>
-
-                <!-- Email -->
-                <div class="space-y-1.5">
-                    <label class="text-zinc-400 text-xs tracking-widest uppercase font-mono">Email</label>
-                    <input type="email" name="email" [(ngModel)]="dto.email" required placeholder="you@example.com"
-                        class="w-full bg-zinc-800 border border-zinc-700 text-white text-sm rounded-lg px-4 py-3
-                   placeholder-zinc-600 outline-none
-                   focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30
-                   transition-all duration-200" />
-                </div>
-
-                <!-- Password -->
-                <div class="space-y-1.5">
-                    <label class="text-zinc-400 text-xs tracking-widest uppercase font-mono">Password</label>
-                    <input type="password" name="password" [(ngModel)]="dto.password" required placeholder="••••••••"
-                        class="w-full bg-zinc-800 border border-zinc-700 text-white text-sm rounded-lg px-4 py-3
-                   placeholder-zinc-600 outline-none
-                   focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30
-                   transition-all duration-200" />
-                </div>
-
-                <!-- Date of Birth + Gender -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="space-y-1.5">
-                        <label class="text-zinc-400 text-xs tracking-widest uppercase font-mono">Date of Birth</label>
-                        <input type="date" name="dateOfBirth" [(ngModel)]="dto.dateOfBirth" required class="w-full bg-zinc-800 border border-zinc-700 text-white text-sm rounded-lg px-4 py-3
-                     outline-none colorscheme-dark
-                     focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30
-                     transition-all duration-200" />
-                    </div>
-                    <div class="space-y-1.5">
-                        <label class="text-zinc-400 text-xs tracking-widest uppercase font-mono">Gender</label>
-                        <select name="gender" [(ngModel)]="dto.gender" class="w-full bg-zinc-800 border border-zinc-700 text-white text-sm rounded-lg px-4 py-3
-                     outline-none
-                     focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30
-                     transition-all duration-200">
-                            <option value="" disabled selected class="text-zinc-600">Select</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                            <option value="Other">Other</option>
-                            <option value="PreferNotToSay">Prefer not to say</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Address -->
-                <div class="space-y-1.5 relative">
-                    <label class="text-zinc-400 text-xs tracking-widest uppercase font-mono">Address</label>
-                    <input type="text" name="address" [(ngModel)]="dto.address" (ngModelChange)="onAddressInput($event)"
-                        required autocomplete="off" placeholder="Start typing your address..." class="w-full bg-zinc-800 border border-zinc-700 text-white text-sm rounded-lg px-4 py-3
-           placeholder-zinc-600 outline-none
-           focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30
-           transition-all duration-200" />
-
-                    <!-- Dropdown -->
-                    <ul *ngIf="showSuggestions && suggestions.length"
-                        class="absolute z-50 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden shadow-xl">
-                        <li *ngFor="let place of suggestions" (mousedown)="selectSuggestion(place)"
-                            class="px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-white cursor-pointer truncate transition-colors duration-150">
-                            {{ place.display_name }}
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Error message -->
-                <p *ngIf="errorMessage"
-                    class="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
-                    {{ errorMessage }}
-                </p>
-
-                <!-- Success message -->
-                <p *ngIf="successMessage"
-                    class="text-emerald-400 text-xs bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
-                    {{ successMessage }}
-                </p>
-
-                <!-- Submit -->
-                <button type="submit" [disabled]="registerForm.invalid || isLoading" class="w-full bg-amber-400 hover:bg-amber-300 disabled:bg-zinc-700 disabled:text-zinc-500
-                 text-zinc-900 font-semibold text-sm rounded-lg px-4 py-3
-                 transition-all duration-200 disabled:cursor-not-allowed
-                 active:scale-[0.98]">
-                    <span *ngIf="!isLoading">Create account</span>
-                    <span *ngIf="isLoading" class="flex items-center justify-center gap-2">
-                        <svg class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none"
-                            viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                        </svg>
-                        Creating account...
-                    </span>
-                </button>
-
-            </form>
+        <!-- Email -->
+        <div class="field">
+          <label>Email</label>
+          <input type="email" name="email" [(ngModel)]="dto.email" required />
         </div>
 
-        <!-- Footer link -->
-        <p class="text-center text-zinc-500 text-sm mt-6">
-            Already have an account?
-            <a routerLink="/login"
-                class="text-amber-400 hover:text-amber-300 transition-colors duration-150 font-medium ml-1">
-                Sign in
-            </a>
+        <!-- Password -->
+        <div class="field">
+          <label>Password</label>
+          <input type="password" name="password" [(ngModel)]="dto.password" required />
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="field">
+        <label>Confirm Password</label>
+        <input
+            type="password"
+            name="confirmPassword"
+            [(ngModel)]="dto.confirmPassword"
+            required
+        />
+        </div>
+
+        <!-- DOB + Gender -->
+        <div class="grid-2">
+          <div class="field">
+            <label>Date of Birth</label>
+            <input class="date" type="date" name="dateOfBirth" [(ngModel)]="dto.dateOfBirth" required />
+          </div>
+
+          <div class="field">
+            <label>Gender</label>
+            <select name="gender" [(ngModel)]="dto.gender">
+              <option value="" disabled selected>Select</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+              <option value="PreferNotToSay">Prefer not to say</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Address -->
+        <div class="field relative">
+          <label>Address</label>
+
+          <input
+            type="text"
+            name="address"
+            [(ngModel)]="dto.address"
+            (ngModelChange)="onAddressInput($event)"
+            autocomplete="off"
+            placeholder="Start typing your address..."
+          />
+
+          <ul *ngIf="showSuggestions && suggestions.length" class="suggestions">
+            <li *ngFor="let place of suggestions"
+                (mousedown)="selectSuggestion(place)">
+              {{ place.properties.formatted }}
+            </li>
+          </ul>
+        </div>
+
+        <!-- Error -->
+        <p *ngIf="errorMessage" class="error">
+          {{ errorMessage }}
         </p>
 
+        <!-- Success -->
+        <p *ngIf="successMessage" class="success">
+          {{ successMessage }}
+        </p>
+        <p *ngIf="dto.password && dto.confirmPassword && dto.password !== dto.confirmPassword" class="error">
+            Passwords do not match
+        </p>
+
+  <!-- Avatar Upload -->
+<div class="field">
+  <label>Profile Picture <span class="optional">(optional)</span></label>
+
+  <!-- Empty state: clickable to upload -->
+  <div *ngIf="!avatarPreview" class="avatar-upload" (click)="avatarInput.click()">
+    <div class="avatar-placeholder">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+      </svg>
+      <span>Upload photo</span>
+      <p>PNG, JPG up to 4MB</p>
     </div>
+  </div>
+
+  <!-- Preview state: just shows image, no click handler -->
+  <div *ngIf="avatarPreview" class="avatar-upload has-preview">
+    <img [src]="avatarPreview" class="avatar-preview" />
+  </div>
+
+  <!-- Action buttons shown below when preview exists -->
+  <div *ngIf="avatarPreview" class="avatar-actions">
+<button type="button" class="change-avatar" (click)="$event.stopPropagation(); avatarInput.click()">
+  ✏️ Change photo
+</button>
+    <button type="button" class="remove-avatar" (click)="removeAvatar()">
+      ✕ Remove
+    </button>
+  </div>
+
+  <input #avatarInput type="file" accept="image/*" style="display:none"
+         (change)="onAvatarSelected($event)" />
+</div>
+
+
+
+        <!-- Submit -->
+       <button type="submit" 
+        [disabled]="registerForm.invalid || isLoading || dto.password !== dto.confirmPassword" 
+        class="submit-btn">
+        <span *ngIf="!isLoading">Create account</span>
+        <span *ngIf="isLoading && isUploadingAvatar" class="loading">
+          <svg class="spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+          Uploading photo...
+        </span>
+        <span *ngIf="isLoading && !isUploadingAvatar" class="loading">
+          <svg class="spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+          Creating account...
+        </span>
+      </button>
+
+      </form>
+    </div>
+
+    <!-- Footer -->
+    <p class="footer">
+      Already have an account?
+      <a routerLink="/login">Sign in</a>
+    </p>
+
+  </div>
 </div>

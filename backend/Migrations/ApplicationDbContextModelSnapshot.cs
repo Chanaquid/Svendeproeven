@@ -831,6 +831,10 @@ namespace backend.Migrations
                     b.Property<DateTime>("AvailableUntil")
                         .HasColumnType("datetime2");
 
+                    b.Property<double?>("AverageRating")
+                        .HasPrecision(4, 2)
+                        .HasColumnType("float(4)");
+
                     b.Property<int>("CategoryId")
                         .HasColumnType("int");
 
@@ -1125,6 +1129,7 @@ namespace backend.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("PricePerDaySnapshot")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("RequestedExtensionDate")

@@ -21,6 +21,7 @@ namespace backend.Interfaces
         Task<List<Loan>> GetExpiredPendingLoansAsync(DateTime cutoff);
         Task<List<Loan>> GetOverdueActiveLoansAsync();
 
+        Task<int> GetAllCompletedLoansCountByUserIdAsync(string userId);
 
         //Paged - for UI
         Task<PagedResult<Loan>> GetByBorrowerIdPagedAsync(string borrowerId, LoanFilter? filter, PagedRequest request);
