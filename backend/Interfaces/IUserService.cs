@@ -12,6 +12,9 @@ namespace backend.Interfaces
 
         Task<PagedResult<UserProfileDto>> SearchUsersAsync(UserFilter? filter, PagedRequest request, string currentUserId);
 
+
+        Task<int> GetTotalUsersCountAsync();
+
         //Guards — called by other services before allowing actions
         Task EnsureUserCanBorrowAsync(string userId);
         Task EnsureUserIsActiveAsync(string userId);

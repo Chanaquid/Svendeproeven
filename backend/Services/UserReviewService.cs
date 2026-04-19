@@ -200,11 +200,14 @@ namespace backend.Services
                 Items = source.Items.Select(r => new UserReviewListDto
                 {
                     Id = r.Id,
+                    ItemTitle = r.Loan?.Item?.Title ?? (r.IsAdminReview ? "Admin Review" : "Unknown Item"),
+                    ReviewerId = r.ReviewerId,
                     ReviewerName = r.Reviewer?.FullName ?? string.Empty,
                     ReviewerUserName = r.Reviewer?.UserName ?? string.Empty,
                     ReviewerAvatarUrl = r.Reviewer?.AvatarUrl,
                     IsAdminReview = r.IsAdminReview,
                     IsMine = currentUserId != null && r.ReviewerId == currentUserId,
+                    IsEdited = r.IsEdited,
                     Rating = r.Rating,
                     Comment = r.Comment,
                     CreatedAt = r.CreatedAt

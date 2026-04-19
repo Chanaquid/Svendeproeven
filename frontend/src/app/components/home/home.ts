@@ -1,13 +1,23 @@
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
-import { AuthService } from '../../services/auth-service';
-import { ItemDTO } from '../../dtos/itemDTO';
-import { UserService } from '../../services/user-service';
-import { FavoriteService } from '../../services/favorite-service';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Navbar } from '../navbar/navbar';
+import { ItemListDto } from '../../dtos/itemDto';
+import { AuthService } from '../../services/authService';
+import { UserService } from '../../services/userService';
+import { UserFavoriteService } from '../../services/userFavoriteService';
+import { ItemService } from '../../services/itemService';
+import { ItemFilter } from '../../dtos/filterDto';
+import { PagedRequest } from '../../dtos/paginationDto';
+import { ItemAvailability, ItemCondition } from '../../dtos/enums';
+import { getPageNumbers, getTotalPages } from '../../utils/pagination.utils';
+import {
+  getConditionClass,
+  getCategoryEmoji,
+  getAvailabilityClass,
+  getAvailabilityLabel,
+} from '../../utils/item.utils';
 
 @Component({
   selector: 'app-home',
@@ -17,39 +27,38 @@ import { Navbar } from '../navbar/navbar';
 })
 export class Home implements OnInit, AfterViewInit {
 
-  private readonly base = 'https://localhost:7183';
-
   @ViewChild('categoryStrip') categoryStrip!: ElementRef;
+  ItemAvailability = ItemAvailability;
 
   userName = '';
   isLoading = true;
+  items: ItemListDto[] = [];
 
-  allItems: ItemDTO.ItemSummaryDTO[] = [];
-  filteredItems: ItemDTO.ItemSummaryDTO[] = [];
-
+  //Search and filters
   searchQuery = '';
   selectedCategory: string | null = null;
-  sortBy = 'newest';
+  sortLabel = 'newest';
+  sortBy = 'createdAt';
+  sortDescending = true;
   availableOnly = false;
+  freeOnly = false;
+
 
   showLeftArrow = false;
   showRightArrow = false;
 
-  // Favorites
   favoriteIds = new Set<number>();
   togglingIds = new Set<number>();
 
-  //Toast error emssage
   toastMessage = '';
   toastVisible = false;
   private toastTimeout: any;
+  private searchDebounce: any;
 
-  //Pagination
   currentPage = 1;
   pageSize = 20;
-
+  totalCount = 0;
   currentUserId = '';
-
 
   categories = [
     { icon: '📱', name: 'Electronics' },
@@ -72,58 +81,54 @@ export class Home implements OnInit, AfterViewInit {
     { icon: '📦', name: 'Other' },
   ];
 
-  private emojiMap: Record<string, string> = {
-    electronics: '📱', tools: '🔧', sports: '⚽', music: '🎸',
-    books: '📚', camping: '⛺', photography: '📷', cameras: '📷',
-    gaming: '🎮', gardening: '🌱', garden: '🪴', biking: '🚲',
-    bikes: '🚲', kitchen: '🍳', cleaning: '🧹', fashion: '👗',
-    art: '🎨', baby: '👶', events: '🎉', auto: '🚗',
-    other: '📦', others: '📦',
+  private isDragging = false;
+  private dragStartX = 0;
+  private scrollStartX = 0;
+
+  private categoryIdMap: Record<string, number> = {
+    'Electronics': 1, 'Tools': 2, 'Sports': 3, 'Music': 4,
+    'Books': 5, 'Camping': 6, 'Photography': 7, 'Gaming': 8,
+    'Gardening': 9, 'Biking': 10, 'Kitchen': 11, 'Cleaning': 12,
+    'Fashion': 13, 'Art': 14, 'Baby': 15, 'Events': 16,
+    'Auto': 17, 'Other': 18,
   };
 
   constructor(
     private authService: AuthService,
     private router: Router,
-    private http: HttpClient,
     private cdr: ChangeDetectorRef,
     private userService: UserService,
-    private favoriteService: FavoriteService,
+    private itemService: ItemService,
+    private favoriteService: UserFavoriteService,
     private route: ActivatedRoute
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     if (!this.authService.isLoggedIn()) {
       this.router.navigate(['/']);
       return;
     }
+
     this.loadUserInfo();
-    this.loadItems();
     this.loadFavorites();
+    this.loadItems(); 
 
     this.route.queryParams.subscribe(params => {
-      this.searchQuery = params['q'] || '';
-      this.applyFilters();
+      const q = params['q'] || '';
+      if (q !== this.searchQuery) {
+        this.searchQuery = q;
+        this.currentPage = 1;
+        this.loadItems();
+      }
     });
-  }
+    }
 
   ngAfterViewInit(): void {
     const el = this.categoryStrip.nativeElement;
 
     const updateArrows = () => {
-      if (el.scrollLeft > 0) {
-        this.showLeftArrow = true;
-      
-      } else {
-        this.showRightArrow = false;
-      }
-
-      if (el.scrollLeft + el.clientWidth < el.scrollWidth - 1) {
-        this.showRightArrow = true;
-      
-      } else {
-        this.showRightArrow = false;
-      }
-
+      this.showLeftArrow = el.scrollLeft > 0;
+      this.showRightArrow = el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
       this.cdr.detectChanges();
     };
 
@@ -134,12 +139,12 @@ export class Home implements OnInit, AfterViewInit {
     let isMouseDown = false;
     let startMouseX = 0;
     let startScrollLeft = 0;
-    let hasDragged =false;
+    let hasDragged = false;
 
     el.addEventListener('mousedown', (event: MouseEvent) => {
-      isMouseDown = true; 
+      isMouseDown = true;
       hasDragged = false;
-      startMouseX = event.pageX; 
+      startMouseX = event.pageX;
       startScrollLeft = el.scrollLeft;
       el.style.userSelect = 'none';
     });
@@ -152,10 +157,7 @@ export class Home implements OnInit, AfterViewInit {
 
     window.addEventListener('mousemove', (e: MouseEvent) => {
       if (!isMouseDown) return;
-      
-      
       const movedDistance = e.pageX - startMouseX;
-      
       if (Math.abs(movedDistance) > 5) {
         hasDragged = true;
         el.style.cursor = 'grabbing';
@@ -164,32 +166,46 @@ export class Home implements OnInit, AfterViewInit {
     });
 
     el.addEventListener('click', (e: MouseEvent) => {
-      if (hasDragged) { 
-        e.stopPropagation(); 
-        hasDragged = false; 
+      if (hasDragged) {
+        e.stopPropagation();
+        hasDragged = false;
       }
     }, true);
   }
 
 
-
   private loadUserInfo(): void {
-    this.userService.getMe().subscribe({
+    this.userService.getMyProfile().subscribe({
       next: (user) => {
-        this.userName = user.fullName || user.username;
-        this.currentUserId = user.id;
+        this.userName = user.data?.fullName ?? '';
+        this.currentUserId = user.data?.id ?? '';
         this.cdr.detectChanges();
       },
       error: (err) => console.error('Failed to load user info:', err)
     });
   }
 
-  private loadItems(): void {
+  loadItems(): void {
     this.isLoading = true;
-    this.http.get<ItemDTO.ItemSummaryDTO[]>(`${this.base}/api/items`).subscribe({
-      next: (items) => {
-        this.allItems = items;
-        this.applyFilters();
+
+    const filter: ItemFilter = {
+      ...(this.searchQuery.trim() && { search: this.searchQuery.trim() }),
+      ...(this.selectedCategory && { categoryId: this.categoryIdMap[this.selectedCategory] }),
+      ...(this.availableOnly && { availability: ItemAvailability.Available }),    
+      ...(this.freeOnly ? { isFree: true } : (this.sortBy === 'pricePerDay' && { isFree: false })),
+    };
+
+    const request: PagedRequest = {
+      page: this.currentPage,
+      pageSize: this.pageSize,
+      sortBy: this.sortBy,
+      sortDescending: this.sortDescending,
+    };
+
+    this.itemService.getAllApproved(filter, request).subscribe({
+      next: (res) => {
+        this.items = res.data?.items ?? [];
+        this.totalCount = res.data?.totalCount ?? 0;
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -201,270 +217,158 @@ export class Home implements OnInit, AfterViewInit {
     });
   }
 
-
   private loadFavorites(): void {
-    if (!this.authService.isLoggedIn()) {
-      return;
-    };
-    
-    this.favoriteService.getMyFavorites().subscribe({
+    const request: PagedRequest = { page: 1, pageSize: 100 };
+    this.favoriteService.getMyFavorites(request).subscribe({
       next: (favs) => {
-        const ids = favs.map((favs) => favs.item.id);
-        this.favoriteIds = new Set(ids);
+        this.favoriteIds = new Set((favs.data?.items ?? []).map(i => i.id));
         this.cdr.detectChanges();
       },
-      error: (error) => {
-        console.error("Failed to load favorites: ", error);
-       }
+      error: (err) => console.error('Failed to load favorites:', err)
     });
   }
 
+  //Search and filters
 
-  toggleFavorite(itemId: number, event: Event): void {
-    event.stopPropagation();
-    
-    if (this.togglingIds.has(itemId)) {
-      return;
-    }
-
-    this.togglingIds.add(itemId);
-
-    const isFavorite = this.favoriteIds.has(itemId);
-    
-    if(isFavorite) {
-      this.favoriteService.removeFavorite(itemId).subscribe({
-        next: () => {
-          this.favoriteIds.delete(itemId);
-          this.togglingIds.delete(itemId);
-          this.cdr.detectChanges();
-        },
-        error: (error) => {
-          if (error.status === 404) {
-            this.favoriteIds.delete(itemId);
-            this.showToast('Item not found in favorites.');
-
-          } else {
-            
-            this.showToast(error.error?.message ?? 'Something went wrong.');
-          
-          }
-
-          this.togglingIds.delete(itemId);
-          this.cdr.detectChanges();
-
-        }
-      });
-    
-    } else {
-
-      this.favoriteService.addFavorite(itemId).subscribe({
-        next: () => {
-          this.favoriteIds.add(itemId);
-          this.togglingIds.delete(itemId);
-          this.cdr.detectChanges();
-        },
-        error: (error) => {
-          if (error.status == 409) {
-          
-            this.favoriteIds.add(itemId);
-          this.showToast('Already in your favorites.');
-          
-          } else {
-            this.showToast(error.error?.message ?? 'Something went wrong');
-          }  
-
-          this.togglingIds.delete(itemId);
-          this.cdr.detectChanges();
-        }
-        
-      });
-    }
-  }
-
-
-  onSearch(): void { 
-    
-    this.applyFilters(); 
+  onSearch(): void {
+    clearTimeout(this.searchDebounce);
+    this.searchDebounce = setTimeout(() => {
+      this.currentPage = 1;
+      this.loadItems();
+    }, 400);
   }
 
   selectCategory(name: string | null): void {
     this.selectedCategory = name;
-    this.applyFilters();
+    this.currentPage = 1;
+    this.loadItems();
   }
 
-  applyFilters(): void {
+  onSortChange(value: string): void {
+    this.sortLabel = value;
+    switch (value) {
+      case 'newest': this.sortBy = 'createdAt'; this.sortDescending = true;  break;
+      case 'oldest': this.sortBy = 'createdAt'; this.sortDescending = false; break;
+      case 'rating': this.sortBy = 'averageRating'; this.sortDescending = true;  break;
+      case 'az': this.sortBy = 'title'; this.sortDescending = false; break;
+      case 'za': this.sortBy = 'title'; this.sortDescending = true;  break;
+      case 'price_asc':  this.sortBy = 'pricePerDay'; this.sortDescending = false; break;
+      case 'price_desc': this.sortBy = 'pricePerDay'; this.sortDescending = true;  break;
+      default:  this.sortBy = 'createdAt'; this.sortDescending = true;
+    }
     this.currentPage = 1;
+    this.loadItems();
+  }
 
-    let result = [...this.allItems];
+  onAvailableToggle(): void {
+    this.availableOnly = !this.availableOnly;
+    this.currentPage = 1;
+    this.loadItems();
+  }
 
-    if (this.searchQuery.trim() != '') {
-      
-      const searchText = this.searchQuery.toLowerCase();
+  // Favorites
 
-      result = result.filter((item) => {
-        return (
-          item.title.toLocaleLowerCase().includes(searchText) ||
-          item.categoryName.toLowerCase().includes(searchText) || 
-          item.pickupAddress.toLowerCase().includes(searchText) ||
-          item.ownerName.toLocaleLowerCase().includes(searchText)
-        );
-      });
-    }
+  toggleFavorite(itemId: number, event: Event): void {
+    event.stopPropagation();
+    if (this.togglingIds.has(itemId)) return;
+    this.togglingIds.add(itemId);
 
-    if (this.selectedCategory != null) {
-      const selected = this.selectedCategory.toLowerCase();
+    const isFavorite = this.favoriteIds.has(itemId);
+    this.favoriteService.toggle(itemId, false).subscribe({
+      next: () => {
+        isFavorite ? this.favoriteIds.delete(itemId) : this.favoriteIds.add(itemId);
+        this.togglingIds.delete(itemId);
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        if (error.status === 409) this.favoriteIds.add(itemId);
+        else if (error.status === 404) this.favoriteIds.delete(itemId);
+        this.showToast(error.error?.message ?? 'Something went wrong.');
+        this.togglingIds.delete(itemId);
+        this.cdr.detectChanges();
+      }
+    });
+  }
 
-      result = result.filter((item) => {
-        return item.categoryName.toLowerCase() === selected;
-      });
-    }
 
-    if (this.availableOnly) {
-      result = result.filter((item) => {
-        return item.isCurrentlyOnLoan === false;
-      });
-    }
+  onDragStart(e: MouseEvent) {
+    this.isDragging = true;
+    this.dragStartX = e.pageX;
+    this.scrollStartX = this.categoryStrip.nativeElement.scrollLeft;
+  }
 
-    if (this.sortBy === 'oldest') {
-      result.sort((a, b) => a.id - b.id);
-    } else if (this.sortBy === 'rating') {
-      result.sort((a, b) => b.averageRating - a.averageRating);
-    } else if (this.sortBy === 'az') {
-      result.sort((a, b) => a.title.localeCompare(b.title));
-    } else if (this.sortBy === 'za') {
-      result.sort((a, b) => b.title.localeCompare(a.title));
-    } else {
-      result.sort((a, b) => b.id - a.id);
-    }
+  onDragMove(e: MouseEvent) {
+    if (!this.isDragging) return;
+    e.preventDefault();
+    const delta = e.pageX - this.dragStartX;
+    this.categoryStrip.nativeElement.scrollLeft = this.scrollStartX - delta;
+  }
 
-    this.filteredItems = result;
+  onDragEnd() {
+    this.isDragging = false;
   }
 
   scrollCategories(dir: 'left' | 'right'): void {
-    
-    if (dir === 'right') {
-      this.categoryStrip.nativeElement.scrollBy({
-        left: 220,
-        behavior: 'smooth'
-      });
-    
-    } else {
-      
-      this.categoryStrip.nativeElement.scrollBy({
-        left: -220,
-        behavior: 'smooth'
-      });
-    
-    }
+    this.categoryStrip.nativeElement.scrollBy({
+      left: dir === 'right' ? 220 : -220,
+      behavior: 'smooth',
+    });
   }
 
-  goToItem(id: number): void {
+  //Pagination
 
-    this.router.navigate(['/items', id]); 
- 
+  get totalPages(): number {
+    return getTotalPages(this.totalCount, this.pageSize);
   }
 
-  getInitials(name: string): string {
-    const parts = name.split(' ');
-    const firstLetters = parts.map((part) => part[0]);
-    const initials = firstLetters.join('').toUpperCase();
-
-    return initials.slice(0, 2);
+  get pageNumbers(): number[] {
+    return getPageNumbers(this.currentPage, this.totalPages);
   }
 
-  getCategoryEmoji(categoryName: string): string {
-
-    const lowerCategoryName = categoryName.toLowerCase();
-
-    if (this.emojiMap[lowerCategoryName]) {
-      return this.emojiMap[lowerCategoryName];
-    }
-    
-    return '📦';
-  
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages) return;
+    this.currentPage = page;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.loadItems();
   }
 
-  getConditionClass(condition: string): string {
-    const lowerCondition = condition?.toLowerCase();
-
-    if (lowerCondition === 'excellent') {
-      return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-    }
-
-    if (lowerCondition === 'good') {
-      return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-    }
-
-    if (lowerCondition === 'fair') {
-      return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-    }
-
-    if (lowerCondition === 'poor') {
-      return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-    }
-
-    return 'bg-zinc-800 text-zinc-400 border-zinc-700';
+  onFreeToggle(): void {
+    this.freeOnly = !this.freeOnly;
+    this.currentPage = 1;
+    this.loadItems();
   }
+
+  //Helpers
+
+  goToItem(slug: string): void {
+  this.router.navigate(['/items', slug]);
+  }
+
+  getCategoryEmoji(name: string): string {
+    return getCategoryEmoji(name);
+  }
+
+  getConditionClass(condition: ItemCondition): string {
+    return getConditionClass(condition);
+  }
+
+  getAvailabilityClass(availability: ItemAvailability): string {
+    return getAvailabilityClass(availability);
+  }
+
+  getAvailabilityLabel(availability: ItemAvailability): string {
+    return getAvailabilityLabel(availability);
+  }
+
 
   showToast(message: string): void {
     this.toastMessage = message;
     this.toastVisible = true;
     this.cdr.detectChanges();
-
     clearTimeout(this.toastTimeout);
-
     this.toastTimeout = setTimeout(() => {
       this.toastVisible = false;
       this.cdr.detectChanges();
     }, 3000);
   }
-
-  get totalPages(): number {
-    
-    const totalItems = this.filteredItems.length;
-    const pages = Math.ceil(totalItems / this.pageSize);
-    
-    return pages;
-  }
-
-  get paginatedItems(): ItemDTO.ItemSummaryDTO[] {
-    const start = (this.currentPage - 1) * this.pageSize;
-    const end = start + this.pageSize;
-
-    return this.filteredItems.slice(start, end);
-  }
-
-  get pageNumbers(): number[] {
-    const total = this.totalPages;
-    const current = this.currentPage;
-    const pages: number[] = [];
-
-    if (total <= 7) {
-      
-      for (let i = 1; i <= total; i++) pages.push(i);
-    
-    } else {
-      
-      pages.push(1);
-
-      if (current > 3) pages.push(-1); // ellipsis
-      for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
-        pages.push(i);
-      }
-      if (current < total - 2) pages.push(-1); // ellipsis
-      pages.push(total);
-    }
-    return pages;
-  }
-
-  goToPage(page: number): void {
-    if (page < 1 || page > this.totalPages){
-     return;
-    }
-    this.currentPage = page;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    this.cdr.detectChanges();
-  }
-
-
 }

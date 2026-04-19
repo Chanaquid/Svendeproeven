@@ -76,7 +76,7 @@ namespace backend.Services
 
             //Send confirmation email
             var confirmToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-            var confirmLink = $"{_configuration["App:BaseUrl"]}/api/auth/confirm-email?userId={user.Id}&token={Uri.EscapeDataString(confirmToken)}";
+            var confirmLink = $"{_configuration["App:FrontendUrl"]}/auth/confirm?userId={user.Id}&token={Uri.EscapeDataString(confirmToken)}";
 
             await _emailService.SendEmailAsync(
                 user.Email,
@@ -237,8 +237,8 @@ namespace backend.Services
             if (user == null || user.IsDeleted || await _userManager.IsEmailConfirmedAsync(user)) return;
 
             var confirmToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-            var confirmLink = $"{_configuration["App:BaseUrl"]}/api/auth/confirm-email?userId={user.Id}&token={Uri.EscapeDataString(confirmToken)}";
-
+            var confirmLink = $"{_configuration["App:FrontendUrl"]}/auth/confirm?userId={user.Id}&token={Uri.EscapeDataString(confirmToken)}";
+            
             await _emailService.SendEmailAsync(
                 user.Email!,
                 "Confirm your RentIt account (resent)",

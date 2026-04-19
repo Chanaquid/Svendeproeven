@@ -81,6 +81,7 @@ namespace backend.Models
         public string? ReviewedByAdminId { get; set; }
         public ApplicationUser? ReviewedByAdmin { get; set; }
 
+        public double? AverageRating { get; set; }
 
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

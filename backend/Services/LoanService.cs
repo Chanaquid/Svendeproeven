@@ -45,7 +45,7 @@ namespace backend.Services
             var item = await _itemRepository.GetByIdWithDetailsAsync(dto.ItemId)
                 ?? throw new KeyNotFoundException("Item not found.");
 
-            if (item.IsDeleted || !item.IsActive)
+            if (item.IsDeleted || !item.IsActive || item.Status != ItemStatus.Approved)
                 throw new InvalidOperationException("This item is not available.");
 
             if (item.Status != ItemStatus.Approved)
@@ -57,8 +57,8 @@ namespace backend.Services
             if (item.RequiresVerification && !borrower.IsVerified)
                 throw new InvalidOperationException("This item requires a verified account.");
 
-            var startDate = dto.StartDate.Date;
-            var endDate = dto.EndDate.Date;
+            var startDate = dto.StartDate.ToUniversalTime().Date;
+            var endDate = dto.EndDate.ToUniversalTime().Date;
 
             if (startDate < DateTime.UtcNow.Date)
                 throw new ArgumentException("Start date cannot be in the past.");
@@ -93,6 +93,16 @@ namespace backend.Services
                 _ => LoanStatus.Pending
             };
 
+            //Check item isn't already on an active loan or pending
+            var hasActiveLoans = item.Loans?.Any(l =>
+                l.Status == LoanStatus.Pending ||
+                l.Status == LoanStatus.AdminPending ||
+                l.Status == LoanStatus.Approved ||
+                l.Status == LoanStatus.Active) ?? false;
+
+            if (hasActiveLoans)
+                throw new InvalidOperationException("This item already has a pending or active loan request.");
+
             var loan = new Loan
             {
                 ItemId = item.Id,
@@ -101,11 +111,17 @@ namespace backend.Services
                 StartDate = startDate,
                 EndDate = endDate,
                 TotalPrice = totalPrice,
-                PricePerDaySnapshot = item.PricePerDay,
-                SnapshotCondition = item.Condition,
-                NoteToOwner = dto.NoteToOwner?.Trim(),
                 Status = status,
-                CreatedAt = DateTime.UtcNow
+                SnapshotCondition = item.Condition,
+                CreatedAt = DateTime.UtcNow,
+                NoteToOwner = dto.NoteToOwner?.Trim(),
+                PricePerDaySnapshot = item.PricePerDay,
+                SnapshotPhotos = item.Photos?.Select(p => new LoanSnapshotPhoto
+                {
+                    PhotoUrl = p.PhotoUrl,
+                    DisplayOrder = p.DisplayOrder,
+                    SnapshotTakenAt = DateTime.UtcNow
+                }).ToList() ?? new List<LoanSnapshotPhoto>()
             };
 
             await _loanRepository.AddAsync(loan);
@@ -138,7 +154,7 @@ namespace backend.Services
                 ?? throw new KeyNotFoundException("Loan not found.");
 
             if (loan.BorrowerId != borrowerId)
-                throw new UnauthorizedAccessException("You do not have permission to cancel this loan.");
+                throw new UnauthorizedAccessException("You can only cancel your own loans.");
 
             var cancellableStatuses = new[]
             {

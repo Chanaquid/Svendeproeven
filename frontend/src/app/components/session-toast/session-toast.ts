@@ -1,11 +1,8 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
- 
-import { AuthService } from '../../services/auth-service';
-import { TokenExpiry } from '../../services/token-expiry';
-
+import { AuthService } from '../../services/authService';
+import { Router } from '@angular/router';
+import { TokenExpiryService } from '../../services/token-expiry-service';
 
 @Component({
   selector: 'app-session-toast',
@@ -27,10 +24,10 @@ export class SessionToast implements OnInit, OnDestroy {
   private subs = new Subscription();
 
   constructor(
-    private authService:       AuthService,
-    private tokenExpiryService: TokenExpiry,
-    private router:            Router,
-    private cdr:               ChangeDetectorRef,
+    private authService: AuthService,
+    private tokenExpiryService: TokenExpiryService,
+    private router: Router,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -38,8 +35,8 @@ export class SessionToast implements OnInit, OnDestroy {
     this.subs.add(
       this.tokenExpiryService.sessionWarning$.subscribe((secondsLeft) => {
         this.initialSeconds = secondsLeft;
-        this.secondsLeft    = secondsLeft;
-        this.visible        = true;
+        this.secondsLeft = secondsLeft;
+        this.visible = true;
         this.startCountdown();
         this.cdr.markForCheck();
       })
@@ -147,7 +144,6 @@ export class SessionToast implements OnInit, OnDestroy {
     this.stopCountdown();
     this.subs.unsubscribe();
   }
-
 
 
 

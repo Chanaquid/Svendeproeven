@@ -1,0 +1,80 @@
+<!-- Background layers -->
+<div class="fixed inset-0 bg-zinc-950 -z-10"></div>
+<div class="fixed inset-0 grid-bg -z-10"></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a routerLink="/" class="logo">
+    <svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="48" height="48" rx="12" fill="#fbbf24"/>
+      <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central"
+        font-family="Syne, sans-serif" font-size="24" font-weight="700" fill="#09090b">R</text>
+    </svg>
+    <span class="logo-text">RentIt</span>
+  </a>
+</nav>
+
+<!-- CONFIRM CONTENT -->
+<div class="confirm-page">
+  <div class="confirm-glow"></div>
+
+  <!-- LOADING -->
+  <div *ngIf="status === 'loading'" class="confirm-card animate-fade-up">
+    <div class="confirm-spinner-wrap">
+      <div class="confirm-spinner"></div>
+    </div>
+    <h2>Verifying your email…</h2>
+    <p>Hang tight while we confirm your account.</p>
+  </div>
+
+  <!-- SUCCESS -->
+  <div *ngIf="status === 'success'" class="confirm-card animate-fade-up">
+    <div class="confirm-icon confirm-icon--success">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+        <path d="M5 13l4 4L19 7" stroke="#09090b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="confirm-label">Email confirmed</div>
+    <h2>You're all set!</h2>
+    <p class="success-message">{{ message }}</p>
+    <a routerLink="/login" class="btn-primary btn-primary--full">
+      Go to Login
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+  </div>
+
+  <!-- ERROR -->
+  <div *ngIf="status === 'error'" class="confirm-card animate-fade-up">
+    <div class="confirm-icon confirm-icon--error">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+        <path d="M18 6L6 18M6 6l12 12" stroke="#09090b" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="confirm-label confirm-label--error">Confirmation failed</div>
+    <h2>Something went wrong</h2>
+    <p>{{ message }}</p>
+    <div class="confirm-actions">
+      <a routerLink="/register" class="btn-primary btn-primary--full">
+        Back to Register
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-logo">
+    <svg width="28" height="28" viewBox="0 0 48 48" fill="none">
+      <rect width="48" height="48" rx="12" fill="#fbbf24"/>
+      <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central"
+        font-family="Syne, sans-serif" font-size="24" font-weight="700" fill="#09090b">R</text>
+    </svg>
+    <span>RentIt</span>
+  </div>
+  <span class="footer-copy">© 2026 RentIt. All rights reserved.</span>
+</footer>

@@ -20,6 +20,10 @@ namespace backend.Interfaces
         Task<ItemDto> ToggleActiveStatusAsync(string ownerId, int itemId, bool isActive);
         Task<ItemQrCodeDto> GetQrCodeAsync(string requesterId, int itemId);
 
+        //For frontend landing page
+        Task<List<ItemListDto>> GetNewestListedAsync(int count = 4);
+        Task<int> GetAvailableCountAsync();
+
         //Photos
         Task<ItemDto> AddPhotoAsync(string ownerId, int itemId, AddItemPhotoDto dto);
         Task<ItemDto> DeletePhotoAsync(string ownerId, int itemId, int photoId);

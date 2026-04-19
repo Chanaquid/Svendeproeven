@@ -62,11 +62,14 @@ namespace backend.Dtos
     public class UserReviewListDto
     {
         public int Id { get; set; }
+        public string? ItemTitle { get; set; }
+        public string ReviewerId { get; set; } = string.Empty;
         public string ReviewerName { get; set; } = string.Empty;
         public string ReviewerUserName { get; set; } = string.Empty;
         public string? ReviewerAvatarUrl { get; set; }
         public bool IsAdminReview { get; set; }
         public bool IsMine { get; set; }
+        public bool IsEdited { get; set; }
         public int Rating { get; set; }
         public string? Comment { get; set; }
         public DateTime CreatedAt { get; set; }

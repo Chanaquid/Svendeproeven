@@ -652,6 +652,13 @@
             }
           },
           {
+            "name": "Availability",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ItemAvailability"
+            }
+          },
+          {
             "name": "MinPrice",
             "in": "query",
             "schema": {
@@ -685,6 +692,22 @@
           },
           {
             "name": "RadiusKm",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MinRating",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MaxRating",
             "in": "query",
             "schema": {
               "type": "number",
@@ -7836,6 +7859,13 @@
             }
           },
           {
+            "name": "Availability",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ItemAvailability"
+            }
+          },
+          {
             "name": "MinPrice",
             "in": "query",
             "schema": {
@@ -7869,6 +7899,22 @@
           },
           {
             "name": "RadiusKm",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MinRating",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MaxRating",
             "in": "query",
             "schema": {
               "type": "number",
@@ -8072,6 +8118,13 @@
             }
           },
           {
+            "name": "Availability",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ItemAvailability"
+            }
+          },
+          {
             "name": "MinPrice",
             "in": "query",
             "schema": {
@@ -8105,6 +8158,22 @@
           },
           {
             "name": "RadiusKm",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MinRating",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MaxRating",
             "in": "query",
             "schema": {
               "type": "number",
@@ -8287,6 +8356,13 @@
             }
           },
           {
+            "name": "Availability",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ItemAvailability"
+            }
+          },
+          {
             "name": "MinPrice",
             "in": "query",
             "schema": {
@@ -8320,6 +8396,22 @@
           },
           {
             "name": "RadiusKm",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MinRating",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MaxRating",
             "in": "query",
             "schema": {
               "type": "number",
@@ -8486,6 +8578,13 @@
             }
           },
           {
+            "name": "Availability",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ItemAvailability"
+            }
+          },
+          {
             "name": "MinPrice",
             "in": "query",
             "schema": {
@@ -8519,6 +8618,22 @@
           },
           {
             "name": "RadiusKm",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MinRating",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MaxRating",
             "in": "query",
             "schema": {
               "type": "number",
@@ -8684,6 +8799,13 @@
             }
           },
           {
+            "name": "Availability",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ItemAvailability"
+            }
+          },
+          {
             "name": "MinPrice",
             "in": "query",
             "schema": {
@@ -8717,6 +8839,22 @@
           },
           {
             "name": "RadiusKm",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MinRating",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MaxRating",
             "in": "query",
             "schema": {
               "type": "number",
@@ -9027,6 +9165,75 @@
         }
       }
     },
+    "/api/items/landing": {
+      "get": {
+        "tags": [
+          "Item"
+        ],
+        "parameters": [
+          {
+            "name": "count",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 4
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemListDtoListApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemListDtoListApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemListDtoListApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/items/count/available": {
+      "get": {
+        "tags": [
+          "Item"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Int32ApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Int32ApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Int32ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/items/my": {
       "get": {
         "tags": [
@@ -9045,6 +9252,13 @@
             "in": "query",
             "schema": {
               "type": "boolean"
+            }
+          },
+          {
+            "name": "Availability",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ItemAvailability"
             }
           },
           {
@@ -9081,6 +9295,22 @@
           },
           {
             "name": "RadiusKm",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MinRating",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MaxRating",
             "in": "query",
             "schema": {
               "type": "number",
@@ -9494,6 +9724,13 @@
             }
           },
           {
+            "name": "Availability",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ItemAvailability"
+            }
+          },
+          {
             "name": "MinPrice",
             "in": "query",
             "schema": {
@@ -9527,6 +9764,22 @@
           },
           {
             "name": "RadiusKm",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MinRating",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MaxRating",
             "in": "query",
             "schema": {
               "type": "number",
@@ -9724,6 +9977,13 @@
             }
           },
           {
+            "name": "Availability",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ItemAvailability"
+            }
+          },
+          {
             "name": "MinPrice",
             "in": "query",
             "schema": {
@@ -9757,6 +10017,22 @@
           },
           {
             "name": "RadiusKm",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MinRating",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "MaxRating",
             "in": "query",
             "schema": {
               "type": "number",
@@ -13504,6 +13780,67 @@
         }
       }
     },
+    "/api/UploadThing/avatar": {
+      "post": {
+        "tags": [
+          "UploadThing"
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              },
+              "encoding": {
+                "file": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/users/totalUsers": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Int32ApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Int32ApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Int32ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/users/me": {
       "get": {
         "tags": [
@@ -14542,17 +14879,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemListDtoPagedResultApiResponse"
+                  "$ref": "#/components/schemas/UserFavoriteItemListDtoPagedResultApiResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemListDtoPagedResultApiResponse"
+                  "$ref": "#/components/schemas/UserFavoriteItemListDtoPagedResultApiResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemListDtoPagedResultApiResponse"
+                  "$ref": "#/components/schemas/UserFavoriteItemListDtoPagedResultApiResponse"
                 }
               }
             }
@@ -19281,6 +19618,10 @@
             "type": "string",
             "nullable": true
           },
+          "pickUpAddress": {
+            "type": "string",
+            "nullable": true
+          },
           "categoryId": {
             "type": "integer",
             "format": "int32"
@@ -19371,6 +19712,26 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ItemListDtoListApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemListDto"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -21921,6 +22282,188 @@
         },
         "additionalProperties": false
       },
+      "UserFavoriteItemListDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "slug": {
+            "type": "string",
+            "nullable": true
+          },
+          "mainPhotoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "pickUpAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "categoryId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "categoryName": {
+            "type": "string",
+            "nullable": true
+          },
+          "categorySlug": {
+            "type": "string",
+            "nullable": true
+          },
+          "categoryIcon": {
+            "type": "string",
+            "nullable": true
+          },
+          "ownerId": {
+            "type": "string",
+            "nullable": true
+          },
+          "ownerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "ownerUsername": {
+            "type": "string",
+            "nullable": true
+          },
+          "ownerAvatarUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "ownerScore": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "isOwnerVerified": {
+            "type": "boolean"
+          },
+          "isFree": {
+            "type": "boolean"
+          },
+          "pricePerDay": {
+            "type": "number",
+            "format": "double"
+          },
+          "condition": {
+            "$ref": "#/components/schemas/ItemCondition"
+          },
+          "availability": {
+            "$ref": "#/components/schemas/ItemAvailability"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "averageRating": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "totalReviews": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxLoanDays": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "minLoanDays": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "availableFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "availableUntil": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "distanceFromUser": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "notifyWhenAvailable": {
+            "type": "boolean"
+          },
+          "savedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UserFavoriteItemListDtoPagedResult": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserFavoriteItemListDto"
+            },
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          },
+          "hasNextPage": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "hasPreviousPage": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UserFavoriteItemListDtoPagedResultApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserFavoriteItemListDtoPagedResult"
+          }
+        },
+        "additionalProperties": false
+      },
       "UserProfileDto": {
         "type": "object",
         "properties": {
@@ -21995,6 +22538,10 @@
           },
           "isBanned": {
             "type": "boolean"
+          },
+          "totalCompletedLoans": {
+            "type": "integer",
+            "format": "int32"
           },
           "borrowingStatus": {
             "$ref": "#/components/schemas/BorrowingStatus"
@@ -22130,6 +22677,10 @@
           "generalAddress": {
             "type": "string",
             "nullable": true
+          },
+          "totalCompletedLoans": {
+            "type": "integer",
+            "format": "int32"
           },
           "totalItems": {
             "type": "integer",
@@ -22418,6 +22969,14 @@
             "type": "integer",
             "format": "int32"
           },
+          "itemTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "reviewerId": {
+            "type": "string",
+            "nullable": true
+          },
           "reviewerName": {
             "type": "string",
             "nullable": true
@@ -22434,6 +22993,9 @@
             "type": "boolean"
           },
           "isMine": {
+            "type": "boolean"
+          },
+          "isEdited": {
             "type": "boolean"
           },
           "rating": {

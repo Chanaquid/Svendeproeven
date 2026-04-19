@@ -49,6 +49,15 @@ namespace backend.Repositories
             return await query.ToPagedResultAsync(request);
         }
 
+        public async Task<List<int>> GetRatingsByItemIdAsync(int itemId)
+        {
+            return await _context.ItemReviews
+                .Where(r => r.ItemId == itemId && !r.IsDeleted)
+                .Select(r => r.Rating)
+                .ToListAsync();
+        }
+
+
         public async Task AddItemReviewAsync(ItemReview review)
         {
             await _context.ItemReviews.AddAsync(review);

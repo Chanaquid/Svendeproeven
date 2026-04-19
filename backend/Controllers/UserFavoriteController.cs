@@ -19,11 +19,11 @@ namespace backend.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<ApiResponse<PagedResult<ItemListDto>>>> GetMyFavorites(
+        public async Task<ActionResult<ApiResponse<PagedResult<UserFavoriteItemListDto>>>> GetMyFavorites(
             [FromQuery] PagedRequest request)
         {
             var result = await _favoriteService.GetFavoritesAsync(Caller.UserId, request);
-            return Ok(ApiResponse<PagedResult<ItemListDto>>.Ok(result, "Favorites retrieved successfully"));
+            return Ok(ApiResponse<PagedResult<UserFavoriteItemListDto>>.Ok(result, "Favorites retrieved successfully"));
         }
 
         // POST /api/favorites/{itemId}

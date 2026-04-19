@@ -1,14 +1,14 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { Router, RouterLink, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AuthService } from '../../services/auth-service';
-import { UserService } from '../../services/user-service';
-import { NotificationDTO } from '../../dtos/notificationDTO';
-import { NotificationService } from '../../services/notification-service';
+import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { SignalRService } from '../../services/signal-r-service';
-
+import { NotificationDto } from '../../dtos/notificationDto';
+import { AuthService } from '../../services/authService';
+import { UserService } from '../../services/userService';
+import { NotificationHubService } from '../../services/notificationHubService';
+import { NotificationService } from '../../services/notificationService';
+import { NotificationType } from '../../dtos/enums';
 
 @Component({
   selector: 'app-navbar',
@@ -16,7 +16,6 @@ import { SignalRService } from '../../services/signal-r-service';
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
 })
-
 
 
 export class Navbar implements OnInit {
@@ -29,7 +28,7 @@ export class Navbar implements OnInit {
   showUserMenu = false;
   showNotifications = false;
 
-  notifications: NotificationDTO.NotificationResponseDTO[] = [];
+  notifications: NotificationDto[] = [];
   unreadCount = 0;
 
   searchQuery = '';
@@ -38,11 +37,13 @@ export class Navbar implements OnInit {
 
   currentUserId = '';
 
+    private hub: NotificationHubService | null = null;
+
+
   constructor(
     private authService: AuthService,
     public router: Router,
     private userService: UserService,
-    private signalRService: SignalRService,
     private notificationService: NotificationService,
     private cdr: ChangeDetectorRef
   ) { }
@@ -61,69 +62,83 @@ export class Navbar implements OnInit {
     if(this.authService.isLoggedIn()) {
       this.loadUserInfo();
       this.loadSummary();
-      this.connectNotificationSignalR();
+      this.connectNotificationHubService();
     }
   }
 
   ngOnDestroy(): void {
-    this.signalRService.offNewNotification();
-    this.signalRService.leaveUserNotifications();
+    if (this.hub) {
+      this.hub.off();
+      this.hub.stop();
+    }
   }
 
 
   private loadUserInfo(): void {
-    this.userService.getMe().subscribe({
-      next: (user) => {
+    this.userService.getMyProfile().subscribe({
+      next: (res) => {
+        const user = res.data!;
         this.userName = user.fullName || user.username;
         this.userEmail = user.email;
         this.userInitials = this.getInitials(this.userName);
         this.userAvatarUrl = user.avatarUrl ?? null;
         this.currentUserId = user.id;
         this.cdr.detectChanges();
-
       },
       error: (err) => console.error('Failed to load user info:', err)
     });
   }
 
-  private connectNotificationSignalR(): void {
-    this.signalRService.startConnection().then(() => {
-      this.signalRService.joinUserNotifications().catch(err =>
-        console.warn('Could not join user notifications:', err)
-      );
 
-      this.signalRService.onNewNotification((notification) => {
-        const exists = this.notifications.some(n => n.id === notification.id);
-        if (!exists) {
-          this.notifications.unshift({
-            id: notification.id,
-            message: notification.message,
-            type: notification.type,
-            referenceId: notification.referenceId,
-            referenceType: notification.referenceType,
-            isRead: false,
-            createdAt: notification.createdAt
-          });
-          this.unreadCount++;
-          this.cdr.detectChanges();
-        }
-      });
-
-    }).catch(err => console.warn('Navbar SignalR failed:', err));
+  private connectNotificationHubService(): void {
+    const token = this.authService.getToken();
+    if (!token) return;
+ 
+    this.hub = new NotificationHubService(token);
+ 
+    this.hub.onReceiveNotification((notification: NotificationDto) => {
+      const exists = this.notifications.some(n => n.id === notification.id);
+      if (!exists) {
+        this.notifications.unshift({
+          id: notification.id,
+          message: notification.message,
+          type: notification.type,
+          referenceId: notification.referenceId,
+          referenceType: notification.referenceType,
+          isRead: false,
+          createdAt: notification.createdAt
+        });
+        this.unreadCount++;
+        this.cdr.detectChanges();
+      }
+    });
+ 
+    this.hub.onUnreadCountUpdated((count: number) => {
+      this.unreadCount = count;
+      this.cdr.detectChanges();
+    });
+ 
+    this.hub.start().catch(err =>
+      console.warn('Notification hub failed to start:', err)
+    );
   }
 
   loadSummary(): void {
     this.notificationService.getSummary().subscribe({
       next: (res) => {
-        this.unreadCount = res.unreadCount;
-        this.notifications = res.recent;
+          const data = res.data;
+
+        if (!data) return;
+
+        this.unreadCount = data.unreadCount;
+        this.notifications = data.recent;
         this.cdr.detectChanges();
       },
       error: () => {}
     });
   }
 
-  onNotificationClick(n: NotificationDTO.NotificationResponseDTO): void {
+ onNotificationClick(n: NotificationDto): void {
     if (!n.isRead) {
       n.isRead = true;
       this.unreadCount = Math.max(0, this.unreadCount - 1);
@@ -153,9 +168,10 @@ export class Navbar implements OnInit {
   }
 
   logout(): void {
-    this.signalRService.offNewNotification();
-    this.signalRService.leaveUserNotifications();
-    this.signalRService.stopConnection();
+    if (this.hub) {
+      this.hub.off();
+      this.hub.stop();
+    }
     this.authService.logout().subscribe({
       next: () => this.router.navigate(['/']),
       error: () => {
@@ -169,86 +185,85 @@ export class Navbar implements OnInit {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   }
 
-  getNotificationIcon(type: string): string {
+  getNotificationIcon(type: NotificationType): string {
     switch (type) {
       //Loan lifecycle
-      case 'LoanRequested': return '📋';
-      case 'LoanApproved': return '✅';
-      case 'LoanRejected': return '❌';
-      case 'LoanCancelled': return '🚫';
-      case 'LoanActive': return '🤝';
-      case 'LoanReturned': return '📦';
+      case NotificationType.LoanRequested: return '📋';
+      case NotificationType.LoanApproved: return '✅';
+      case NotificationType.LoanRejected: return '❌';
+      case NotificationType.LoanCancelled: return '🚫';
+      case NotificationType.LoanActive: return '🤝';
+      case NotificationType.LoanReturned: return '📦';
       //Due dates
-      case 'DueSoon': return '⏰';
-      case 'Overdue': return '🔴';
+      case NotificationType.DueSoon: return '⏰';
+      case NotificationType.LoanOverdue: return '🔴';
       //Item lifecycle
-      case 'ItemApproved': return '✅';
-      case 'ItemRejected': return '❌';
-      case 'ItemAvailable': return '🟢';
+      case NotificationType.ItemApproved: return '✅';
+      case NotificationType.ItemRejected: return '❌';
+      case NotificationType.ItemAvailable: return '🟢';
       //Fines and score
-      case 'FineIssued': return '⚠️';
-      case 'FinePaid': return '💰';
-      case 'ScoreChanged': return '📊';
+      case NotificationType.FineIssued: return '⚠️';
+      case NotificationType.FinePaid: return '💰';
+      case NotificationType.ScoreChanged: return '📊';
       //Disputes
-      case 'DisputeFiled': return '⚖️';
-      case 'DisputeResponse': return '📝';
-      case 'DisputeResolved': return '🏛️';
+      case NotificationType.DisputeFiled: return '⚖️';
+      case NotificationType.DisputeResponseSubmitted: return '📝';
+      case NotificationType.DisputeResolved: return '🏛️';
       //Appeals
-      case 'AppealSubmitted': return '📤';
-      case 'AppealApproved': return '✅';
-      case 'AppealRejected': return '❌';
+      case NotificationType.AppealSubmitted: return '📤';
+      case NotificationType.AppealApproved: return '✅';
+      case NotificationType.AppealRejected: return '❌';
       //Verification
-      case 'VerificationApproved': return '🏅';
-      case 'VerificationRejected': return '❌';
+      case NotificationType.VerificationApproved: return '🏅';
+      case NotificationType.VerificationRejected: return '❌';
       //Messages
-      case 'MessageReceived': return '💬';
-      case 'DirectMessageReceived': return '✉️';
-      case 'SupportMessageReceived': return '🎧';
+      case NotificationType.LoanMessageReceived: return '💬';
+      case NotificationType.DirectMessageReceived: return '✉️';
+      case NotificationType.SupportMessageReceived: return '🎧';
       default: return '🔔';
     }
   }
-
-  getNotificationIconBg(type: string): string {
+ 
+  getNotificationIconBg(type: NotificationType): string {
     switch (type) {
       //Green — positive outcomes
-      case 'LoanApproved':
-      case 'LoanActive':
-      case 'ItemApproved':
-      case 'ItemAvailable':
-      case 'FinePaid':
-      case 'AppealApproved':
-      case 'VerificationApproved': return 'bg-emerald-400/10';
+      case NotificationType.LoanApproved:
+      case NotificationType.LoanActive:
+      case NotificationType.ItemApproved:
+      case NotificationType.ItemAvailable:
+      case NotificationType.FinePaid:
+      case NotificationType.AppealApproved:
+      case NotificationType.VerificationApproved:
+        return 'bg-emerald-400/10';
       //Red — negative outcomes
-      case 'LoanRejected':
-      case 'LoanCancelled':
-      case 'ItemRejected':
-      case 'FineIssued':
-      case 'Overdue':
-      case 'AppealRejected':
-      case 'VerificationRejected':
+      case NotificationType.LoanRejected:
+      case NotificationType.LoanCancelled:
+      case NotificationType.ItemRejected:
+      case NotificationType.FineIssued:
+      case NotificationType.LoanOverdue:
+      case NotificationType.AppealRejected:
+      case NotificationType.VerificationRejected:
         return 'bg-red-400/10';
-
       //Amber — pending / action needed
-      case 'LoanRequested':
-      case 'DueSoon':
-      case 'DisputeFiled':
-      case 'DisputeResponse':
-      case 'AppealSubmitted':
+      case NotificationType.LoanRequested:
+      case NotificationType.DueSoon:
+      case NotificationType.DisputeFiled:
+      case NotificationType.DisputeResponseSubmitted:
+      case NotificationType.AppealSubmitted:
         return 'bg-amber-400/10';
-
       //Blue — informational
-      case 'LoanReturned':
-      case 'ScoreChanged':
-      case 'DisputeResolved':
-      case 'MessageReceived':
-      case 'DirectMessageReceived':
-      case 'SupportMessageReceived':
+      case NotificationType.LoanReturned:
+      case NotificationType.ScoreChanged:
+      case NotificationType.DisputeResolved:
+      case NotificationType.LoanMessageReceived:
+      case NotificationType.DirectMessageReceived:
+      case NotificationType.SupportMessageReceived:
         return 'bg-blue-400/10';
-
       default:
         return 'bg-zinc-800';
     }
   }
+ 
 
 
 }

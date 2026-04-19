@@ -210,6 +210,18 @@ namespace backend.Repositories
             return await query.ToPagedResultAsync(request);
         }
 
+        //for user profile
+        public async Task<int> GetAllCompletedLoansCountByUserIdAsync(string userId)
+        {
+            return await _context.Loans
+                .CountAsync(l =>
+                    (l.BorrowerId == userId || l.LenderId == userId) &&
+                    l.Status == LoanStatus.Completed
+                );
+        }
+
+
+
         //Checks
         public async Task<bool> ExistsAsync(int loanId)
         {

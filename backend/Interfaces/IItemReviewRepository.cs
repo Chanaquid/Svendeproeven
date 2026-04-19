@@ -12,6 +12,7 @@ namespace backend.Interfaces
         Task AddItemReviewAsync(ItemReview review);
         Task LoadReviewerAsync(ItemReview review);
 
+        Task<List<int>> GetRatingsByItemIdAsync(int itemId);
 
         void Update(ItemReview review);
         void MarkReviewsDeletedByItemId(int itemId); //Called when item is deleted

@@ -1,8 +1,8 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { SessionToast } from "./components/session-toast/session-toast";
-import { AuthService } from './services/auth-service';
-import { TokenExpiry } from './services/token-expiry';
+import { AuthService } from './services/authService';
+import { TokenExpiryService } from './services/token-expiry-service';
 
 @Component({
   selector: 'app-root',
@@ -15,7 +15,7 @@ export class App implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private tokenExpiryService: TokenExpiry,
+    private tokenExpiryService: TokenExpiryService,
     private router: Router,
   ) {}
 
@@ -29,7 +29,7 @@ export class App implements OnInit {
       setTimeout(() => {
         this.tokenExpiryService.scheduleWarning();
 
-        // If the warning was already showing before the refresh, re-emit immediately
+        //If the warning was already showing before the refresh, re-emit immediately
         if (sessionStorage.getItem('session_warning')) {
           const token = this.authService.getToken()!;
           const secondsLeft = this.tokenExpiryService.getSecondsUntilExpiry(token);
@@ -45,6 +45,8 @@ export class App implements OnInit {
       this.router.navigate(['/']);
     });
   }
+
+
 
 
 

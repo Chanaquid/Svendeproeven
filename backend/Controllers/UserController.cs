@@ -17,6 +17,14 @@ namespace backend.Controllers
             _userService = userService;
         }
 
+        [HttpGet("totalUsers")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse<int>>> GetTotalUsersCount()
+        {
+            var count = await _userService.GetTotalUsersCountAsync();
+            return Ok(ApiResponse<int>.Ok(count));
+        }
+
         //Get own profile
         [HttpGet("me")]
         public async Task<ActionResult<ApiResponse<UserProfileDto>>> GetMyProfile()

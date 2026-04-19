@@ -1,21 +1,27 @@
 ﻿using backend.Dtos;
 using backend.Interfaces;
 using backend.Models;
+using backend.Repositories;
 using Microsoft.AspNetCore.Identity;
 
 namespace backend.Services
 {
     public class ItemReviewService : IItemReviewService
     {
+     
+
         private readonly IItemReviewRepository _itemReviewRepository;
+        private readonly IItemRepository _itemRepository;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILoanRepository _loanRepository;
 
         public ItemReviewService(IItemReviewRepository itemReviewRepository,
+            IItemRepository itemRepository,
             UserManager<ApplicationUser> userManager,
             ILoanRepository loanRepository)
         {
             _itemReviewRepository = itemReviewRepository;
+            _itemRepository = itemRepository;
             _userManager = userManager;
             _loanRepository = loanRepository;
         }
@@ -81,6 +87,8 @@ namespace backend.Services
             await _itemReviewRepository.AddItemReviewAsync(review);
             await _itemReviewRepository.SaveChangesAsync();
 
+            await UpdateItemAverageRatingAsync(itemId);
+
             //Ensure navigation properties are populated before mapping to DTO.
             await _itemReviewRepository.LoadReviewerAsync(review);
 
@@ -112,6 +120,8 @@ namespace backend.Services
             _itemReviewRepository.Update(review);
             await _itemReviewRepository.SaveChangesAsync();
 
+            await UpdateItemAverageRatingAsync(review.ItemId);
+
             return MapToItemReviewDto(review, currentUserId);
         }
 
@@ -131,7 +141,10 @@ namespace backend.Services
             review.DeletedByAdminId = userId;
             review.DeletedAt = DateTime.UtcNow;
 
+            _itemReviewRepository.Update(review);
             await _itemReviewRepository.SaveChangesAsync();
+            await UpdateItemAverageRatingAsync(review.ItemId);
+
         }
 
         public async Task<PagedResult<ItemReviewDto>> GetByItemIdAsync(
@@ -152,6 +165,24 @@ namespace backend.Services
                 PageSize = result.PageSize
             };
         }
+
+        //Recalculates and persists AverageRating on the Item whenever reviews change
+
+        private async Task UpdateItemAverageRatingAsync(int itemId)
+        {
+            var item = await _itemRepository.GetByIdAsync(itemId);
+            if (item == null) return;
+
+            var ratings = await _itemReviewRepository.GetRatingsByItemIdAsync(itemId);
+
+            item.AverageRating = ratings.Count > 0
+                ? Math.Round(ratings.Average(), 2)
+                : null;
+
+            _itemRepository.Update(item);
+            await _itemRepository.SaveChangesAsync();
+        }
+
 
         private static ItemReviewDto MapToItemReviewDto(ItemReview r, string? currentUserId = null)
         {
@@ -174,5 +205,6 @@ namespace backend.Services
                 IsMine = currentUserId != null && r.ReviewerId == currentUserId
             };
         }
+    
     }
 }

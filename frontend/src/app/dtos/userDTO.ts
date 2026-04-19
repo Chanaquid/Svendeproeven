@@ -1,125 +1,103 @@
-import { AppealDTO } from "./appealDTO";
-import { ChatDTO } from "./chatDTO";
-import { FineDTO } from "./fineDTO";
-import { ItemDTO } from "./itemDTO";
-import { LoanDTO } from "./loanDTO";
-import { VerificationDTO } from "./verificationDTO";
+import { BorrowingStatus } from "./enums";
 
-export namespace UserDTO {
-  //Requests
-  export interface UpdateProfileDTO {
-    fullName: string;
-    userName: string;
-    address?: string;
-    latitude?: number;
-    longitude?: number;
-    gender?: string;
-    avatarUrl?: string;
-  }
- 
-  export interface DeleteAccountDTO {
-    password: string;
-  }
- 
-  export interface AdminScoreAdjustDTO {
-    pointsChanged: number;
-    note: string;
-  }
- 
-  export interface AdminEditUserDTO {
-    fullName?: string;
-    username?: string;
-    email?: string;
-    newPassword?: string;
-    address?: string;
-    gender?: string;
-    avatarUrl?: string;
-    latitude?: number;
-    longitude?: number;
-    isVerified?: boolean;
-    role?: string;
-    score?: number;
-    scoreNote?: string;
-    unpaidFinesTotal?: number;
-  }
- 
-  //Responses
-  export interface UserProfileDTO {
-    id: string;
-    fullName: string;
-    username: string;
-    email: string;
-    address: string;
-    latitude?: number;
-    longitude?: number;
-    gender?: string;
-    dateOfBirth: string;
-    age: number;
-    avatarUrl?: string;
-    score: number;
-    unpaidFinesTotal: number;
-    isVerified: boolean;
-    borrowingStatus: string; //"Free" | "AdminApproval" | "Blocked"
-    membershipDate: string;
-    createdAt: string;
-  }
- 
-  export interface UserSummaryDTO {
-    id: string;
-    username: string;
-    fullName: string;
-    avatarUrl?: string;
-    score: number;
-    isVerified: boolean;
-    completedLoansCount: number;
+export interface RegisterUserRequestDto {
+  fullName: string;
+  email: string;
+  username: string;
+  password: string;
+  confirmPassword: string;
+  phoneNumber?: string | null;
+  address: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  dateOfBirth: string;
+  gender?: string | null;
+  bio?: string | null;
+  avatarUrl?: string | null;
+}
 
-  }
- 
-  export interface AdminUserDTO {
-    id: string;
-    fullName: string;
-    username: string;
-    email: string;
-    address: string;
-    latitude?: number;
-    longitude?: number;
-    gender?: string;
-    age: number;
-    avatarUrl?: string;
-    score: number;
-    unpaidFinesTotal: number;
-    isVerified: boolean;
-    role: string;
-    isDeleted: boolean;
-    deletedAt?: string;
-    membershipDate: string;
-    createdAt: string;
-  }
- 
-  export interface AdminUserDetailDTO extends AdminUserDTO {
-    fines: FineDTO.FineResponseDTO[];
-    scoreHistory: ScoreHistoryDTO[];
-    loansAsBorrower: LoanDTO.LoanSummaryDTO[];
-    items: ItemDTO.ItemSummaryDTO[];
-    appeals: AppealDTO.AppealResponseDTO[];
-    verificationRequests: VerificationDTO.VerificationRequestResponseDTO[];
-    blockedUsers: ChatDTO.UserBlockDTO.BlockResponseDTO[];
-    loanMessages: ChatDTO.LoanMessageDTO.LoanMessageResponseDTO[];
-    directConversations: ChatDTO.DirectMessageDTO.DirectConversationSummaryDTO[];
-  }
- 
-  export interface AdminDeleteResultDTO {
-    success: boolean;
-    warnings: string[];
-  }
- 
-  export interface ScoreHistoryDTO {
-    id: number;
-    pointsChanged: number;
-    scoreAfterChange: number;
-    reason: string; //"OnTimeReturn" | "LateReturn" | "AdminAdjustment"
-    note?: string;
-    loanId?: number;
-    createdAt: string;
-  }
+export interface RegisterUserResponseDto {
+  userId: string;
+  email: string;
+  avatarUrl: string | null;
+  username: string;
+  message: string;
+}
+
+export interface UpdateProfileDto {
+  fullName?: string | null;
+  userName?: string | null;
+  email?: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  gender?: string | null;
+  bio?: string | null;
+  avatarUrl?: string | null;
+  dateOfBirth?: string | null;
+}
+
+export interface UpdateAvatarDto {
+  avatarUrl: string;
+}
+
+export interface DeleteAccountDto {
+  password: string;
+  reason?: string | null;
+}
+
+export interface UserProfileDto {
+  id: string;
+  fullName: string;
+  username: string;
+  email: string;
+  phoneNumber: string | null;
+  gender: string | null;
+  role: string;
+  bio: string | null;
+  address: string;
+  latitude: number | null;
+  longitude: number | null;
+  dateOfBirth: string;
+  age: number;
+  avatarUrl: string | null;
+  score: number;
+  unpaidFinesTotal: number;
+  isVerified: boolean;
+  isBanned: boolean;
+  totalCompletedLoans: number;
+  borrowingStatus: BorrowingStatus;
+  membershipDate: string;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+export interface UserListForUsersDto {
+  id: string;
+  username: string;
+  fullName: string;
+  avatarUrl: string | null;
+  score: number;
+  isVerified: boolean;
+  totalItems: number;
+  averageRating: number | null;
+  membershipDate: string;
+}
+
+export interface UserPublicProfileDto {
+  id: string;
+  fullName: string;
+  username: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  gender: string | null;
+  age: number;
+  isVerified: boolean;
+  score: number;
+  membershipDate: string;
+  generalAddress: string | null;
+  totalItems: number;
+  totalReviewsReceived: number;
+  totalCompletedLoans: number;
+
 }

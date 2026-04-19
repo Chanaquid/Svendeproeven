@@ -1,8 +1,8 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AuthService } from '../../services/auth-service';
 import { Router, RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { AuthService } from '../../services/authService';
 
 @Component({
   selector: 'app-login',
@@ -11,7 +11,7 @@ import { CommonModule } from '@angular/common';
   styleUrl: './login.css',
 })
 export class Login {
-  email = '';
+ email = '';
   password = '';
   errorMessage = '';
   isLoading = false;
@@ -42,5 +42,6 @@ export class Login {
   togglePassword() {
       this.showPassword = !this.showPassword;
   }
-  
+
+
 }

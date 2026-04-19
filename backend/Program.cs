@@ -54,6 +54,11 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
+//builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+//{
+//    options.TokenLifespan = TimeSpan.FromMinutes(15);
+//});
+
 //JWT
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
@@ -188,7 +193,7 @@ builder.Services.AddScoped<IScoreHistoryService, ScoreHistoryService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IUserBanHistoryService, UserBanHistoryService>();
 
-
+builder.Services.AddHttpClient();
 builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllers()
@@ -198,7 +203,6 @@ builder.Services.AddControllers()
             new JsonStringEnumConverter());
     });
 builder.Services.AddSignalR();
-
 
 var app = builder.Build();
 

@@ -23,7 +23,11 @@ namespace backend.Interfaces
         Task<PagedResult<Item>> GetPendingApprovalsAsync(ItemFilter? filter, PagedRequest request);
         Task<PagedResult<Item>> GetActiveItemsExpiredBeforeAsync(DateTime date, ItemFilter? filter, PagedRequest request);
         Task<PagedResult<Item>> GetAvailableItemsAsync(ItemFilter? filter, PagedRequest request); //Approved + active + Available status
-                                                                             
+
+        //4 items 
+        Task<List<Item>> GetNewestListedAsync(int count = 4);
+        Task<int> GetAvailableCountAsync();
+
         //Returns items within a certain radius of the user's current location
         Task<PagedResult<Item>> GetNearbyItemsAsync(double lat, double lon, double radiusKm, ItemFilter? filter, PagedRequest request);
 

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+        
+            <defs>
+                <clipPath id="clip-shape">
+                    <rect width="100%" height="100%" rx="40" ry="40" />
+                </clipPath>
+            </defs>
+        
+		<defs>
+			
+						<filter id="shadow-0" x="-200%" y="-200%" width="500%" height="500%">
+							<feDropShadow
+								dx="0.21818181818181814"
+								dy="0.4363636363636363"
+								stdDeviation="0.5454545454545454"
+								flood-color="#56ab2f"
+								flood-opacity="0.3"
+							/>
+						</filter>
+					
+		</defs>
+        <g clip-path="url(#clip-shape)">
+            <rect width="100%" height="100%" fill="#fbbf24" />
+			
+            <g transform="translate(256, 256) scale(9.166666666666668) rotate(0) translate(-12, -12)" opacity="1" filter="url(#shadow-0)">
+					<title xmlns="" fill="#17cc17">lucide:leaf</title>
+<g xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8c0 5.5-4.78 10-10 10" fill="#17cc17"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" fill="#17cc17"/></g>
+				</g>
+        </g>
+    </svg>

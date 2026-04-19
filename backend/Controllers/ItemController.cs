@@ -20,7 +20,6 @@ namespace backend.Controllers
         //Public
 
         [HttpGet]
-        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<PagedResult<ItemListDto>>>> GetAllApproved(
             [FromQuery] ItemFilter? filter,
             [FromQuery] PagedRequest request)
@@ -30,7 +29,6 @@ namespace backend.Controllers
         }
 
         [HttpGet("available")]
-        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<PagedResult<ItemListDto>>>> GetAvailable(
             [FromQuery] ItemFilter? filter,
             [FromQuery] PagedRequest request)
@@ -40,7 +38,6 @@ namespace backend.Controllers
         }
 
         [HttpGet("nearby")]
-        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<PagedResult<ItemListDto>>>> GetNearby(
             [FromQuery] double lat,
             [FromQuery] double lon,
@@ -54,7 +51,6 @@ namespace backend.Controllers
         }
 
         [HttpGet("category/{categoryId:int}")]
-        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<PagedResult<ItemListDto>>>> GetByCategory(
             int categoryId,
             [FromQuery] ItemFilter? filter,
@@ -65,7 +61,6 @@ namespace backend.Controllers
         }
 
         [HttpGet("by-owner/{ownerId}")]
-        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<PagedResult<ItemListDto>>>> GetPublicByOwner(
             string ownerId,
             [FromQuery] ItemFilter? filter,
@@ -76,7 +71,6 @@ namespace backend.Controllers
         }
 
         [HttpGet("{id:int}")]
-        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<ItemDto>>> GetById(int id)
         {
             var item = await _itemService.GetByIdAsync(id, Caller.UserId);
@@ -84,11 +78,28 @@ namespace backend.Controllers
         }
 
         [HttpGet("slug/{slug}")]
-        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<ItemDto>>> GetBySlug(string slug)
         {
             var item = await _itemService.GetBySlugAsync(slug, Caller.UserId);
             return Ok(ApiResponse<ItemDto>.Ok(item));
+        }
+
+        [HttpGet("landing")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse<List<ItemListDto>>>> GetNewest(
+        [FromQuery] int count = 4)
+        {
+            var result = await _itemService.GetNewestListedAsync(count);
+            return Ok(ApiResponse<List<ItemListDto>>.Ok(result));
+        }
+
+        [HttpGet("count/available")]
+        [AllowAnonymous]
+
+        public async Task<ActionResult<ApiResponse<int>>> GetAvailableCount()
+        {
+            var count = await _itemService.GetAvailableCountAsync();
+            return Ok(ApiResponse<int>.Ok(count));
         }
 
         //Owner endpoints

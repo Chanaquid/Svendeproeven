@@ -18,13 +18,12 @@ namespace backend.Services
             _itemRepository = itemRepository;
         }
 
-        public async Task<PagedResult<ItemListDto>> GetFavoritesAsync(string userId, PagedRequest request)
+        public async Task<PagedResult<UserFavoriteItemListDto>> GetFavoritesAsync(string userId, PagedRequest request)
         {
             var result = await _userFavoriteRepository.GetAllByUserIdAsync(userId, request);
-
-            return new PagedResult<ItemListDto>
+            return new PagedResult<UserFavoriteItemListDto>
             {
-                Items = result.Items.Select(f => MapToItemListDto(f.Item)).ToList(),
+                Items = result.Items.Select(f => MapToFavoriteListDto(f)).ToList(),
                 TotalCount = result.TotalCount,
                 Page = result.Page,
                 PageSize = result.PageSize
@@ -78,22 +77,31 @@ namespace backend.Services
             await _userFavoriteRepository.SaveChangesAsync();
         }
 
-        private static ItemListDto MapToItemListDto(Item item)
+        private static UserFavoriteItemListDto MapToFavoriteListDto(UserFavoriteItem favorite)
         {
-            var primary = item.Photos.FirstOrDefault(p => p.IsPrimary)
-                ?? item.Photos.FirstOrDefault();
+            var item = favorite.Item;
+            var primary = item.Photos.FirstOrDefault(p => p.IsPrimary) ?? item.Photos.FirstOrDefault();
 
-            return new ItemListDto
+            return new UserFavoriteItemListDto
             {
                 Id = item.Id,
                 Title = item.Title,
+                Description = item.Description,
                 Slug = item.Slug,
                 MainPhotoUrl = primary?.PhotoUrl,
-                PricePerDay = item.PricePerDay,
-                IsFree = item.IsFree,
+                PickUpAddress = item.PickupAddress,
                 CategoryId = item.CategoryId,
                 CategoryName = item.Category?.Name ?? "",
                 CategorySlug = item.Category?.Slug ?? "",
+                CategoryIcon = item.Category?.Icon,
+                OwnerId = item.OwnerId,
+                OwnerName = item.Owner?.FullName ?? "",
+                OwnerUsername = item.Owner?.UserName ?? "",
+                OwnerAvatarUrl = item.Owner?.AvatarUrl ?? "",
+                OwnerScore = item.Owner?.Score ?? 0,
+                IsOwnerVerified = item.Owner?.IsVerified ?? false,
+                IsFree = item.IsFree,
+                PricePerDay = item.PricePerDay,
                 Condition = item.Condition,
                 Availability = item.Availability,
                 IsActive = item.IsActive,
@@ -101,20 +109,15 @@ namespace backend.Services
                     ? Math.Round(item.Reviews.Average(r => r.Rating), 1)
                     : null,
                 TotalReviews = item.Reviews?.Count ?? 0,
-                OwnerId = item.OwnerId,
-                OwnerName = item.Owner?.FullName ?? "",
-                OwnerUsername = item.Owner?.UserName ?? "",
-                OwnerAvatarUrl = item.Owner?.AvatarUrl,
-                OwnerScore = item.Owner?.Score ?? 0,
-                IsOwnerVerified = item.Owner?.IsVerified ?? false,
-                AvailableFrom = item.AvailableFrom,
-                AvailableUntil = item.AvailableUntil,
                 MinLoanDays = item.MinLoanDays,
                 MaxLoanDays = item.MaxLoanDays,
-                CreatedAt = item.CreatedAt
+                AvailableFrom = item.AvailableFrom,
+                AvailableUntil = item.AvailableUntil,
+                CreatedAt = item.CreatedAt,
+                NotifyWhenAvailable = favorite.NotifyWhenAvailable,
+                SavedAt = favorite.SavedAt,
             };
         }
-    
-    
+
     }
 }
