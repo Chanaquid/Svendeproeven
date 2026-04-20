@@ -229,12 +229,12 @@ using (var scope = app.Services.CreateScope())
     {
         var admin = new ApplicationUser
         {
-            UserName = adminEmail,
+            UserName = "SYSTEM_ADMIN",
             Email = adminEmail,
             FullName = "SystemAdmin",
             Address = "Copenhagen",
             Gender = "Male",
-            Bio = "This is a sytemgenerated root Admin.",
+            Bio = "This is a systemgenerated root Admin.",
             Latitude = 55.67594,
             Longitude = 12.56553,
             DateOfBirth = new DateTime(1990, 1, 1),

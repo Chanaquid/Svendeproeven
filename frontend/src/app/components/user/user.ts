@@ -1,8 +1,8 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Navbar } from "../navbar/navbar";
-import { UserListForUsersDto, UserPublicProfileDto } from '../../dtos/userDto';
+import { UserPublicProfileDto } from '../../dtos/userDto';
 import { ItemListDto } from '../../dtos/itemDto';
-import { UserReviewDto, UserReviewListDto } from '../../dtos/userReviewDto';
+import { UserReviewListDto } from '../../dtos/userReviewDto';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -10,7 +10,15 @@ import { AuthService } from '../../services/authService';
 import { UserService } from '../../services/userService';
 import { ItemService } from '../../services/itemService';
 import { UserReviewService } from '../../services/userReviewService';
-import { ItemAvailability, ItemCondition } from '../../dtos/enums';
+import { ItemAvailability, ItemCondition, ReportReason, ReportType } from '../../dtos/enums';
+import { getPageNumbers, getTotalPages } from '../../utils/pagination.utils';
+import {
+  getConditionClass,
+  getCategoryEmoji,
+  getAvailabilityClass,
+  getAvailabilityLabel,
+} from '../../utils/item.utils';
+import { ReportService } from '../../services/reportService';
 
 @Component({
   selector: 'app-user',
@@ -21,11 +29,11 @@ import { ItemAvailability, ItemCondition } from '../../dtos/enums';
 export class UserProfile implements OnInit {
 
   userId = '';
+  currentUserId = '';
   profile: UserPublicProfileDto | null = null;
   items: ItemListDto[] = [];
   filteredItems: ItemListDto[] = [];
   reviews: UserReviewListDto[] = [];
-  displayedReviews: UserReviewListDto[] = [];
   ItemAvailability = ItemAvailability;
   itemsCollapsed = false;
 
@@ -33,10 +41,59 @@ export class UserProfile implements OnInit {
   isLoadingItems = true;
   isLoadingReviews = true;
 
-  //Item filters
+  // Item filters
   searchQuery = '';
-  activeFilter: 'all' | 'available' | 'onloan' = 'all';
-  visibleReviews = 5;
+  activeFilter: 'all' | 'available' = 'all';
+
+  // Items pagination
+  itemPage = 1;
+  itemPageSize = 20;
+
+
+
+  get itemTotalPages(): number {
+    return getTotalPages(this.filteredItems.length, this.itemPageSize);
+  }
+  get itemPageNumbers(): number[] {
+    return getPageNumbers(this.itemPage, this.itemTotalPages);
+  }
+  get pagedItems(): ItemListDto[] {
+    const start = (this.itemPage - 1) * this.itemPageSize;
+    return this.filteredItems.slice(start, start + this.itemPageSize);
+  }
+  goToItemPage(page: number): void {
+    if (page < 1 || page > this.itemTotalPages) return;
+    this.itemPage = page;
+    this.cdr.detectChanges();
+  }
+
+  // Reviews pagination
+  reviewPage = 1;
+  reviewPageSize = 5;
+
+  get reviewTotalPages(): number {
+    return getTotalPages(this.reviews.length, this.reviewPageSize);
+  }
+  get reviewPageNumbers(): number[] {
+    return getPageNumbers(this.reviewPage, this.reviewTotalPages);
+  }
+  get displayedReviews(): UserReviewListDto[] {
+    const start = (this.reviewPage - 1) * this.reviewPageSize;
+    return this.reviews.slice(start, start + this.reviewPageSize);
+  }
+  goToReviewPage(page: number): void {
+    if (page < 1 || page > this.reviewTotalPages) return;
+    this.reviewPage = page;
+    this.cdr.detectChanges();
+  }
+
+  // Report modal
+  showReportModal = false;
+  reportReason: ReportReason | '' = '';
+  reportDetails = '';
+  isSubmittingReport = false;
+  reportSuccess = '';
+  reportError = '';
 
   get averageRating(): number {
     if (!this.reviews.length) return 0;
@@ -45,41 +102,34 @@ export class UserProfile implements OnInit {
 
   get scoreColor(): string {
     const s = this.profile?.score ?? 0;
-    if (s >= 70) return 'text-emerald-400';
-    if (s >= 40) return 'text-amber-400';
-    return 'text-red-400';
+    if (s >= 70) return 'score--green';
+    if (s >= 40) return 'score--amber';
+    return 'score--red';
   }
 
   get scoreBg(): string {
     const s = this.profile?.score ?? 0;
-    if (s >= 70) return 'bg-emerald-400/10 border-emerald-400/20';
-    if (s >= 40) return 'bg-amber-400/10 border-amber-400/20';
-    return 'bg-red-400/10 border-red-400/20';
+    if (s >= 70) return 'score-chip--green';
+    if (s >= 40) return 'score-chip--amber';
+    return 'score-chip--red';
   }
-
-  private emojiMap: Record<string, string> = {
-    electronics: '📱', tools: '🔧', sports: '⚽', music: '🎸',
-    books: '📚', camping: '⛺', photography: '📷', gaming: '🎮',
-    gardening: '🌱', biking: '🚲', kitchen: '🍳', cleaning: '🧹',
-    fashion: '👗', art: '🎨', baby: '👶', events: '🎉', auto: '🚗', other: '📦',
-  };
 
   constructor(
     private authService: AuthService,
     private userService: UserService,
     private itemService: ItemService,
     private reviewService: UserReviewService,
+    private reportService: ReportService,
     private route: ActivatedRoute,
     public router: Router,
     private cdr: ChangeDetectorRef,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     if (!this.authService.isLoggedIn()) {
       this.router.navigate(['/']);
       return;
     }
-
     this.route.params.subscribe(params => {
       this.userId = params['id'];
       this.load();
@@ -93,101 +143,88 @@ export class UserProfile implements OnInit {
     this.profile = null;
     this.items = [];
     this.reviews = [];
-    this.visibleReviews = 5;
+    this.itemPage = 1;
+    this.reviewPage = 1;
 
-    this.userService.getPublicProfile(this.userId).subscribe({
-      next: (res) => {
-        this.profile = res.data;
-        this.isLoadingProfile = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.isLoadingProfile = false;
-        this.cdr.detectChanges();
-      }
+    this.userService.getMyProfile().subscribe({
+      next: (res) => { this.currentUserId = res.data?.id ?? ''; this.cdr.detectChanges(); },
+      error: () => { }
     });
 
-  this.itemService.getPublicByOwner(
-    this.userId,
-    {},
-    { page: 1, pageSize: 50 }
-  ).subscribe({
-    next: (res) => {
-      this.items = res.data?.items ?? [];
-      this.applyFilters();
-      this.isLoadingItems = false;
-      this.cdr.detectChanges();
-    },
-    error: () => {
-      this.isLoadingItems = false;
-      this.cdr.detectChanges();
-    }
-  });
+    this.userService.getPublicProfile(this.userId).subscribe({
+      next: (res) => { this.profile = res.data; this.isLoadingProfile = false; this.cdr.detectChanges(); },
+      error: () => { this.isLoadingProfile = false; this.cdr.detectChanges(); }
+    });
 
-    this.reviewService.getReviewsForUser(
-      this.userId,
-      {},
-      { page: 1, pageSize: 50 }
-    ).subscribe({
+    this.itemService.getPublicByOwner(this.userId, {}, { page: 1, pageSize: 200 }).subscribe({
       next: (res) => {
-        this.reviews = res.data?.items ?? [];
-        this.updateDisplayedReviews();
-        this.isLoadingReviews = false;
+        this.items = res.data?.items ?? [];
+        this.applyFilters();
+        this.isLoadingItems = false;
         this.cdr.detectChanges();
       },
-      error: () => {
-        this.isLoadingReviews = false;
-        this.cdr.detectChanges();
-      }
+      error: () => { this.isLoadingItems = false; this.cdr.detectChanges(); }
+    });
+
+    this.reviewService.getReviewsForUser(this.userId, {}, { page: 1, pageSize: 200 }).subscribe({
+      next: (res) => { this.reviews = res.data?.items ?? []; this.isLoadingReviews = false; this.cdr.detectChanges(); },
+      error: () => { this.isLoadingReviews = false; this.cdr.detectChanges(); }
     });
   }
 
   applyFilters(): void {
     let result = [...this.items];
-
     if (this.searchQuery.trim()) {
       const q = this.searchQuery.toLowerCase();
-      result = result.filter(i =>
-        i.title.toLowerCase().includes(q) ||
-        i.categoryName.toLowerCase().includes(q)
-      );
+      result = result.filter(i => i.title.toLowerCase().includes(q) || i.categoryName.toLowerCase().includes(q));
     }
-
-    switch (this.activeFilter) {
-      case 'available': result = result.filter(i => i.isActive && i.availability === ItemAvailability.Available); break;
-      case 'onloan':    result = result.filter(i => i.availability === ItemAvailability.OnRent); break;
+    if (this.activeFilter === 'available') {
+      result = result.filter(i => i.isActive && i.availability === ItemAvailability.Available);
     }
-
     this.filteredItems = result;
+    this.itemPage = 1;
     this.cdr.detectChanges();
   }
 
-  updateDisplayedReviews(): void {
-    this.displayedReviews = this.reviews.slice(0, this.visibleReviews);
+  openReportModal(): void {
+    this.reportReason = '';
+    this.reportDetails = '';
+    this.reportSuccess = '';
+    this.reportError = '';
+    this.showReportModal = true;
   }
 
-  loadMoreReviews(): void {
-    this.visibleReviews += 5;
-    this.updateDisplayedReviews();
+  submitReport(): void {
+    if (!this.reportReason) { this.reportError = 'Please select a reason.'; return; }
+    this.isSubmittingReport = true;
+    this.reportError = '';
+
+    this.reportService.create({
+      type: ReportType.User,
+      targetId: this.userId,
+      reasons: this.reportReason as ReportReason,
+      additionalDetails: this.reportDetails.trim() || null,
+    }).subscribe({
+      next: () => {
+        this.isSubmittingReport = false;
+        this.reportSuccess = 'Report submitted. Thank you.';
+        this.cdr.detectChanges();
+        setTimeout(() => { this.showReportModal = false; }, 1500);
+      },
+      error: (err) => {
+        this.reportError = err.error?.message ?? 'Failed to submit report.';
+        this.isSubmittingReport = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
-  getCategoryEmoji(cat: string): string {
-    return this.emojiMap[cat?.toLowerCase()] ?? '📦';
-  }
-
-  getConditionClass(condition: ItemCondition): string {
-    switch (condition) {
-      case ItemCondition.Excellent: return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-      case ItemCondition.Good: return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-      case ItemCondition.Fair: return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-      case ItemCondition.Poor: return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-      default: return 'bg-zinc-800 text-zinc-400 border-zinc-700';
-    }
-  }
-
+  goToItem(slug: string): void { this.router.navigate(['/items', slug]); }
+  getCategoryEmoji(name: string): string { return getCategoryEmoji(name); }
+  getConditionClass(condition: ItemCondition): string { return getConditionClass(condition); }
+  getAvailabilityClass(availability: ItemAvailability): string { return getAvailabilityClass(availability); }
+  getAvailabilityLabel(availability: ItemAvailability): string { return getAvailabilityLabel(availability); }
   getInitials(name: string): string {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) ?? '';
   }
-
-
 }

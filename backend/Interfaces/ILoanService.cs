@@ -38,7 +38,7 @@ namespace backend.Interfaces
             PagedRequest request,
             bool isAdmin = false);
 
-
+        Task<LoanDto?> GetMyActiveLoanForItemAsync(string userId, int itemId);
 
     }
 }

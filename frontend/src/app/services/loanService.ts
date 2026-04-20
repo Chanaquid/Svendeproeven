@@ -17,9 +17,11 @@ import {
 } from '../dtos/loanDto';
 import { LoanFilter } from '../dtos/filterDto';
 
+
 @Injectable({
   providedIn: 'root',
 })
+
 export class LoanService {
   private readonly baseUrl = 'https://localhost:7183/api/loans';
 
@@ -95,6 +97,8 @@ export class LoanService {
     return this.http.get<ApiResponse<LoanDto>>(`${this.baseUrl}/${id}`);
   }
 
+
+
   // GET /api/loans/my/borrowing
   getMyAsBorrower(
     filter: LoanFilter,
@@ -115,6 +119,11 @@ export class LoanService {
       `${this.baseUrl}/my/lending`,
       { params: { ...filter, ...request } as any }
     );
+  }
+
+
+  getMyLoanForItem(itemId: number): Observable<ApiResponse<LoanDto | null>> {
+    return this.http.get<ApiResponse<LoanDto | null>>(`${this.baseUrl}/by-item/${itemId}`);
   }
 
   //Admin queries

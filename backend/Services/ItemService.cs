@@ -142,6 +142,8 @@ namespace backend.Services
             if (owner == null)
                 throw new KeyNotFoundException("Owner not found.");
 
+            bool isAdmin = await _userManager.IsInRoleAsync(owner, "Admin");
+
             var category = await _categoryRepository.GetByIdAsync(dto.CategoryId);
             if (category == null)
                 throw new ArgumentException($"Category with ID {dto.CategoryId} does not exist.");
@@ -178,6 +180,16 @@ namespace backend.Services
                 throw new ArgumentException(
                     $"Availability window ({availableDays:0} days) must allow MaxLoanDays ({dto.MaxLoanDays}).");
 
+            //Fall back to user's location if pickup details are not provided
+            var pickupAddress = !string.IsNullOrWhiteSpace(dto.PickupAddress)
+                ? dto.PickupAddress.Trim()
+                : owner.Address ?? throw new ArgumentException("Pickup address is required and no address is set on your profile.");
+
+            var pickupLat = dto.PickupLatitude != 0 ? dto.PickupLatitude
+                : owner.Latitude ?? throw new ArgumentException("Pickup location is required and no location is set on your profile.");
+
+            var pickupLong = dto.PickupLongitude != 0 ? dto.PickupLongitude
+                : owner.Longitude ?? throw new ArgumentException("Pickup location is required and no location is set on your profile.");
 
 
             var item = new Item
@@ -195,12 +207,12 @@ namespace backend.Services
                 MinLoanDays = dto.MinLoanDays,
                 MaxLoanDays = dto.MaxLoanDays,
                 RequiresVerification = dto.RequiresVerification,
-                PickupAddress = dto.PickupAddress.Trim(),
-                PickupLatitude = dto.PickupLatitude,
-                PickupLongitude = dto.PickupLongitude,
+                PickupAddress = pickupAddress,
+                PickupLatitude = pickupLat,
+                PickupLongitude = pickupLong,
                 AvailableFrom = dto.AvailableFrom.ToUniversalTime(),
                 AvailableUntil = dto.AvailableUntil.ToUniversalTime(),
-                Status = ItemStatus.Pending,//Items must be reviewed by admin before becoming public
+                Status = isAdmin ? ItemStatus.Approved : ItemStatus.Pending,
                 Availability = ItemAvailability.Available,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
@@ -269,13 +281,6 @@ namespace backend.Services
                         $"Availability window ({availableDays} days) must allow MaxLoanDays ({dto.MaxLoanDays}).");
             }
 
-
-            if (!isAdmin && item.Status == ItemStatus.Approved && HasSignificantChanges(dto))
-            {
-                item.Status = ItemStatus.Pending;
-                item.ReviewedAt = null;
-                item.ReviewedByAdminId = null;
-            }
 
             if (dto.Title != null)
             {
@@ -713,12 +718,14 @@ namespace backend.Services
                 MainPhotoUrl = primary?.PhotoUrl,
                 PricePerDay = item.PricePerDay,
                 IsFree = item.IsFree,
+                Status = item.Status,
                 CategoryId = item.CategoryId,
                 CategoryName = item.Category?.Name ?? "",
                 CategorySlug = item.Category?.Slug ?? "",
                 Condition = item.Condition,
                 Availability = item.Availability,
-                PickUpAddress = item.PickupAddress,
+                
+                PickupAddress = item.PickupAddress,
                 IsActive = item.IsActive,
                 AverageRating = item.Reviews?.Any() == true
                             ? Math.Round(item.Reviews.Average(r => r.Rating), 1)
@@ -730,6 +737,7 @@ namespace backend.Services
                 OwnerAvatarUrl = item.Owner?.AvatarUrl,
                 OwnerScore = item.Owner?.Score ?? 0,
                 IsOwnerVerified = item.Owner?.IsVerified ?? false,
+                RequiresVerification = item.RequiresVerification,
                 AvailableFrom = item.AvailableFrom,
                 AvailableUntil = item.AvailableUntil,
                 MaxLoanDays = item.MaxLoanDays,

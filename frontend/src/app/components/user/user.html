@@ -30,6 +30,8 @@
 
       <!-- Info -->
       <div class="profile-details">
+
+        <!-- Name + verified badge + report — all inline -->
         <div class="profile-name-row">
           <h1 class="profile-name">{{ profile.fullName }}</h1>
           <span *ngIf="profile.isVerified" class="badge badge--verified">
@@ -41,42 +43,39 @@
             Verified
           </span>
           <span *ngIf="!profile.isVerified" class="badge badge--unverified">Not Verified</span>
+          <button *ngIf="currentUserId !== userId" (click)="openReportModal()" class="report-btn">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
+            </svg>
+            Report
+          </button>
         </div>
 
         <p class="profile-username">@{{ profile.username }}</p>
 
         <!-- Stats row -->
         <div class="stats-row">
-
-          <!-- Score -->
           <div class="stat-chip" [ngClass]="scoreBg">
             <span class="stat-chip__label">Score</span>
             <span class="stat-chip__value" [ngClass]="scoreColor">{{ profile.score }}</span>
           </div>
-
-          <!-- Rating -->
           <div *ngIf="reviews.length > 0" class="stat-chip stat-chip--default">
             <div class="stars">
-              <span *ngFor="let s of [1,2,3,4,5]"
-                [class.stars__star--on]="s <= averageRating"
+              <span *ngFor="let s of [1,2,3,4,5]" [class.stars__star--on]="s <= averageRating"
                 [class.stars__star--off]="s > averageRating">★</span>
             </div>
             <span class="stat-chip__value">{{ averageRating.toFixed(1) }}</span>
             <span class="stat-chip__meta">({{ reviews.length }} review{{ reviews.length !== 1 ? 's' : '' }})</span>
           </div>
-
-          <!-- Items count -->
           <div class="stat-chip stat-chip--default">
             <span class="stat-chip__label">Items</span>
             <span class="stat-chip__value">{{ items.length }}</span>
           </div>
-
-          <!-- Completed loans -->
           <div class="stat-chip stat-chip--default">
             <span class="stat-chip__label">Completed Loans</span>
             <span class="stat-chip__value">{{ profile.totalCompletedLoans }}</span>
           </div>
-
         </div>
       </div>
     </div>
@@ -89,7 +88,7 @@
 
   <div class="page-body">
 
-    <!-- Items Section -->
+    <!-- ── Items Section ── -->
     <div class="section">
       <div class="section-header">
         <button (click)="itemsCollapsed = !itemsCollapsed" class="section-toggle">
@@ -97,99 +96,100 @@
             Listed Items
             <span class="section-count">({{ filteredItems.length }})</span>
           </h2>
-          <svg class="section-toggle__chevron" [class.section-toggle__chevron--open]="!itemsCollapsed"
-            fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <svg class="section-toggle__chevron" [class.section-toggle__chevron--open]="!itemsCollapsed" fill="none"
+            viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
         </button>
 
-        <!-- Filters -->
         <div *ngIf="!itemsCollapsed" class="filters">
           <div class="filter-tabs">
-            <button (click)="activeFilter = 'all'; applyFilters()"
-              class="filter-tab"
+            <button (click)="activeFilter = 'all'; applyFilters()" class="filter-tab"
               [class.filter-tab--active]="activeFilter === 'all'">All</button>
-            <button (click)="activeFilter = 'available'; applyFilters()"
-              class="filter-tab"
+            <button (click)="activeFilter = 'available'; applyFilters()" class="filter-tab"
               [class.filter-tab--active]="activeFilter === 'available'">Available</button>
-            <button (click)="activeFilter = 'onloan'; applyFilters()"
-              class="filter-tab"
-              [class.filter-tab--active]="activeFilter === 'onloan'">On Loan</button>
           </div>
-
           <div class="search-wrapper">
             <svg class="search-wrapper__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
             </svg>
-            <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="applyFilters()"
-              placeholder="Search items..." class="search-input" />
+            <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="applyFilters()" placeholder="Search items..."
+              class="search-input" />
           </div>
         </div>
       </div>
 
-      <!-- Collapsible content -->
       <div *ngIf="!itemsCollapsed">
 
-        <!-- Loading items -->
-        <div *ngIf="isLoadingItems" class="items-grid">
-          <div *ngFor="let _ of [1,2,3,4]" class="item-skeleton">
-            <div class="item-skeleton__photo"></div>
-            <div class="item-skeleton__body">
-              <div class="skeleton skeleton--line-sm"></div>
-              <div class="skeleton skeleton--line-md"></div>
-            </div>
-          </div>
+        <!-- Loading -->
+        <div *ngIf="isLoadingItems" class="grid-grid">
+          <div *ngFor="let _ of [1,2,3,4,5,6,7,8]" class="skeleton-card"></div>
         </div>
 
         <!-- Empty -->
         <div *ngIf="!isLoadingItems && filteredItems.length === 0" class="empty-state">
-          <span class="empty-state__icon">📦</span>
-          <p class="empty-state__title">No items found</p>
-          <p class="empty-state__sub">
+          <div class="empty-icon">📦</div>
+          <h3 class="empty-title">No items found</h3>
+          <p class="empty-sub">
             {{ activeFilter === 'all' ? 'This user has no listed items.' : 'No items match this filter.' }}
           </p>
         </div>
 
         <!-- Items grid -->
-        <div *ngIf="!isLoadingItems && filteredItems.length > 0" class="items-grid">
-          <div *ngFor="let item of filteredItems" [routerLink]="['/items', item.id]" class="item-card">
-
-            <div class="item-card__photo">
-              <img *ngIf="item.mainPhotoUrl" [src]="item.mainPhotoUrl" [alt]="item.title"
-                class="item-card__img" />
-              <div *ngIf="!item.mainPhotoUrl" class="item-card__placeholder">
+        <div *ngIf="!isLoadingItems && filteredItems.length > 0" class="grid-grid">
+          <div *ngFor="let item of pagedItems" (click)="goToItem(item.slug)" class="card">
+            <div class="card-image">
+              <img *ngIf="item.mainPhotoUrl" [src]="item.mainPhotoUrl" [alt]="item.title" />
+              <div *ngIf="!item.mainPhotoUrl" class="card-fallback">
                 {{ getCategoryEmoji(item.categoryName) }}
               </div>
-              <div class="item-card__badges">
-                <span *ngIf="item.availability === ItemAvailability.OnRent" class="item-badge item-badge--on-loan">On Rent</span>
-                <span *ngIf="item.availability === ItemAvailability.Available" class="item-badge item-badge--available">Available</span>
-                <span *ngIf="item.availability === ItemAvailability.Unavailable" class="item-badge item-badge--inactive">Unavailable</span>
-              </div>
+              <span class="card-badge" [ngClass]="getAvailabilityClass(item.availability)">
+                {{ getAvailabilityLabel(item.availability) }}
+              </span>
             </div>
-
-            <div class="item-card__body">
-              <p class="item-card__category">{{ item.categoryName }}</p>
-              <h3 class="item-card__title">{{ item.title }}</h3>
-              <p class="item-card__address">📍 {{ item.pickupAddress }}</p>
-              <div class="item-card__footer">
-                <span class="condition-badge" [ngClass]="getConditionClass(item.condition)">
+            <div class="card-body">
+              <div class="card-header">
+                <h3 class="card-title">{{ item.title }}</h3>
+                <span class="card-condition" [class]="getConditionClass(item.condition)">
                   {{ item.condition }}
                 </span>
-                <span *ngIf="item.totalReviews > 0" class="item-card__rating">
-                  <span class="item-card__rating-star">★</span>
-                  {{ item.averageRating?.toFixed(1) }} ({{ item.totalReviews }})
+              </div>
+              <p class="card-location">📍 {{ item.pickupAddress }}</p>
+              <p *ngIf="item.description" class="card-desc">{{ item.description }}</p>
+              <div class="card-meta">
+                <span class="card-rating">
+                  <span class="star">★</span>
+                  {{ item.averageRating ? item.averageRating.toFixed(1) : 'New' }}
+                  <span *ngIf="item.totalReviews">({{ item.totalReviews }})</span>
+                </span>
+              </div>
+              <div class="card-price">
+                <span>{{ item.isFree ? 'Free' : item.pricePerDay + ' kr/day' }}</span>
+                <span *ngIf="item.requiresVerification" class="verification-badge">
+                  <span>⚠️</span><span>Needs verification</span>
                 </span>
               </div>
             </div>
-
           </div>
+        </div>
+
+        <!-- Items pagination -->
+        <div *ngIf="itemTotalPages > 1" class="pagination">
+          <button (click)="goToItemPage(itemPage - 1)" [disabled]="itemPage === 1" class="page-btn">← Prev</button>
+          <ng-container *ngFor="let page of itemPageNumbers">
+            <span *ngIf="page === -1" class="page-ellipsis">…</span>
+            <button *ngIf="page !== -1" (click)="goToItemPage(page)" class="page-btn"
+              [class.page-btn--active]="page === itemPage">{{ page }}</button>
+          </ng-container>
+          <button (click)="goToItemPage(itemPage + 1)" [disabled]="itemPage === itemTotalPages" class="page-btn">Next
+            →</button>
         </div>
 
       </div>
     </div>
 
-    <!-- Reviews Section -->
+    <!-- ── Reviews Section ── -->
     <div class="section">
       <div class="section-header section-header--simple">
         <h2 class="section-title">
@@ -198,16 +198,14 @@
         </h2>
         <div *ngIf="reviews.length > 0" class="rating-summary">
           <div class="stars">
-            <span *ngFor="let s of [1,2,3,4,5]"
-              class="stars__star"
-              [class.stars__star--on]="s <= averageRating"
+            <span *ngFor="let s of [1,2,3,4,5]" class="stars__star" [class.stars__star--on]="s <= averageRating"
               [class.stars__star--off]="s > averageRating">★</span>
           </div>
           <span class="rating-summary__value">{{ averageRating.toFixed(1) }}</span>
         </div>
       </div>
 
-      <!-- Loading reviews -->
+      <!-- Loading -->
       <div *ngIf="isLoadingReviews" class="reviews-list">
         <div *ngFor="let _ of [1,2,3]" class="review-skeleton">
           <div class="review-skeleton__header">
@@ -221,23 +219,20 @@
 
       <!-- No reviews -->
       <div *ngIf="!isLoadingReviews && reviews.length === 0" class="empty-state">
-        <span class="empty-state__icon">⭐</span>
-        <p class="empty-state__title">No reviews yet</p>
-        <p class="empty-state__sub">This user hasn't received any reviews yet.</p>
+        <div class="empty-icon">⭐</div>
+        <p class="empty-title">No reviews yet</p>
+        <p class="empty-sub">This user hasn't received any reviews yet.</p>
       </div>
 
       <!-- Reviews list -->
       <div *ngIf="!isLoadingReviews && reviews.length > 0" class="reviews-list">
-        <div *ngFor="let review of displayedReviews"
-          class="review-card"
+        <div *ngFor="let review of displayedReviews" class="review-card"
           [class.review-card--admin]="review.isAdminReview">
 
-          <!-- Reviewer header -->
           <div class="review-card__header">
             <div class="review-card__reviewer">
               <div class="reviewer-avatar">
-                <img *ngIf="review.reviewerAvatarUrl" [src]="review.reviewerAvatarUrl"
-                  class="reviewer-avatar__img" />
+                <img *ngIf="review.reviewerAvatarUrl" [src]="review.reviewerAvatarUrl" class="reviewer-avatar__img" />
                 <span *ngIf="!review.reviewerAvatarUrl">{{ review.reviewerName.charAt(0).toUpperCase() }}</span>
               </div>
               <p class="reviewer-name" (click)="router.navigate(['/users', review.reviewerId])">
@@ -248,33 +243,80 @@
             </div>
             <div class="review-card__meta">
               <div class="stars">
-                <span *ngFor="let s of [1,2,3,4,5]"
-                  class="stars__star"
-                  [class.stars__star--on]="s <= review.rating"
+                <span *ngFor="let s of [1,2,3,4,5]" class="stars__star" [class.stars__star--on]="s <= review.rating"
                   [class.stars__star--off]="s > review.rating">★</span>
               </div>
               <span class="review-date">{{ review.createdAt | date:'MMM d, yyyy' }}</span>
             </div>
           </div>
 
-          <!-- Item context -->
           <p *ngIf="review.itemTitle" class="review-item-context">
             Loan: <span>{{ review.itemTitle }}</span>
           </p>
-
-          <!-- Comment -->
           <p *ngIf="review.comment" class="review-comment">{{ review.comment }}</p>
           <p *ngIf="!review.comment" class="review-no-comment">No comment left.</p>
-
         </div>
 
-        <!-- Load more -->
-        <button *ngIf="visibleReviews < reviews.length" (click)="loadMoreReviews()" class="load-more-btn">
-          Load more ({{ reviews.length - visibleReviews }} remaining)
-        </button>
-      </div>
+        <!-- Reviews pagination -->
+        <div *ngIf="reviewTotalPages > 1" class="pagination">
+          <button (click)="goToReviewPage(reviewPage - 1)" [disabled]="reviewPage === 1" class="page-btn">←
+            Prev</button>
+          <ng-container *ngFor="let page of reviewPageNumbers">
+            <span *ngIf="page === -1" class="page-ellipsis">…</span>
+            <button *ngIf="page !== -1" (click)="goToReviewPage(page)" class="page-btn"
+              [class.page-btn--active]="page === reviewPage">{{ page }}</button>
+          </ng-container>
+          <button (click)="goToReviewPage(reviewPage + 1)" [disabled]="reviewPage === reviewTotalPages"
+            class="page-btn">Next →</button>
+        </div>
 
+      </div>
     </div>
 
   </div>
 </main>
+
+<!-- ── Report Modal ── -->
+<div *ngIf="showReportModal" class="modal-overlay">
+  <div class="modal-backdrop" (click)="showReportModal = false"></div>
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title">Report User</h2>
+        <p class="modal-sub">@{{ profile?.username }}</p>
+      </div>
+      <button (click)="showReportModal = false" class="modal-close">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Reason <span class="required">*</span></label>
+        <select [(ngModel)]="reportReason" class="form-input form-select">
+          <option value="">Select a reason...</option>
+          <option value="FakeIdentity">Fake Identity</option>
+          <option value="Scammer">Scammer</option>
+          <option value="Harassment">Harassment</option>
+          <option value="InappropriateContent">Inappropriate Content</option>
+          <option value="Spam">Spam</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Additional details</label>
+        <textarea [(ngModel)]="reportDetails" rows="3" placeholder="Describe the issue..."
+          class="form-input form-textarea"></textarea>
+      </div>
+      <p *ngIf="reportError" class="error-msg">{{ reportError }}</p>
+      <p *ngIf="reportSuccess" class="success-msg">{{ reportSuccess }}</p>
+    </div>
+    <div class="modal-footer">
+      <button (click)="showReportModal = false" class="btn-secondary">Cancel</button>
+      <button (click)="submitReport()" [disabled]="isSubmittingReport" class="btn-danger">
+        {{ isSubmittingReport ? 'Submitting...' : 'Submit Report' }}
+      </button>
+    </div>
+  </div>
+</div>

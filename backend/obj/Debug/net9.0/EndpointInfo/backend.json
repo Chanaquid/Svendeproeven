@@ -11402,6 +11402,46 @@
         }
       }
     },
+    "/api/loans/by-item/{itemId}": {
+      "get": {
+        "tags": [
+          "Loan"
+        ],
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanDtoApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/loans/admin/all": {
       "get": {
         "tags": [
@@ -19618,7 +19658,7 @@
             "type": "string",
             "nullable": true
           },
-          "pickUpAddress": {
+          "pickupAddress": {
             "type": "string",
             "nullable": true
           },
@@ -19661,6 +19701,9 @@
           "isOwnerVerified": {
             "type": "boolean"
           },
+          "status": {
+            "$ref": "#/components/schemas/ItemStatus"
+          },
           "isFree": {
             "type": "boolean"
           },
@@ -19675,6 +19718,9 @@
             "$ref": "#/components/schemas/ItemAvailability"
           },
           "isActive": {
+            "type": "boolean"
+          },
+          "requiresVerification": {
             "type": "boolean"
           },
           "averageRating": {

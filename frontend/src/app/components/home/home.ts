@@ -81,6 +81,7 @@ export class Home implements OnInit, AfterViewInit {
     { icon: '📦', name: 'Other' },
   ];
 
+
   private isDragging = false;
   private dragStartX = 0;
   private scrollStartX = 0;
@@ -101,7 +102,7 @@ export class Home implements OnInit, AfterViewInit {
     private itemService: ItemService,
     private favoriteService: UserFavoriteService,
     private route: ActivatedRoute
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     if (!this.authService.isLoggedIn()) {
@@ -111,17 +112,16 @@ export class Home implements OnInit, AfterViewInit {
 
     this.loadUserInfo();
     this.loadFavorites();
-    this.loadItems(); 
 
     this.route.queryParams.subscribe(params => {
       const q = params['q'] || '';
-      if (q !== this.searchQuery) {
-        this.searchQuery = q;
-        this.currentPage = 1;
-        this.loadItems();
-      }
+      const page = parseInt(params['page']) || 1;
+
+      this.searchQuery = q;
+      this.currentPage = page;
+      this.loadItems();
     });
-    }
+  }
 
   ngAfterViewInit(): void {
     const el = this.categoryStrip.nativeElement;
@@ -187,11 +187,12 @@ export class Home implements OnInit, AfterViewInit {
 
   loadItems(): void {
     this.isLoading = true;
+    this.cdr.detectChanges();
 
     const filter: ItemFilter = {
       ...(this.searchQuery.trim() && { search: this.searchQuery.trim() }),
       ...(this.selectedCategory && { categoryId: this.categoryIdMap[this.selectedCategory] }),
-      ...(this.availableOnly && { availability: ItemAvailability.Available }),    
+      ...(this.availableOnly && { availability: ItemAvailability.Available }),
       ...(this.freeOnly ? { isFree: true } : (this.sortBy === 'pricePerDay' && { isFree: false })),
     };
 
@@ -206,8 +207,12 @@ export class Home implements OnInit, AfterViewInit {
       next: (res) => {
         this.items = res.data?.items ?? [];
         this.totalCount = res.data?.totalCount ?? 0;
-        this.isLoading = false;
-        this.cdr.detectChanges();
+
+        console.log(this.items);
+        setTimeout(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: (err) => {
         console.error('Failed to load items:', err);
@@ -234,6 +239,11 @@ export class Home implements OnInit, AfterViewInit {
     clearTimeout(this.searchDebounce);
     this.searchDebounce = setTimeout(() => {
       this.currentPage = 1;
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { page: 1 },
+        queryParamsHandling: 'merge',
+      });
       this.loadItems();
     }, 400);
   }
@@ -247,14 +257,14 @@ export class Home implements OnInit, AfterViewInit {
   onSortChange(value: string): void {
     this.sortLabel = value;
     switch (value) {
-      case 'newest': this.sortBy = 'createdAt'; this.sortDescending = true;  break;
+      case 'newest': this.sortBy = 'createdAt'; this.sortDescending = true; break;
       case 'oldest': this.sortBy = 'createdAt'; this.sortDescending = false; break;
-      case 'rating': this.sortBy = 'averageRating'; this.sortDescending = true;  break;
+      case 'rating': this.sortBy = 'averageRating'; this.sortDescending = true; break;
       case 'az': this.sortBy = 'title'; this.sortDescending = false; break;
-      case 'za': this.sortBy = 'title'; this.sortDescending = true;  break;
-      case 'price_asc':  this.sortBy = 'pricePerDay'; this.sortDescending = false; break;
-      case 'price_desc': this.sortBy = 'pricePerDay'; this.sortDescending = true;  break;
-      default:  this.sortBy = 'createdAt'; this.sortDescending = true;
+      case 'za': this.sortBy = 'title'; this.sortDescending = true; break;
+      case 'price_asc': this.sortBy = 'pricePerDay'; this.sortDescending = false; break;
+      case 'price_desc': this.sortBy = 'pricePerDay'; this.sortDescending = true; break;
+      default: this.sortBy = 'createdAt'; this.sortDescending = true;
     }
     this.currentPage = 1;
     this.loadItems();
@@ -328,6 +338,11 @@ export class Home implements OnInit, AfterViewInit {
   goToPage(page: number): void {
     if (page < 1 || page > this.totalPages) return;
     this.currentPage = page;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { page },
+      queryParamsHandling: 'merge',
+    });
     window.scrollTo({ top: 0, behavior: 'smooth' });
     this.loadItems();
   }
@@ -341,7 +356,7 @@ export class Home implements OnInit, AfterViewInit {
   //Helpers
 
   goToItem(slug: string): void {
-  this.router.navigate(['/items', slug]);
+    this.router.navigate(['/items', slug]);
   }
 
   getCategoryEmoji(name: string): string {
@@ -358,6 +373,10 @@ export class Home implements OnInit, AfterViewInit {
 
   getAvailabilityLabel(availability: ItemAvailability): string {
     return getAvailabilityLabel(availability);
+  }
+
+  getInitials(name: string): string {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   }
 
 

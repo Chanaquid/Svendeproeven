@@ -23,6 +23,8 @@ namespace backend.Interfaces
 
         Task<int> GetAllCompletedLoansCountByUserIdAsync(string userId);
 
+        Task<Loan?> GetActiveLoanByItemAndUserAsync(int itemId, string userId);
+
         //Paged - for UI
         Task<PagedResult<Loan>> GetByBorrowerIdPagedAsync(string borrowerId, LoanFilter? filter, PagedRequest request);
         Task<PagedResult<Loan>> GetByOwnerIdPagedAsync(string ownerId, LoanFilter? filter, PagedRequest request);

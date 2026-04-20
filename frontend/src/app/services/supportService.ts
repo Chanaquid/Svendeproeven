@@ -4,79 +4,107 @@ import { Observable } from 'rxjs';
 import { ApiResponse } from '../dtos/apiResponseDto';
 import { PagedRequest, PagedResult } from '../dtos/paginationDto';
 import {
-  AdminAdjustScoreDto,
-  ScoreHistoryDto,
-  UserScoreSummaryDto,
-} from '../dtos/scoreHistoryDto';
-import { ScoreHistoryFilter } from '../dtos/filterDto';
+  CreateSupportThreadDto,
+  SupportThreadDto,
+  SupportThreadListDto,
+} from '../dtos/supportThreadDto';
+import {
+  MarkSupportMessagesReadDto,
+  SendSupportMessageDto,
+  SupportMessageDto,
+} from '../dtos/supportMessageDto';
+import { SupportThreadFilter } from '../dtos/filterDto';
 
 @Injectable({
   providedIn: 'root',
 })
-export class ScoreHistoryService {
-  private readonly baseUrl = 'https://localhost:7183/api/score-history';
+export class SupportService {
+  private readonly baseUrl = 'https://localhost:7183/api/support';
 
   constructor(private http: HttpClient) {}
 
-  //User endpoints
+  // User endpoints
 
-  // GET /api/score-history/my
-  getMy(
-    filter: ScoreHistoryFilter,
+  // POST /api/support
+  createThread(dto: CreateSupportThreadDto): Observable<ApiResponse<SupportThreadDto>> {
+    return this.http.post<ApiResponse<SupportThreadDto>>(this.baseUrl, dto);
+  }
+
+  // GET /api/support/my
+  getMyThreads(
+    filter: SupportThreadFilter,
     request: PagedRequest
-  ): Observable<ApiResponse<PagedResult<ScoreHistoryDto>>> {
-    return this.http.get<ApiResponse<PagedResult<ScoreHistoryDto>>>(
+  ): Observable<ApiResponse<PagedResult<SupportThreadListDto>>> {
+    return this.http.get<ApiResponse<PagedResult<SupportThreadListDto>>>(
       `${this.baseUrl}/my`,
       { params: { ...filter, ...request } as any }
     );
   }
 
-  // GET /api/score-history/my/summary
-  getMySummary(): Observable<ApiResponse<UserScoreSummaryDto>> {
-    return this.http.get<ApiResponse<UserScoreSummaryDto>>(
-      `${this.baseUrl}/my/summary`
+  // GET /api/support/{id}
+  getById(id: number): Observable<ApiResponse<SupportThreadDto>> {
+    return this.http.get<ApiResponse<SupportThreadDto>>(`${this.baseUrl}/${id}`);
+  }
+
+  // POST /api/support/{id}/messages
+  sendMessage(
+    id: number,
+    dto: SendSupportMessageDto
+  ): Observable<ApiResponse<SupportMessageDto>> {
+    return this.http.post<ApiResponse<SupportMessageDto>>(
+      `${this.baseUrl}/${id}/messages`,
+      dto
     );
   }
 
-  //Admin endpoints
+  // PATCH /api/support/{id}/close
+  closeThread(id: number): Observable<ApiResponse<string>> {
+    return this.http.patch<ApiResponse<string>>(
+      `${this.baseUrl}/${id}/close`,
+      {}
+    );
+  }
 
-  // GET /api/score-history
+  // PATCH /api/support/{id}/read
+  markAsRead(
+    id: number,
+    dto: MarkSupportMessagesReadDto
+  ): Observable<ApiResponse<string>> {
+    return this.http.patch<ApiResponse<string>>(
+      `${this.baseUrl}/${id}/read`,
+      dto
+    );
+  }
+
+  // Admin endpoints
+
+  // GET /api/support
   adminGetAll(
-    filter: ScoreHistoryFilter,
+    filter: SupportThreadFilter,
     request: PagedRequest
-  ): Observable<ApiResponse<PagedResult<ScoreHistoryDto>>> {
-    return this.http.get<ApiResponse<PagedResult<ScoreHistoryDto>>>(
+  ): Observable<ApiResponse<PagedResult<SupportThreadListDto>>> {
+    return this.http.get<ApiResponse<PagedResult<SupportThreadListDto>>>(
       this.baseUrl,
       { params: { ...filter, ...request } as any }
     );
   }
 
-  // GET /api/score-history/user/{userId}
-  adminGetByUserId(
+  // POST /api/support/admin/user/{userId}
+  adminCreateThread(
     userId: string,
-    filter: ScoreHistoryFilter,
-    request: PagedRequest
-  ): Observable<ApiResponse<PagedResult<ScoreHistoryDto>>> {
-    return this.http.get<ApiResponse<PagedResult<ScoreHistoryDto>>>(
-      `${this.baseUrl}/user/${userId}`,
-      { params: { ...filter, ...request } as any }
-    );
-  }
-
-  // GET /api/score-history/user/{userId}/summary
-  adminGetSummaryByUserId(
-    userId: string
-  ): Observable<ApiResponse<UserScoreSummaryDto>> {
-    return this.http.get<ApiResponse<UserScoreSummaryDto>>(
-      `${this.baseUrl}/user/${userId}/summary`
-    );
-  }
-
-  // POST /api/score-history/adjust
-  adminAdjust(dto: AdminAdjustScoreDto): Observable<ApiResponse<string>> {
-    return this.http.post<ApiResponse<string>>(
-      `${this.baseUrl}/adjust`,
+    dto: CreateSupportThreadDto
+  ): Observable<ApiResponse<SupportThreadDto>> {
+    return this.http.post<ApiResponse<SupportThreadDto>>(
+      `${this.baseUrl}/admin/user/${userId}`,
       dto
+    );
+  }
+
+  // POST /api/support/{id}/claim
+  adminClaimThread(id: number): Observable<ApiResponse<SupportThreadDto>> {
+    return this.http.post<ApiResponse<SupportThreadDto>>(
+      `${this.baseUrl}/${id}/claim`,
+      {}
     );
   }
 }
