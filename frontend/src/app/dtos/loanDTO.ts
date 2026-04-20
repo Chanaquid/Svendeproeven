@@ -112,6 +112,7 @@ export interface LoanListDto {
   status: LoanStatus;
   totalPrice: number;
   isBorrower: boolean;
+  isOverdue: boolean;
   createdAt: string;
 }
 

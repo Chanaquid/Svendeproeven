@@ -2,7 +2,7 @@
 .backdrop {
   position: fixed;
   inset: 0;
-  z-index: 299;
+  z-index: 9998;
   background: rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(1px);
   transition: opacity 300ms ease;
@@ -11,6 +11,7 @@
 
 .backdrop.show {
   opacity: 1;
+  pointer-events: none;
 }
 
 .backdrop.hide {
@@ -23,8 +24,8 @@
   bottom: 1.5rem;
   left: 50%;
   transform: translateX(-50%) translateY(1.5rem);
-  z-index: 300;
-  transition: all 500ms ease-out;
+  z-index: 9999;
+    transition: all 500ms ease-out;
   opacity: 0;
   pointer-events: none;
 }
@@ -32,6 +33,7 @@
 .toast-container.show {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
 }
 
 .toast-container.hide {

@@ -270,6 +270,31 @@ namespace backend.Repositories
         }
 
 
+        public async Task<Loan?> GetActiveLoanByItemAndUserAsync(int itemId, string userId)
+        {
+            var activeStatuses = new[]
+            {
+                LoanStatus.Pending,
+                LoanStatus.AdminPending,
+                LoanStatus.Approved,
+                LoanStatus.Active,
+                LoanStatus.Late
+            };
+
+            return await _context.Loans
+                .AsNoTracking()
+                .Include(l => l.Item).ThenInclude(i => i.Photos)
+                .Include(l => l.Lender)
+                .Include(l => l.Borrower)
+                .Include(l => l.Fines)
+                .Include(l => l.SnapshotPhotos)
+                .FirstOrDefaultAsync(l =>
+                    l.ItemId == itemId &&
+                    l.BorrowerId == userId &&
+                    activeStatuses.Contains(l.Status));
+        }
+
+
 
         //Counts — admin dashboard
         public async Task<int> GetPendingAdminApprovalsCountAsync()

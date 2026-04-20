@@ -7897,6 +7897,32 @@
   },
   {
     "ContainingType": "backend.Controllers.LoanController",
+    "Method": "GetMyLoanForItem",
+    "RelativePath": "api/loans/by-item/{itemId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "itemId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "backend.Dtos.ApiResponse\u00601[[backend.Dtos.LoanDto, backend, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "backend.Controllers.LoanController",
     "Method": "GetMyLoansAsBorrower",
     "RelativePath": "api/loans/my/borrowing",
     "HttpMethod": "GET",

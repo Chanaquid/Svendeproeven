@@ -120,6 +120,14 @@ namespace backend.Controllers
             return Ok(ApiResponse<PagedResult<LoanListDto>>.Ok(result));
         }
 
+
+        [HttpGet("by-item/{itemId:int}")]
+        public async Task<ActionResult<ApiResponse<LoanDto?>>> GetMyLoanForItem(int itemId)
+        {
+            var loan = await _loanService.GetMyActiveLoanForItemAsync(Caller.UserId, itemId);
+            return Ok(ApiResponse<LoanDto?>.Ok(loan));
+        }
+
         //Admin
 
         // GET: api/loans/admin/all

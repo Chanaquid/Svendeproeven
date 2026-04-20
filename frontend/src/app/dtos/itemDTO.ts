@@ -117,11 +117,13 @@ export interface ItemListDto {
   ownerAvatarUrl: string;
   ownerScore: number;
   isOwnerVerified: boolean;
+  status: ItemStatus;
   isFree: boolean;
   pricePerDay: number;
   condition: ItemCondition;
   availability: ItemAvailability;
   isActive: boolean;
+  requiresVerification: boolean;
   averageRating: number | null;
   totalReviews: number;
   maxLoanDays: number | null;

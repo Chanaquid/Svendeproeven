@@ -123,8 +123,7 @@ namespace backend.Services
         //Enforces single reason rule
         private static bool IsSingleFlag(ReportReason reasons)
         {
-            var value = (int)reasons;
-            return value > 0 && (value & (value - 1)) == 0;
+            return Enum.IsDefined(typeof(ReportReason), reasons);
         }
 
         private static ReportDto MapToDto(Report report, string? currentUserId = null, bool adminView = false)

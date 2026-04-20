@@ -49,6 +49,15 @@ namespace backend.Repositories
         public async Task<Item?> GetBySlugAsync(string slug)
         {
             return await _context.Items
+                .AsSplitQuery()
+                .Include(i => i.Owner)
+                .Include(i => i.Category)
+                .Include(i => i.Photos)
+                .Include(i => i.Reviews)
+                    .ThenInclude(i => i.Reviewer)
+                .Include(i => i.Loans)
+                    .ThenInclude(l => l.Disputes)
+                .Include(i => i.ReviewedByAdmin)
                 .FirstOrDefaultAsync(i => i.Slug == slug && !i.IsDeleted);
         }
 

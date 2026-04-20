@@ -57,10 +57,11 @@ namespace backend.Services
             if (item.RequiresVerification && !borrower.IsVerified)
                 throw new InvalidOperationException("This item requires a verified account.");
 
-            var startDate = dto.StartDate.ToUniversalTime().Date;
-            var endDate = dto.EndDate.ToUniversalTime().Date;
+            //Treat incoming dates as plain calendar dates
+            var startDate = dto.StartDate.Date;
+            var endDate = dto.EndDate.Date;
 
-            if (startDate < DateTime.UtcNow.Date)
+            if (startDate < DateTime.Today)
                 throw new ArgumentException("Start date cannot be in the past.");
 
             if (endDate <= startDate)
@@ -200,6 +201,7 @@ namespace backend.Services
             if (loan.ExtensionRequestStatus == ExtensionStatus.Approved)
                 throw new InvalidOperationException("This loan has already been extended once.");
 
+            // Plain date — no timezone conversion
             var requestedDate = dto.RequestedExtensionDate.Date;
 
             if (requestedDate <= loan.EndDate.Date)
@@ -210,7 +212,7 @@ namespace backend.Services
 
             if (!await _loanRepository.IsItemAvailableForDatesAsync(
                 loan.ItemId,
-                loan.EndDate.AddDays(1),
+                loan.EndDate.Date.AddDays(1),
                 requestedDate))
                 throw new InvalidOperationException("The item is already booked during the requested extension period.");
 
@@ -278,8 +280,8 @@ namespace backend.Services
 
             if (dto.IsApproved)
             {
-                var oldEndDate = loan.EndDate;
-                var newEndDate = loan.RequestedExtensionDate!.Value;
+                var oldEndDate = loan.EndDate.Date;
+                var newEndDate = loan.RequestedExtensionDate!.Value.Date;
                 var extraDays = (newEndDate - oldEndDate).Days;
 
                 loan.EndDate = newEndDate;
@@ -332,7 +334,6 @@ namespace backend.Services
             if (loan.Status != LoanStatus.Approved)
                 throw new InvalidOperationException("This loan is not in an approved state for pickup.");
 
-            //Ensure either the lender or borrower is performing the scan
             if (scannerId != loan.BorrowerId)
                 throw new UnauthorizedAccessException("Only the borrower can confirm pickup.");
 
@@ -379,24 +380,27 @@ namespace backend.Services
                 throw new UnauthorizedAccessException("Only the borrower can confirm return.");
 
             var returnDate = DateTime.UtcNow;
+
+            // loan.EndDate is a plain calendar date stored as UTC midnight —
+            // compare date parts only to avoid time-of-day false positives
             var isLate = returnDate.Date > loan.EndDate.Date;
 
             loan.Status = LoanStatus.Completed;
             loan.ReturnedAt = returnDate;
             loan.ActualReturnDate = returnDate;
-            //Set 14-day dispute window from return date
+            // Set 14-day dispute window from return date
             loan.DisputeDeadline = returnDate.AddDays(14);
             loan.UpdatedAt = DateTime.UtcNow;
 
             item.Availability = ItemAvailability.Available;
             _itemRepository.Update(item);
 
-            //Score logic
+            // Score logic
             var borrower = loan.Borrower;
 
             if (isLate)
             {
-                //-5 points per day, capped at -15 per item loan
+                // -5 points per day, capped at -15 per item loan
                 var daysLate = (returnDate.Date - loan.EndDate.Date).Days;
                 var penalty = -Math.Min(daysLate * 5, 15);
                 var newScore = Math.Max(0, borrower.Score + penalty);
@@ -415,7 +419,7 @@ namespace backend.Services
             }
             else if (borrower.Score < 100)
             {
-                //Skip entirely if score already at 100
+                // Skip entirely if score already at 100
                 var newScore = Math.Min(100, borrower.Score + 5);
                 borrower.Score = newScore;
                 await _scoreHistoryRepository.AddAsync(new ScoreHistory
@@ -555,7 +559,6 @@ namespace backend.Services
                     throw new UnauthorizedAccessException("You do not have access to this loan.");
             }
 
-  
             bool canReview = false;
             bool hasReviewed = false;
 
@@ -601,6 +604,14 @@ namespace backend.Services
             var result = await _loanRepository.GetAllAsAdminAsync(filter, request);
             return MapToPagedLoanListDto(result, null);
         }
+
+        public async Task<LoanDto?> GetMyActiveLoanForItemAsync(string userId, int itemId)
+        {
+            var loan = await _loanRepository.GetActiveLoanByItemAndUserAsync(itemId, userId);
+            if (loan == null) return null;
+            return MapToLoanDto(loan, userId);
+        }
+
 
         //Mappers
 
