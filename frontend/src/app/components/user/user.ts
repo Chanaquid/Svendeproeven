@@ -43,18 +43,20 @@ export class UserProfile implements OnInit {
     return Math.round((this.reviews.reduce((s, r) => s + r.rating, 0) / this.reviews.length) * 10) / 10;
   }
 
+  /** Plain CSS class for score tier — styled in user.css */
   get scoreColor(): string {
     const s = this.profile?.score ?? 0;
-    if (s >= 70) return 'text-emerald-400';
-    if (s >= 40) return 'text-amber-400';
-    return 'text-red-400';
+    if (s >= 70) return 'score-text--good';
+    if (s >= 40) return 'score-text--medium';
+    return 'score-text--low';
   }
 
+  /** Plain CSS class for score chip background — styled in user.css */
   get scoreBg(): string {
     const s = this.profile?.score ?? 0;
-    if (s >= 70) return 'bg-emerald-400/10 border-emerald-400/20';
-    if (s >= 40) return 'bg-amber-400/10 border-amber-400/20';
-    return 'bg-red-400/10 border-red-400/20';
+    if (s >= 70) return 'score-chip--good';
+    if (s >= 40) return 'score-chip--medium';
+    return 'score-chip--low';
   }
 
   private emojiMap: Record<string, string> = {
@@ -107,22 +109,22 @@ export class UserProfile implements OnInit {
       }
     });
 
-  this.itemService.getPublicByOwner(
-    this.userId,
-    {},
-    { page: 1, pageSize: 50 }
-  ).subscribe({
-    next: (res) => {
-      this.items = res.data?.items ?? [];
-      this.applyFilters();
-      this.isLoadingItems = false;
-      this.cdr.detectChanges();
-    },
-    error: () => {
-      this.isLoadingItems = false;
-      this.cdr.detectChanges();
-    }
-  });
+    this.itemService.getPublicByOwner(
+      this.userId,
+      {},
+      { page: 1, pageSize: 50 }
+    ).subscribe({
+      next: (res) => {
+        this.items = res.data?.items ?? [];
+        this.applyFilters();
+        this.isLoadingItems = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isLoadingItems = false;
+        this.cdr.detectChanges();
+      }
+    });
 
     this.reviewService.getReviewsForUser(
       this.userId,
@@ -175,19 +177,18 @@ export class UserProfile implements OnInit {
     return this.emojiMap[cat?.toLowerCase()] ?? '📦';
   }
 
+  /** Plain CSS class for item condition — styled in user.css */
   getConditionClass(condition: ItemCondition): string {
     switch (condition) {
-      case ItemCondition.Excellent: return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-      case ItemCondition.Good: return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-      case ItemCondition.Fair: return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-      case ItemCondition.Poor: return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-      default: return 'bg-zinc-800 text-zinc-400 border-zinc-700';
+      case ItemCondition.Excellent: return 'condition-badge--excellent';
+      case ItemCondition.Good:      return 'condition-badge--good';
+      case ItemCondition.Fair:      return 'condition-badge--fair';
+      case ItemCondition.Poor:      return 'condition-badge--poor';
+      default:                      return 'condition-badge--default';
     }
   }
 
   getInitials(name: string): string {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) ?? '';
   }
-
-
 }

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Navbar } from '../navbar/navbar';
 import { ItemListDto } from '../../dtos/itemDTO';
 import { AuthService } from '../../services/authService';
@@ -21,7 +21,7 @@ import {
 
 @Component({
   selector: 'app-home',
-  imports: [CommonModule, RouterLink, FormsModule, Navbar],
+  imports: [CommonModule, FormsModule, Navbar],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })

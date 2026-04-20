@@ -1,3 +1,566 @@
-/* You can add global styles to this file, and also import other style files */
+/* ==========================================================================
+   RentIt — Global Styles, Design Tokens & Shared Primitives
+   ========================================================================== */
 
 @import 'tailwindcss';
+
+/* ----- Design tokens ----------------------------------------------------- */
+:root {
+  --color-bg:           #ffffff;
+  --color-surface:      #ffffff;
+  --color-surface-alt:  #f5f5f5;
+  --color-border:       #000000;
+  --color-border-soft:  #d4d4d4;
+  --color-text:         #000000;
+  --color-text-muted:   #6b6b6b;
+  --color-text-subtle:  #9a9a9a;
+  --color-primary:      #000000;
+  --color-primary-text: #ffffff;
+  --color-primary-hover:#1a1a1a;
+  --color-accent-pink:  #e11d48;
+  --color-danger:       #dc2626;
+  --color-danger-soft:  #fef2f2;
+  --color-success:      #059669;
+  --color-success-soft: #f0fdf4;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+
+  --container-max: 1200px;
+  --navbar-height: 64px;
+}
+
+/* ----- Reset & base ------------------------------------------------------ */
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 { margin: 0; font-weight: 700; color: var(--color-text); }
+p { margin: 0; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+input, select, textarea { font-family: inherit; font-size: 14px; }
+
+/* ----- Shared: page shell -----------------------------------------------
+   Every component currently re-declares :host with the same three rules.
+   Applied globally so components don't need to repeat it.
+   ------------------------------------------------------------------------ */
+app-landing, app-login, app-register, app-home, app-user,
+app-item-detail, app-user-dashboard, app-confirm-email {
+  display: block;
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+/* ----- Shared: top brand bar (landing, login, register, confirm-email) -- */
+.topbar {
+  height: var(--navbar-height);
+  padding: 0 24px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.topbar-brand {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+@media (max-width: 480px) {
+  .topbar { padding: 0 16px; }
+}
+
+/* ----- Shared: button primitives ---------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  border-color: var(--color-primary);
+}
+
+.btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); }
+
+.btn-primary:disabled {
+  background: var(--color-text-subtle);
+  border-color: var(--color-text-subtle);
+  cursor: not-allowed;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.btn-outline:hover { background: var(--color-surface-alt); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+  border-color: transparent;
+}
+
+.btn-ghost:hover { color: var(--color-text); background: var(--color-surface-alt); }
+
+/* ----- Shared: form primitives (login, register, and any form) ----------
+   Covers card, field, input, submit button, error/success, auth footer.
+   ------------------------------------------------------------------------ */
+.auth-page { min-height: 100vh; display: flex; flex-direction: column; }
+
+.auth-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 24px;
+}
+
+.auth-card {
+  width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+}
+
+.auth-card h1 { font-size: 24px; margin-bottom: 4px; }
+
+.subtitle {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.form { display: flex; flex-direction: column; gap: 16px; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+
+.field label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.field input,
+.field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.field input::placeholder { color: var(--color-text-subtle); }
+.field input:focus,
+.field select:focus { border-color: var(--color-border); }
+
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.form-error,
+.form-success {
+  font-size: 13px;
+  padding: 8px 12px;
+  border: 1px solid;
+  border-radius: var(--radius-sm);
+}
+
+.form-error   { color: var(--color-danger);  border-color: var(--color-danger);  background: var(--color-danger-soft); }
+.form-success { color: var(--color-success); border-color: var(--color-success); background: var(--color-success-soft); }
+
+.auth-footer {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border-soft);
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.auth-footer a {
+  color: var(--color-text);
+  font-weight: 500;
+  text-decoration: underline;
+  margin-left: 4px;
+}
+
+@media (max-width: 480px) {
+  .auth-wrapper { padding: 24px 16px; }
+  .auth-card    { padding: 24px 20px; }
+}
+
+/* ----- Shared: skeleton loaders ---------------------------------------- */
+.skeleton {
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-sm);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton--avatar    { width: 80px; height: 80px; border-radius: 50%; flex-shrink: 0; }
+.skeleton--avatar-sm { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; }
+.skeleton--line-lg   { height: 20px; width: 12rem; }
+.skeleton--line-md   { height: 12px; width: 8rem;  }
+.skeleton--line-sm   { height: 12px; width: 6rem;  }
+.skeleton--line-full { height: 12px; width: 100%;  }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+/* ==========================================================================
+   RentIt — Global Styles, Design Tokens & Shared Primitives
+   ========================================================================== */
+
+@import 'tailwindcss';
+
+/* ----- Design tokens: light (default) ---------------------------------- */
+:root {
+  --color-bg:           #ffffff;
+  --color-surface:      #ffffff;
+  --color-surface-alt:  #f5f5f5;
+  --color-border:       #000000;
+  --color-border-soft:  #d4d4d4;
+  --color-text:         #000000;
+  --color-text-muted:   #6b6b6b;
+  --color-text-subtle:  #9a9a9a;
+  --color-primary:      #000000;
+  --color-primary-text: #ffffff;
+  --color-primary-hover:#1a1a1a;
+  --color-accent-pink:  #e11d48;
+  --color-danger:       #dc2626;
+  --color-danger-soft:  #fef2f2;
+  --color-success:      #059669;
+  --color-success-soft: #f0fdf4;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+
+  --container-max: 1200px;
+  --navbar-height: 64px;
+}
+
+/* ----- Design tokens: dark theme override ------------------------------
+   Flipping <html data-theme="dark"> swaps every token below. Every
+   component already consumes these via var(--color-*), so no component
+   CSS needs to change.
+   ---------------------------------------------------------------------- */
+[data-theme="dark"] {
+  --color-bg:           #0a0a0a;
+  --color-surface:      #171717;
+  --color-surface-alt:  #262626;
+  --color-border:       #fafafa;
+  --color-border-soft:  #404040;
+  --color-text:         #fafafa;
+  --color-text-muted:   #a3a3a3;
+  --color-text-subtle:  #737373;
+  --color-primary:      #fafafa;
+  --color-primary-text: #0a0a0a;
+  --color-primary-hover:#e5e5e5;
+  --color-danger-soft:  #450a0a;
+  --color-success-soft: #052e16;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* ----- Reset & base ---------------------------------------------------- */
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 { margin: 0; font-weight: 700; color: var(--color-text); }
+p { margin: 0; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+input, select, textarea { font-family: inherit; font-size: 14px; }
+
+/* ----- Shared: page shell ---------------------------------------------- */
+app-landing, app-login, app-register, app-home, app-user,
+app-item-detail, app-user-dashboard, app-confirm-email {
+  display: block;
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+/* ----- Shared: top brand bar (landing, login, register, confirm-email) --
+   One canonical top bar. All logged-out pages use .topbar now.
+   ---------------------------------------------------------------------- */
+.topbar {
+  height: var(--navbar-height);
+  padding: 0 24px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.topbar-brand {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 480px) {
+  .topbar { padding: 0 16px; }
+}
+
+/* ----- Shared: button primitives --------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  border-color: var(--color-primary);
+}
+
+.btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); }
+
+.btn-primary:disabled {
+  background: var(--color-text-subtle);
+  border-color: var(--color-text-subtle);
+  cursor: not-allowed;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.btn-outline:hover { background: var(--color-surface-alt); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+  border-color: transparent;
+}
+
+.btn-ghost:hover { color: var(--color-text); background: var(--color-surface-alt); }
+
+/* ----- Shared: theme toggle button ------------------------------------
+   Small round button used in both the logged-in navbar and the logged-out
+   topbars. Inherits current text color.
+   ---------------------------------------------------------------------- */
+.theme-toggle {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.theme-toggle:hover { background: var(--color-surface-alt); }
+
+/* ----- Shared: form primitives (login, register) ---------------------- */
+.auth-page { min-height: 100vh; display: flex; flex-direction: column; }
+
+.auth-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 24px;
+}
+
+.auth-card {
+  width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+}
+
+.auth-card h1 { font-size: 24px; margin-bottom: 4px; }
+
+.subtitle {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.form { display: flex; flex-direction: column; gap: 16px; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+
+.field label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.field input,
+.field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.field input::placeholder { color: var(--color-text-subtle); }
+.field input:focus,
+.field select:focus { border-color: var(--color-border); }
+
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.form-error,
+.form-success {
+  font-size: 13px;
+  padding: 8px 12px;
+  border: 1px solid;
+  border-radius: var(--radius-sm);
+}
+
+.form-error   { color: var(--color-danger);  border-color: var(--color-danger);  background: var(--color-danger-soft); }
+.form-success { color: var(--color-success); border-color: var(--color-success); background: var(--color-success-soft); }
+
+.auth-footer {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border-soft);
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.auth-footer a {
+  color: var(--color-text);
+  font-weight: 500;
+  text-decoration: underline;
+  margin-left: 4px;
+}
+
+@media (max-width: 480px) {
+  .auth-wrapper { padding: 24px 16px; }
+  .auth-card    { padding: 24px 20px; }
+}
+
+/* ----- Shared: skeleton loaders --------------------------------------- */
+.skeleton {
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-sm);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton--avatar    { width: 80px; height: 80px; border-radius: 50%; flex-shrink: 0; }
+.skeleton--avatar-sm { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; }
+.skeleton--line-lg   { height: 20px; width: 12rem; }
+.skeleton--line-md   { height: 12px; width: 8rem;  }
+.skeleton--line-sm   { height: 12px; width: 6rem;  }
+.skeleton--line-full { height: 12px; width: 100%;  }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ----- Shared: location pin ------------------------------------------ */
+.pin { color: var(--color-accent-pink); }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ----- Shared: location pin ------------------------------------------- */
+.pin { color: var(--color-accent-pink); }

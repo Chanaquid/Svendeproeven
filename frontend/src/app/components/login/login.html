@@ -1,96 +1,84 @@
-<div class="login-page">
+<div class="auth-page">
 
-  <!-- Background grid texture -->
-  <div class="grid-bg"></div>
+  <!-- Top bar -->
+  <nav class="topbar">
+    <a routerLink="/" class="topbar-brand">RentIt</a>
+    <div class="topbar-actions">
+      <button
+        type="button"
+        class="theme-toggle"
+        (click)="theme.toggle()"
+        [attr.aria-label]="theme.theme() === 'dark' ? 'Skift til lyst tema' : 'Skift til mørkt tema'"
+      >
+        {{ theme.theme() === 'dark' ? '☀️' : '🌙' }}
+      </button>
+    </div>
+  </nav>
 
-  <!-- Glow blob -->
-  <div class="glow"></div>
-
-  <div class="login-wrapper">
-
-    <!-- Brand -->
- <div class="brand">
-  <div class="logo">
-    <img src="logo.svg" />
-  </div>
-  <p>Welcome back</p>
-</div>
-
-    <!-- Card -->
-    <div class="card">
-
-      <h2>Sign in</h2>
+  <!-- Login card -->
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <h1>Velkommen Tilbage</h1>
+      <p class="subtitle">Log ind på din konto</p>
 
       <form (ngSubmit)="login()" #loginForm="ngForm" class="form">
 
         <!-- Email -->
         <div class="field">
-          <label>Email</label>
+          <label for="email">E-mail</label>
           <input
+            id="email"
             type="email"
             name="email"
             [(ngModel)]="email"
             required
-            placeholder="email@rentit.dk"
+            placeholder="anders@example.dk"
           />
         </div>
 
         <!-- Password -->
         <div class="field">
-          <label>Password</label>
-
+          <label for="password">Adgangskode</label>
           <div class="password-wrapper">
             <input
+              id="password"
               [type]="showPassword ? 'text' : 'password'"
               name="password"
               [(ngModel)]="password"
               required
               placeholder="••••••••"
             />
-
-            <button type="button" (click)="togglePassword()" class="toggle-btn">
-              <svg *ngIf="!showPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-
-              <svg *ngIf="showPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
-                <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
-                <line x1="2" y1="2" x2="22" y2="22" />
-              </svg>
+            <button
+              type="button"
+              class="toggle-btn"
+              (click)="togglePassword()"
+              [attr.aria-label]="showPassword ? 'Skjul adgangskode' : 'Vis adgangskode'"
+            >
+              {{ showPassword ? 'Skjul' : 'Vis' }}
             </button>
           </div>
         </div>
 
+        <!-- Forgot password -->
+        <a href="#" class="forgot-link">Glemt adgangskode?</a>
+
         <!-- Error -->
-        <p *ngIf="errorMessage" class="error">
-          {{ errorMessage }}
-        </p>
+        <p *ngIf="errorMessage" class="form-error">{{ errorMessage }}</p>
 
         <!-- Submit -->
-        <button type="submit" [disabled]="loginForm.invalid || isLoading" class="submit-btn">
-          <span *ngIf="!isLoading">Sign in</span>
-
-          <span *ngIf="isLoading" class="loading">
-            <svg class="spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-              <path fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-            </svg>
-            Signing in...
-          </span>
+        <button
+          type="submit"
+          class="btn btn-primary submit-btn"
+          [disabled]="loginForm.invalid || isLoading"
+        >
+          {{ isLoading ? 'Logger ind...' : 'Log Ind' }}
         </button>
-
       </form>
 
+      <p class="auth-footer">
+        Har du ikke en konto?
+        <a routerLink="/register">Tilmeld</a>
+      </p>
     </div>
-
-    <!-- Footer -->
-    <p class="footer">
-      Not registered yet?
-      <a routerLink="/register">Register now</a>
-    </p>
-
   </div>
 </div>

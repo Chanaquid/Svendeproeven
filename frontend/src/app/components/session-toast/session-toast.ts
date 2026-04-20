@@ -3,10 +3,11 @@ import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/authService';
 import { Router } from '@angular/router';
 import { TokenExpiryService } from '../../services/token-expiry-service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-session-toast',
-  imports: [],
+  imports: [CommonModule],
   templateUrl: './session-toast.html',
   styleUrl: './session-toast.css',
 })

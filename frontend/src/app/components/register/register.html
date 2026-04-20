@@ -1,183 +1,145 @@
-<div class="register-page">
+<div class="auth-page">
 
-  <!-- Background grid -->
-  <div class="grid-bg"></div>
-
-  <!-- Glow -->
-  <div class="glow"></div>
-
-  <div class="register-wrapper">
-
-    <!-- Brand -->
-    <div class="brand">
-      <div class="logo">
- <img src="logo.svg" />
-</div>
-      <p>Create your account</p>
+  <!-- Top bar -->
+  <nav class="topbar">
+    <a routerLink="/" class="topbar-brand">RentIt</a>
+    <div class="topbar-actions">
+      <button
+        type="button"
+        class="theme-toggle"
+        (click)="theme.toggle()"
+        [attr.aria-label]="theme.theme() === 'dark' ? 'Skift til lyst tema' : 'Skift til mørkt tema'"
+      >
+        {{ theme.theme() === 'dark' ? '☀️' : '🌙' }}
+      </button>
     </div>
+  </nav>
 
-    <!-- Card -->
-    <div class="card">
-
-      <h2>Register</h2>
+  <!-- Register card -->
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <h1>Opret Konto</h1>
+      <p class="subtitle">Tilmeld dig RentIt og begynd at leje</p>
 
       <form (ngSubmit)="register()" #registerForm="ngForm" class="form">
 
-        <!-- Name + Username -->
-        <div class="grid-2">
+        <!-- Name + username -->
+        <div class="field-row">
           <div class="field">
-            <label>Full Name</label>
-            <input type="text" name="fullName" [(ngModel)]="dto.fullName" required />
+            <label for="fullName">Fulde Navn</label>
+            <input id="fullName" type="text" name="fullName"
+              [(ngModel)]="dto.fullName" required placeholder="Anders Hansen" />
           </div>
 
           <div class="field">
-            <label>Username</label>
-            <input type="text" name="username" [(ngModel)]="dto.username" required />
+            <label for="username">Brugernavn</label>
+            <input id="username" type="text" name="username"
+              [(ngModel)]="dto.username" required placeholder="anders" />
           </div>
         </div>
 
         <!-- Email -->
         <div class="field">
-          <label>Email</label>
-          <input type="email" name="email" [(ngModel)]="dto.email" required />
+          <label for="email">E-mail</label>
+          <input id="email" type="email" name="email"
+            [(ngModel)]="dto.email" required placeholder="anders@example.dk" />
         </div>
 
         <!-- Password -->
         <div class="field">
-          <label>Password</label>
-          <input type="password" name="password" [(ngModel)]="dto.password" required />
+          <label for="password">Adgangskode</label>
+          <input id="password" type="password" name="password"
+            [(ngModel)]="dto.password" required placeholder="••••••••" />
         </div>
 
-        <!-- Confirm Password -->
+        <!-- Confirm password -->
         <div class="field">
-        <label>Confirm Password</label>
-        <input
-            type="password"
-            name="confirmPassword"
-            [(ngModel)]="dto.confirmPassword"
-            required
-        />
+          <label for="confirmPassword">Bekræft Adgangskode</label>
+          <input id="confirmPassword" type="password" name="confirmPassword"
+            [(ngModel)]="dto.confirmPassword" required placeholder="••••••••" />
         </div>
 
-        <!-- DOB + Gender -->
-        <div class="grid-2">
+        <!-- DOB + gender -->
+        <div class="field-row">
           <div class="field">
-            <label>Date of Birth</label>
-            <input class="date" type="date" name="dateOfBirth" [(ngModel)]="dto.dateOfBirth" required />
+            <label for="dob">Fødselsdato</label>
+            <input id="dob" type="date" name="dateOfBirth"
+              [(ngModel)]="dto.dateOfBirth" required />
           </div>
 
           <div class="field">
-            <label>Gender</label>
-            <select name="gender" [(ngModel)]="dto.gender">
-              <option value="" disabled selected>Select</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Other">Other</option>
-              <option value="PreferNotToSay">Prefer not to say</option>
+            <label for="gender">Køn</label>
+            <select id="gender" name="gender" [(ngModel)]="dto.gender">
+              <option value="" disabled selected>Vælg</option>
+              <option value="Male">Mand</option>
+              <option value="Female">Kvinde</option>
+              <option value="Other">Andet</option>
+              <option value="PreferNotToSay">Vil ikke oplyse</option>
             </select>
           </div>
         </div>
 
         <!-- Address -->
-        <div class="field relative">
-          <label>Address</label>
-
-          <input
-            type="text"
-            name="address"
-            [(ngModel)]="dto.address"
-            (ngModelChange)="onAddressInput($event)"
-            autocomplete="off"
-            placeholder="Start typing your address..."
-          />
-
+        <div class="field address-field">
+          <label for="address">Adresse</label>
+          <input id="address" type="text" name="address"
+            [(ngModel)]="dto.address" (ngModelChange)="onAddressInput($event)"
+            autocomplete="off" placeholder="Begynd at skrive din adresse..." />
           <ul *ngIf="showSuggestions && suggestions.length" class="suggestions">
-            <li *ngFor="let place of suggestions"
-                (mousedown)="selectSuggestion(place)">
+            <li *ngFor="let place of suggestions" (mousedown)="selectSuggestion(place)">
               {{ place.properties.formatted }}
             </li>
           </ul>
         </div>
 
-        <!-- Error -->
-        <p *ngIf="errorMessage" class="error">
-          {{ errorMessage }}
+        <!-- Avatar (optional) -->
+        <div class="field">
+          <label>Profilbillede <span class="optional">(valgfrit)</span></label>
+
+          <div *ngIf="!avatarPreview" class="avatar-upload" (click)="avatarInput.click()">
+            <span class="avatar-placeholder-icon">📷</span>
+            <span class="avatar-placeholder-text">Upload billede</span>
+            <span class="avatar-placeholder-hint">PNG, JPG op til 4MB</span>
+          </div>
+
+          <div *ngIf="avatarPreview" class="avatar-preview-wrap">
+            <img [src]="avatarPreview" class="avatar-preview" alt="Avatar preview" />
+            <div class="avatar-actions">
+              <button type="button" class="btn-link"
+                (click)="$event.stopPropagation(); avatarInput.click()">
+                Skift billede
+              </button>
+              <button type="button" class="btn-link btn-link--danger" (click)="removeAvatar()">
+                Fjern
+              </button>
+            </div>
+          </div>
+
+          <input #avatarInput type="file" accept="image/*" style="display:none"
+            (change)="onAvatarSelected($event)" />
+        </div>
+
+        <!-- Messages -->
+        <p *ngIf="errorMessage" class="form-error">{{ errorMessage }}</p>
+        <p *ngIf="successMessage" class="form-success">{{ successMessage }}</p>
+        <p *ngIf="dto.password && dto.confirmPassword && dto.password !== dto.confirmPassword"
+          class="form-error">
+          Adgangskoderne stemmer ikke overens
         </p>
-
-        <!-- Success -->
-        <p *ngIf="successMessage" class="success">
-          {{ successMessage }}
-        </p>
-        <p *ngIf="dto.password && dto.confirmPassword && dto.password !== dto.confirmPassword" class="error">
-            Passwords do not match
-        </p>
-
-  <!-- Avatar Upload -->
-<div class="field">
-  <label>Profile Picture <span class="optional">(optional)</span></label>
-
-  <!-- Empty state: clickable to upload -->
-  <div *ngIf="!avatarPreview" class="avatar-upload" (click)="avatarInput.click()">
-    <div class="avatar-placeholder">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path stroke-linecap="round" stroke-linejoin="round"
-          d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-      </svg>
-      <span>Upload photo</span>
-      <p>PNG, JPG up to 4MB</p>
-    </div>
-  </div>
-
-  <!-- Preview state: just shows image, no click handler -->
-  <div *ngIf="avatarPreview" class="avatar-upload has-preview">
-    <img [src]="avatarPreview" class="avatar-preview" />
-  </div>
-
-  <!-- Action buttons shown below when preview exists -->
-  <div *ngIf="avatarPreview" class="avatar-actions">
-<button type="button" class="change-avatar" (click)="$event.stopPropagation(); avatarInput.click()">
-  ✏️ Change photo
-</button>
-    <button type="button" class="remove-avatar" (click)="removeAvatar()">
-      ✕ Remove
-    </button>
-  </div>
-
-  <input #avatarInput type="file" accept="image/*" style="display:none"
-         (change)="onAvatarSelected($event)" />
-</div>
-
-
 
         <!-- Submit -->
-       <button type="submit" 
-        [disabled]="registerForm.invalid || isLoading || dto.password !== dto.confirmPassword" 
-        class="submit-btn">
-        <span *ngIf="!isLoading">Create account</span>
-        <span *ngIf="isLoading && isUploadingAvatar" class="loading">
-          <svg class="spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-            <path fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-          </svg>
-          Uploading photo...
-        </span>
-        <span *ngIf="isLoading && !isUploadingAvatar" class="loading">
-          <svg class="spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-            <path fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-          </svg>
-          Creating account...
-        </span>
-      </button>
-
+        <button type="submit" class="btn btn-primary submit-btn"
+          [disabled]="registerForm.invalid || isLoading || dto.password !== dto.confirmPassword">
+          <span *ngIf="!isLoading">Opret Konto</span>
+          <span *ngIf="isLoading && isUploadingAvatar">Uploader billede...</span>
+          <span *ngIf="isLoading && !isUploadingAvatar">Opretter konto...</span>
+        </button>
       </form>
+
+      <p class="auth-footer">
+        Har du allerede en konto?
+        <a routerLink="/login">Log ind</a>
+      </p>
     </div>
-
-    <!-- Footer -->
-    <p class="footer">
-      Already have an account?
-      <a routerLink="/login">Sign in</a>
-    </p>
-
   </div>
 </div>

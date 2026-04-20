@@ -5283,23 +5283,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\subar\\.nuget\\packages\\": {},
+    "C:\\Users\\Chanakya Joshi\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\backend.csproj",
+      "projectUniqueName": "C:\\Users\\Chanakya Joshi\\Desktop\\RentIt\\Svendeproeven\\backend\\backend.csproj",
       "projectName": "backend",
-      "projectPath": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\backend.csproj",
-      "packagesPath": "C:\\Users\\subar\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\subar\\Desktop\\RentIt\\backend\\obj\\",
+      "projectPath": "C:\\Users\\Chanakya Joshi\\Desktop\\RentIt\\Svendeproeven\\backend\\backend.csproj",
+      "packagesPath": "C:\\Users\\Chanakya Joshi\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Chanakya Joshi\\Desktop\\RentIt\\Svendeproeven\\backend\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\subar\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\Chanakya Joshi\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -5392,8 +5392,20 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.311/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.312/PortableRuntimeIdentifierGraph.json"
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'MailKit' 4.15.1 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-9j88-vvj5-vhgr",
+      "libraryId": "MailKit",
+      "targetGraphs": [
+        "net9.0"
+      ]
+    }
+  ]
 }

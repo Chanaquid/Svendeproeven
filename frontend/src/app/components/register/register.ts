@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, NgZone  } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, inject  } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { RegisterUserRequestDto } from '../../dtos/userDTO';
 import { AuthService } from '../../services/authService';
-import { UploadThingService } from '../../services/UploadThingService'; 
+import { UploadThingService } from '../../services/UploadThingService';
+import { ThemeService } from '../../services/themeService';
 
 @Component({
   selector: 'app-register',
@@ -14,6 +15,8 @@ import { UploadThingService } from '../../services/UploadThingService';
 })
 
 export class Register {
+
+  readonly theme = inject(ThemeService);
 
   dto: RegisterUserRequestDto = {
     fullName: '',

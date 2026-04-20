@@ -1,219 +1,48 @@
-<!-- Background layers -->
-<div class="fixed inset-0 bg-zinc-950 -z-10"></div>
-<div class="fixed inset-0 grid-bg -z-10"></div>
+<!-- Top navigation -->
+<nav class="topbar">
+  <a routerLink="/" class="topbar-brand">RentIt</a>
 
-<!-- NAV -->
-<nav class="nav">
-  <a routerLink="/" class="logo">
-    <img src="logo.svg" alt="RentIt logo" />
-    <span class="logo-text">RentIt</span>
-  </a>
-
-  <ul class="nav-links">
-    <li><a href="#how-it-works">How it works</a></li>
-    <li><a href="#categories">Categories</a></li>
-    <li><a href="#safety">Safety</a></li>
-  </ul>
-
-  <div class="nav-actions">
-    <a routerLink="/login" class="btn-outline">Sign in</a>
-    <a routerLink="/register" class="btn-primary">Get started</a>
+  <div class="topbar-actions">
+    <button
+      type="button"
+      class="theme-toggle"
+      (click)="theme.toggle()"
+      [attr.aria-label]="theme.theme() === 'dark' ? 'Skift til lyst tema' : 'Skift til mørkt tema'"
+    >
+      {{ theme.theme() === 'dark' ? '☀️' : '🌙' }}
+    </button>
+    <a routerLink="/login" class="btn btn-outline">Log ind</a>
+    <a routerLink="/register" class="btn btn-primary">Tilmeld</a>
   </div>
 </nav>
 
-<!-- HERO -->
+<!-- Hero -->
 <section class="hero">
-  <div class="hero-glow"></div>
-
-  <div class="hero-content">
-
-    <div class="hero-badge animate-fade-up">
-      <span class="dot"></span>
-      Now live in Copenhagen & beyond
-    </div>
-
-    <h1 class="animate-fade-up animation-delay-100">
-      Access anything.<br/>
-      From <span class="highlight">people around you<span class="highlight-underline"></span></span>.
-    </h1>
-    <p class="animate-fade-up animation-delay-200">
-      RentIt brings together people who own things and those who need them — skip the purchase, reduce waste, and share access effortlessly.
-    </p>
-
-    <div class="hero-actions animate-fade-up animation-delay-300">
-      <a routerLink="/register" class="btn-primary btn-primary--arrow">
-        Start renting
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </a>
-      <a href="#browse" class="btn-secondary">Browse items</a>
-    </div>
-
-    <div class="stats animate-fade-up animation-delay-400">
-      <div class="stat">
-        <span>{{ stats.activeItems }}</span>
-        <p>Active items</p>
-      </div>
-      <div class="stat">
-        <span>{{ stats.members }}</span>
-        <p>Members</p>
-      </div>
-      <div class="stat">
-        <span>1000+</span>
-        <p>Cities covered</p>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-<!-- MARQUEE -->
-<div class="marquee">
-  <div class="marquee-track animate-marquee">
-    <ng-container *ngFor="let _ of [1,2]">
-      <div *ngFor="let item of categories" class="marquee-item">
-        <span>{{ item.icon }}</span>{{ item.name }}
-      </div>
-    </ng-container>
-  </div>
-</div>
-
-<!-- HOW IT WORKS -->
-<section id="how-it-works" class="section">
-  <div class="section-inner">
-    <span class="section-label">How it works</span>
-    <h2>Get what you need in three simple steps</h2>
-    <p class="section-sub">From search to pickup in no time. No subscriptions or hidden fees.</p>
-
-    <div class="steps-grid">
-      <div *ngFor="let step of steps" class="step-card">
-        <div class="step-number">{{ step.number }}</div>
-        <div class="step-icon">{{ step.icon }}</div>
-        <h3>{{ step.title }}</h3>
-        <p>{{ step.desc }}</p>
-      </div>
+  <div class="hero-card">
+    <h1>Lej Værktøj Nær Dig</h1>
+    <p>Del hvad du har. Lej hvad du behøver.</p>
+    <div class="hero-actions">
+      <a routerLink="/login" class="btn btn-primary">Gennemse</a>
+      <a routerLink="/register" class="btn btn-outline">Opret konto</a>
     </div>
   </div>
 </section>
 
-<!-- CATEGORIES -->
-<section id="categories" class="section section--dark">
-  <div class="section-inner">
-    <div class="section-header">
-      <div>
-        <span class="section-label">Categories</span>
-        <h2>Find what you need</h2>
-      </div>
-    </div>
-
-    <div class="categories-grid">
-      <a *ngFor="let cat of categories" class="category-card">
-        <span>{{ cat.icon }}</span>
-        <p>{{ cat.name }}</p>
-      </a>
+<!-- How it works -->
+<section class="how-it-works">
+  <h2>Sådan Fungerer Det</h2>
+  <div class="steps">
+    <div *ngFor="let step of steps" class="step">
+      <div class="step-icon">{{ step.icon }}</div>
+      <p class="step-label">{{ step.number }}. {{ step.title }}</p>
     </div>
   </div>
 </section>
 
-<!-- FEATURED ITEMS -->
-<section id="browse" class="section">
-  <div class="section-inner">
-    <div class="section-header">
-      <div>
-        <span class="section-label">Latest additions</span>
-        <h2>Ready to rent</h2>
-      </div>
-      <a routerLink="/login" class="browse-all-link">Browse all →</a>
-    </div>
-
-    <div class="items-grid">
-      <div *ngFor="let item of featuredItems" class="item-card">
-        <div class="item-image">
-          <img *ngIf="item.primaryPhotoUrl" [src]="item.primaryPhotoUrl" [alt]="item.title" />
-          <span *ngIf="!item.primaryPhotoUrl">{{ item.emoji }}</span>
-          <span *ngIf="item.available" class="item-available-badge">Available</span>
-        </div>
-        <div class="item-body">
-          <div class="item-category">{{ item.category }}</div>
-          <h3>{{ item.title }}</h3>
-          <p class="item-location">📍 {{ item.location }}</p>
-          <div class="item-meta">
-            <div class="item-owner">
-              <div class="item-owner-avatar">{{ item.ownerInitials }}</div>
-              {{ item.owner }}
-            </div>
-            <div class="item-rating">
-              <span class="item-rating-star">★</span> {{ item.rating }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+<!-- Categories -->
+<section class="categories">
+  <div class="category-card" *ngFor="let cat of categories">
+    <div class="category-icon">{{ cat.icon }}</div>
+    <p>{{ cat.name }}</p>
   </div>
 </section>
-
-<!-- SAFETY -->
-<section id="safety" class="section section--dark">
-  <div class="section-inner">
-    <span class="section-label">Trust & safety</span>
-    <h2>Designed with reliability in mind</h2>
-    <p class="section-sub">Every loan is backed by a reputation system, photo documentation, and an admin team that resolves disputes fast.</p>
-    <div class="trust-grid">
-      <div *ngFor="let trust of trustItems" class="trust-card">
-        <div class="trust-icon">{{ trust.icon }}</div>
-        <div>
-          <h3>{{ trust.title }}</h3>
-          <p>{{ trust.desc }}</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- CTA -->
-<section class="cta">
-  <div class="cta-inner">
-    <div class="cta-glow"></div>
-    <span class="section-label">Get started</span>
-    <h2>Someone nearby has what you’re looking for.</h2>
-    <p>Join a growing community choosing access over ownership.</p>
-    <div class="cta-actions">
-      <a routerLink="/register" class="btn-primary">Create your account</a>
-      <a routerLink="/login" class="btn-secondary">Sign In</a>
-    </div>
-  </div>
-</section>
-
-<!-- FOOTER -->
-<footer class="footer">
-  <div class="footer-logo">
-<svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Yellow rounded box -->
-  <rect width="48" height="48" rx="12" fill="#fbbf24"/>
-
-  <!-- Letter R -->
-  <text 
-    x="50%" 
-    y="50%" 
-    text-anchor="middle" 
-    dominant-baseline="central"
-    font-family="Syne, sans-serif" 
-    font-size="24" 
-    font-weight="700" 
-    fill="#09090b">
-    R
-  </text>
-</svg>    <span>RentIt</span>
-  </div>
-
-  <ul class="footer-links">
-    <li><a href="#">About</a></li>
-    <li><a href="#how-it-works">How it works</a></li>
-    <li><a href="#safety">Safety</a></li>
-    <li><a href="#">Terms</a></li>
-    <li><a href="#">Privacy</a></li>
-  </ul>
-
-  <span class="footer-copy">© 2026 RentIt. All rights reserved.</span>
-</footer>

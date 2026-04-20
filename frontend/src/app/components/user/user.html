@@ -1,7 +1,3 @@
-<!-- Background -->
-<div class="bg-base"></div>
-<div class="bg-grid"></div>
-
 <app-navbar></app-navbar>
 
 <main class="main-content">
@@ -43,7 +39,7 @@
           <span *ngIf="!profile.isVerified" class="badge badge--unverified">Not Verified</span>
         </div>
 
-        <p class="profile-username">@{{ profile.username }}</p>
+        <p class="profile-username">&#64;{{ profile.username }}</p>
 
         <!-- Stats row -->
         <div class="stats-row">
@@ -171,7 +167,10 @@
             <div class="item-card__body">
               <p class="item-card__category">{{ item.categoryName }}</p>
               <h3 class="item-card__title">{{ item.title }}</h3>
-              <p class="item-card__address">📍 {{ item.pickupAddress }}</p>
+              <p class="item-card__address">
+                <span class="item-card__pin" aria-hidden="true">📍</span>
+                {{ item.pickupAddress }}
+              </p>
               <div class="item-card__footer">
                 <span class="condition-badge" [ngClass]="getConditionClass(item.condition)">
                   {{ item.condition }}
