@@ -9,11 +9,11 @@ import {
   DisputeStatsDto,
   EditDisputeDto,
   SubmitDisputeResponseDto,
-} from '../dtos/disputeDto';
+} from '../dtos/disputeDTO';
 import { AddDisputePhotoDto, DisputePhotoDto } from '../dtos/disputePhotoDto';
 import { DisputeFilter } from '../dtos/filterDto';
 import { DisputeStatus } from '../dtos/enums';
-import { ApiResponse } from '../dtos/apiResponseDto';
+import { ApiResponse } from '../dtos/apiResponseDTO';
 import { PagedRequest, PagedResult } from '../dtos/paginationDto';
 
 @Injectable({

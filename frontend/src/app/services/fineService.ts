@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResponse } from '../dtos/apiResponseDto';
+import { ApiResponse } from '../dtos/apiResponseDTO';
 import { PagedRequest, PagedResult } from '../dtos/paginationDto';
 import {
   AdminFineVerifyPaymentDto,
@@ -12,7 +12,7 @@ import {
   FineStatsDto,
   SubmitPaymentProofDto,
   UpdateFineDto,
-} from '../dtos/fineDto';
+} from '../dtos/fineDTO';
 import { FineFilter } from '../dtos/filterDto';
 import { FineStatus } from '../dtos/enums';
 

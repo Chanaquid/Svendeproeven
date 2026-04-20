@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResponse } from '../dtos/apiResponseDto';
+import { ApiResponse } from '../dtos/apiResponseDTO';
 import { PagedRequest, PagedResult } from '../dtos/paginationDto';
 import {
   DeleteAccountDto,
@@ -9,18 +9,18 @@ import {
   UpdateProfileDto,
   UserProfileDto,
   UserPublicProfileDto,
-} from '../dtos/userDto';
+} from '../dtos/userDTO';
 import {
   AdminDeleteResultDto,
   AdminEditUserDto,
   AdminUserDto,
 } from '../dtos/adminUserDto';
 import { AdminAdjustScoreDto, ScoreHistoryDto } from '../dtos/scoreHistoryDto';
-import { AppealDto } from '../dtos/appealDto';
-import { DisputeListDto } from '../dtos/disputeDto';
-import { FineListDto } from '../dtos/fineDto';
-import { ItemListDto } from '../dtos/itemDto';
-import { LoanListDto } from '../dtos/loanDto';
+import { AppealDto } from '../dtos/appealDTO';
+import { DisputeListDto } from '../dtos/disputeDTO';
+import { FineListDto } from '../dtos/fineDTO';
+import { ItemListDto } from '../dtos/itemDTO';
+import { LoanListDto } from '../dtos/loanDTO';
 import { SupportThreadListDto } from '../dtos/supportThreadDto';
 import { VerificationRequestDto } from '../dtos/verificationRequestDto';
 import { BanUserDto, UnbanUserDto } from '../dtos/userBanHistoryDto';

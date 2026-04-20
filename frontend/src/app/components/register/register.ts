@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, NgZone  } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { RegisterUserRequestDto } from '../../dtos/userDto';
+import { RegisterUserRequestDto } from '../../dtos/userDTO';
 import { AuthService } from '../../services/authService';
 import { UploadThingService } from '../../services/UploadThingService'; 
 

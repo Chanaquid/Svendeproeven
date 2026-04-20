@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResponse } from '../dtos/apiResponseDto';
+import { ApiResponse } from '../dtos/apiResponseDTO';
 import { PagedRequest, PagedResult } from '../dtos/paginationDto';
 import {
   AdminPendingLoanDto,
@@ -14,7 +14,7 @@ import {
   OwnerDecideLoanDto,
   RequestExtensionDto,
   ScanQrCodeDto,
-} from '../dtos/loanDto';
+} from '../dtos/loanDTO';
 import { LoanFilter } from '../dtos/filterDto';
 
 @Injectable({

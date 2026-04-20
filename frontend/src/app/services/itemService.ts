@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResponse } from '../dtos/apiResponseDto';
+import { ApiResponse } from '../dtos/apiResponseDTO';
 import { PagedRequest, PagedResult } from '../dtos/paginationDto';
 import {
   AdminDecideItemDto,
@@ -12,7 +12,7 @@ import {
   ItemQrCodeDto,
   ToggleActiveStatusDto,
   UpdateItemDto,
-} from '../dtos/itemDto';
+} from '../dtos/itemDTO';
 import { AddItemPhotoDto } from '../dtos/itemPhotoDto';
 import { ItemFilter } from '../dtos/filterDto';
 

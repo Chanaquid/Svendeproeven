@@ -1,6 +1,6 @@
 import { ExtensionStatus, ItemCondition, LoanStatus } from './enums';
-import { DisputeDto } from './disputeDto';
-import { FineDto } from './fineDto';
+import { DisputeDto } from './disputeDTO';
+import { FineDto } from './fineDTO';
 import { LoanMessageDto } from './loanMessageDto';
 import { LoanSnapshotPhotoDto } from './loanSnapshotPhotoDto';
 

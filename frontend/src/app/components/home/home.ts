@@ -3,7 +3,7 @@ import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnInit, ViewCh
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Navbar } from '../navbar/navbar';
-import { ItemListDto } from '../../dtos/itemDto';
+import { ItemListDto } from '../../dtos/itemDTO';
 import { AuthService } from '../../services/authService';
 import { UserService } from '../../services/userService';
 import { UserFavoriteService } from '../../services/userFavoriteService';

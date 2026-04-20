@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Navbar } from "../navbar/navbar";
-import { UserListForUsersDto, UserPublicProfileDto } from '../../dtos/userDto';
-import { ItemListDto } from '../../dtos/itemDto';
+import { UserListForUsersDto, UserPublicProfileDto } from '../../dtos/userDTO';
+import { ItemListDto } from '../../dtos/itemDTO';
 import { UserReviewDto, UserReviewListDto } from '../../dtos/userReviewDto';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';

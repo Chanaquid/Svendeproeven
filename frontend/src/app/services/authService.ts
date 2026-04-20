@@ -10,12 +10,12 @@ import {
   RefreshTokenRequestDto,
   ResendConfirmationDto,
   ResetPasswordDto,
-} from '../dtos/authDto';
+} from '../dtos/authDTO';
 import {
   RegisterUserRequestDto,
   RegisterUserResponseDto,
-} from '../dtos/userDto';
-import { ApiResponse } from '../dtos/apiResponseDto';
+} from '../dtos/userDTO';
+import { ApiResponse } from '../dtos/apiResponseDTO';
 
 @Injectable({
   providedIn: 'root',

@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResponse } from '../dtos/apiResponseDto';
+import { ApiResponse } from '../dtos/apiResponseDTO';
 import { PagedRequest, PagedResult } from '../dtos/paginationDto';
 import {
   AdminDecidesFineAppealDto,
@@ -9,7 +9,7 @@ import {
   AppealDto,
   CreateFineAppealDto,
   CreateScoreAppealDto,
-} from '../dtos/appealDto';
+} from '../dtos/appealDTO';
 import { AppealFilter } from '../dtos/filterDto';
 import { AppealStatus } from '../dtos/enums';
 

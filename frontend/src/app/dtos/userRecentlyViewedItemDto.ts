@@ -1,4 +1,4 @@
-import { ItemDto } from './itemDto';
+import { ItemDto } from './itemDTO';
 
 export interface UserRecentlyViewedItemResponseDto {
   item: ItemDto;

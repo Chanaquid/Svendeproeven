@@ -3,7 +3,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { NotificationDto } from '../../dtos/notificationDto';
+import { NotificationDto } from '../../dtos/notificationDTO';
 import { AuthService } from '../../services/authService';
 import { UserService } from '../../services/userService';
 import { NotificationHubService } from '../../services/notificationHubService';

@@ -1,12 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResponse } from '../dtos/apiResponseDto';
+import { ApiResponse } from '../dtos/apiResponseDTO';
 import {
   MarkMultipleNotificationsReadDto,
   NotificationDto,
   NotificationSummaryDto,
-} from '../dtos/notificationDto';
+} from '../dtos/notificationDTO';
 
 @Injectable({
   providedIn: 'root',

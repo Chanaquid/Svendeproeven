@@ -1,8 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResponse } from '../dtos/apiResponseDto';
-import { CategoryDto, CreateCategoryDto, UpdateCategoryDto } from '../dtos/categoryDto';
+import { ApiResponse } from '../dtos/apiResponseDTO';
+import { CategoryDto, CreateCategoryDto, UpdateCategoryDto } from '../dtos/categoryDTO';
 
 @Injectable({
   providedIn: 'root',

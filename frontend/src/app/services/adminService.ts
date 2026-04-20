@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AdminDashboardDto, ItemHistoryDto } from '../dtos/adminDto';
+import { AdminDashboardDto, ItemHistoryDto } from '../dtos/adminDTO';
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
