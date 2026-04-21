@@ -1,30 +1,32 @@
 <!doctype html>
 <html lang="da">
-<head>
-  <meta charset="utf-8">
-  <title>RentIt</title>
-  <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <head>
+    <meta charset="utf-8" />
+    <title>RentIt</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
-  <!--
+    <!--
     Apply the saved theme BEFORE Angular loads so dark-mode users don't see
     a flash of light background on page refresh. This tiny script reads the
     same localStorage key that ThemeService uses. If nothing is saved we
     default to light (no attribute set).
   -->
-  <script>
-    (function () {
-      try {
-        var saved = localStorage.getItem('rentit-theme');
-        if (saved === 'dark') {
-          document.documentElement.setAttribute('data-theme', 'dark');
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('rentit-theme');
+          if (saved === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+          }
+        } catch (_) {
+          /* ignore — private browsing, etc. */
         }
-      } catch (_) { /* ignore — private browsing, etc. */ }
-    })();
-  </script>
-</head>
-<body>
-  <app-root></app-root>
-</body>
+      })();
+    </script>
+  </head>
+  <body>
+    <app-root></app-root>
+  </body>
 </html>

@@ -11,7 +11,6 @@ import { ThemeService } from '../../services/themeService';
   styleUrl: './landing.css',
 })
 export class Landing implements OnInit {
-
   readonly theme = inject(ThemeService);
 
   constructor(

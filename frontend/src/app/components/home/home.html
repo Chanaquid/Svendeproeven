@@ -1,7 +1,6 @@
 <app-navbar></app-navbar>
 
 <main class="page">
-
   <!-- Greeting -->
   <header class="page-header">
     <p class="greeting-sub">Godt at se dig igen,</p>
@@ -22,7 +21,6 @@
 
   <!-- Layout: sidebar filters + results -->
   <div class="browse-layout">
-
     <!-- ===== Sidebar filters (wireframe: Filtre) ===== -->
     <aside class="filters-panel">
       <h2 class="filters-title">Filtre</h2>
@@ -56,19 +54,11 @@
       <div class="filter-group">
         <h3>Status</h3>
         <label class="filter-option">
-          <input
-            type="checkbox"
-            [checked]="availableOnly"
-            (change)="onAvailableToggle()"
-          />
+          <input type="checkbox" [checked]="availableOnly" (change)="onAvailableToggle()" />
           <span>Kun tilgængelige</span>
         </label>
         <label class="filter-option">
-          <input
-            type="checkbox"
-            [checked]="freeOnly"
-            (change)="onFreeToggle()"
-          />
+          <input type="checkbox" [checked]="freeOnly" (change)="onFreeToggle()" />
           <span>Kun gratis</span>
         </label>
       </div>
@@ -76,7 +66,6 @@
 
     <!-- ===== Results area ===== -->
     <section class="results">
-
       <!-- Toolbar -->
       <div class="toolbar">
         <p class="results-count">
@@ -86,11 +75,7 @@
         <div class="toolbar-controls">
           <label class="sort-label">
             Sortér:
-            <select
-              [ngModel]="sortLabel"
-              (ngModelChange)="onSortChange($event)"
-              class="select"
-            >
+            <select [ngModel]="sortLabel" (ngModelChange)="onSortChange($event)" class="select">
               <option value="newest">Nyeste</option>
               <option value="oldest">Ældste</option>
               <option value="rating">Bedst bedømt</option>
@@ -105,7 +90,7 @@
 
       <!-- Loading skeleton -->
       <div *ngIf="isLoading" class="items-grid">
-        <div *ngFor="let _ of [1,2,3,4,5,6,7,8]" class="skeleton-card"></div>
+        <div *ngFor="let _ of [1, 2, 3, 4, 5, 6, 7, 8]" class="skeleton-card"></div>
       </div>
 
       <!-- Empty state -->
@@ -117,27 +102,15 @@
 
       <!-- Items grid -->
       <div *ngIf="!isLoading && items.length > 0" class="items-grid">
-        <article
-          *ngFor="let item of items"
-          class="item-card"
-          (click)="goToItem(item.slug)"
-        >
-
+        <article *ngFor="let item of items" class="item-card" (click)="goToItem(item.slug)">
           <!-- Image -->
           <div class="item-card-image">
-            <img
-              *ngIf="item.mainPhotoUrl"
-              [src]="item.mainPhotoUrl"
-              [alt]="item.title"
-            />
+            <img *ngIf="item.mainPhotoUrl" [src]="item.mainPhotoUrl" [alt]="item.title" />
             <div *ngIf="!item.mainPhotoUrl" class="item-card-fallback">
               {{ getCategoryEmoji(item.categoryName) }}
             </div>
 
-            <span
-              class="availability-badge"
-              [ngClass]="getAvailabilityClass(item.availability)"
-            >
+            <span class="availability-badge" [ngClass]="getAvailabilityClass(item.availability)">
               {{ getAvailabilityLabel(item.availability) }}
             </span>
 
@@ -147,7 +120,9 @@
               [class.fav-btn--active]="favoriteIds.has(item.id)"
               [disabled]="togglingIds.has(item.id)"
               (click)="toggleFavorite(item.id, $event)"
-              [attr.aria-label]="favoriteIds.has(item.id) ? 'Fjern fra favoritter' : 'Tilføj til favoritter'"
+              [attr.aria-label]="
+                favoriteIds.has(item.id) ? 'Fjern fra favoritter' : 'Tilføj til favoritter'
+              "
             >
               ♥
             </button>
@@ -171,10 +146,7 @@
               <span class="item-card-rating">
                 ★ {{ item.averageRating ? item.averageRating.toFixed(1) : 'Ny' }}
               </span>
-              <span
-                class="availability-label"
-                [ngClass]="getAvailabilityClass(item.availability)"
-              >
+              <span class="availability-label" [ngClass]="getAvailabilityClass(item.availability)">
                 {{ getAvailabilityLabel(item.availability) }}
               </span>
             </div>
@@ -184,11 +156,7 @@
 
       <!-- Pagination -->
       <nav *ngIf="totalPages > 1" class="pagination" aria-label="Pagination">
-        <button
-          class="page-btn"
-          (click)="goToPage(currentPage - 1)"
-          [disabled]="currentPage === 1"
-        >
+        <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
           ← Forrige
         </button>
 
@@ -212,7 +180,6 @@
           Næste →
         </button>
       </nav>
-
     </section>
   </div>
 

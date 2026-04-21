@@ -1,5 +1,4 @@
 <div class="auth-page">
-
   <!-- Top bar -->
   <nav class="topbar">
     <a routerLink="/" class="topbar-brand">RentIt</a>
@@ -8,7 +7,9 @@
         type="button"
         class="theme-toggle"
         (click)="theme.toggle()"
-        [attr.aria-label]="theme.theme() === 'dark' ? 'Skift til lyst tema' : 'Skift til mørkt tema'"
+        [attr.aria-label]="
+          theme.theme() === 'dark' ? 'Skift til lyst tema' : 'Skift til mørkt tema'
+        "
       >
         {{ theme.theme() === 'dark' ? '☀️' : '🌙' }}
       </button>
@@ -22,7 +23,6 @@
       <p class="subtitle">Log ind på din konto</p>
 
       <form (ngSubmit)="login()" #loginForm="ngForm" class="form">
-
         <!-- Email -->
         <div class="field">
           <label for="email">E-mail</label>

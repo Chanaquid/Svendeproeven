@@ -26,12 +26,11 @@ export class AppealService {
   // GET /api/appeals/my
   getMyAppeals(
     filter: AppealFilter,
-    request: PagedRequest
+    request: PagedRequest,
   ): Observable<ApiResponse<PagedResult<AppealDto>>> {
-    return this.http.get<ApiResponse<PagedResult<AppealDto>>>(
-      `${this.baseUrl}/my`,
-      { params: { ...filter, ...request } as any }
-    );
+    return this.http.get<ApiResponse<PagedResult<AppealDto>>>(`${this.baseUrl}/my`, {
+      params: { ...filter, ...request } as any,
+    });
   }
 
   // GET /api/appeals/{id}
@@ -64,68 +63,55 @@ export class AppealService {
   // GET /api/appeals
   adminGetAll(
     filter: AppealFilter,
-    request: PagedRequest
+    request: PagedRequest,
   ): Observable<ApiResponse<PagedResult<AppealDto>>> {
-    return this.http.get<ApiResponse<PagedResult<AppealDto>>>(
-      this.baseUrl,
-      { params: { ...filter, ...request } as any }
-    );
+    return this.http.get<ApiResponse<PagedResult<AppealDto>>>(this.baseUrl, {
+      params: { ...filter, ...request } as any,
+    });
   }
 
   // GET /api/appeals/pending
   adminGetPending(
     filter: AppealFilter,
-    request: PagedRequest
+    request: PagedRequest,
   ): Observable<ApiResponse<PagedResult<AppealDto>>> {
-    return this.http.get<ApiResponse<PagedResult<AppealDto>>>(
-      `${this.baseUrl}/pending`,
-      { params: { ...filter, ...request } as any }
-    );
+    return this.http.get<ApiResponse<PagedResult<AppealDto>>>(`${this.baseUrl}/pending`, {
+      params: { ...filter, ...request } as any,
+    });
   }
 
   // GET /api/appeals/user/{userId}
   adminGetByUserId(
     userId: string,
     filter: AppealFilter,
-    request: PagedRequest
+    request: PagedRequest,
   ): Observable<ApiResponse<PagedResult<AppealDto>>> {
-    return this.http.get<ApiResponse<PagedResult<AppealDto>>>(
-      `${this.baseUrl}/user/${userId}`,
-      { params: { ...filter, ...request } as any }
-    );
+    return this.http.get<ApiResponse<PagedResult<AppealDto>>>(`${this.baseUrl}/user/${userId}`, {
+      params: { ...filter, ...request } as any,
+    });
   }
 
   // GET /api/appeals/status/{status}
   adminGetByStatus(
     status: AppealStatus,
     filter: AppealFilter,
-    request: PagedRequest
+    request: PagedRequest,
   ): Observable<ApiResponse<PagedResult<AppealDto>>> {
-    return this.http.get<ApiResponse<PagedResult<AppealDto>>>(
-      `${this.baseUrl}/status/${status}`,
-      { params: { ...filter, ...request } as any }
-    );
+    return this.http.get<ApiResponse<PagedResult<AppealDto>>>(`${this.baseUrl}/status/${status}`, {
+      params: { ...filter, ...request } as any,
+    });
   }
 
   // POST /api/appeals/{id}/decide/score
   adminDecideScore(
     id: number,
-    dto: AdminDecidesScoreAppealDto
+    dto: AdminDecidesScoreAppealDto,
   ): Observable<ApiResponse<AppealDto>> {
-    return this.http.post<ApiResponse<AppealDto>>(
-      `${this.baseUrl}/${id}/decide/score`,
-      dto
-    );
+    return this.http.post<ApiResponse<AppealDto>>(`${this.baseUrl}/${id}/decide/score`, dto);
   }
 
   // POST /api/appeals/{id}/decide/fine
-  adminDecideFine(
-    id: number,
-    dto: AdminDecidesFineAppealDto
-  ): Observable<ApiResponse<AppealDto>> {
-    return this.http.post<ApiResponse<AppealDto>>(
-      `${this.baseUrl}/${id}/decide/fine`,
-      dto
-    );
+  adminDecideFine(id: number, dto: AdminDecidesFineAppealDto): Observable<ApiResponse<AppealDto>> {
+    return this.http.post<ApiResponse<AppealDto>>(`${this.baseUrl}/${id}/decide/fine`, dto);
   }
 }

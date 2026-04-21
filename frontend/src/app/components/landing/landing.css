@@ -16,8 +16,14 @@
   text-align: center;
 }
 
-.hero-card h1 { font-size: 28px; margin-bottom: 8px; }
-.hero-card p  { color: var(--color-text-muted); margin-bottom: 24px; }
+.hero-card h1 {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+.hero-card p {
+  color: var(--color-text-muted);
+  margin-bottom: 24px;
+}
 
 .hero-actions {
   display: flex;
@@ -48,7 +54,9 @@
   padding: 24px;
 }
 
-.step { text-align: center; }
+.step {
+  text-align: center;
+}
 
 .step-icon {
   width: 40px;
@@ -63,7 +71,10 @@
   font-size: 18px;
 }
 
-.step-label { font-size: 14px; font-weight: 500; }
+.step-label {
+  font-size: 14px;
+  font-weight: 500;
+}
 
 /* Categories */
 .categories {
@@ -85,7 +96,9 @@
   cursor: pointer;
 }
 
-.category-card:hover { background: var(--color-surface-alt); }
+.category-card:hover {
+  background: var(--color-surface-alt);
+}
 
 .category-icon {
   width: 32px;
@@ -99,9 +112,16 @@
   font-size: 16px;
 }
 
-.category-card p { font-size: 14px; font-weight: 500; }
+.category-card p {
+  font-size: 14px;
+  font-weight: 500;
+}
 
 @media (max-width: 480px) {
-  .hero-card    { padding: 32px 16px; }
-  .hero-card h1 { font-size: 22px; }
+  .hero-card {
+    padding: 32px 16px;
+  }
+  .hero-card h1 {
+    font-size: 22px;
+  }
 }

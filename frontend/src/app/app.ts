@@ -1,6 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
-import { SessionToast } from "./components/session-toast/session-toast";
+import { SessionToast } from './components/session-toast/session-toast';
 import { AuthService } from './services/authService';
 import { TokenExpiryService } from './services/token-expiry-service';
 
@@ -8,7 +8,7 @@ import { TokenExpiryService } from './services/token-expiry-service';
   selector: 'app-root',
   imports: [RouterOutlet, SessionToast],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrl: './app.css',
 })
 export class App implements OnInit {
   protected readonly title = signal('frontend');
@@ -18,7 +18,6 @@ export class App implements OnInit {
     private tokenExpiryService: TokenExpiryService,
     private router: Router,
   ) {}
-
 
   ngOnInit(): void {
     //Wire the scheduler so AuthService can re-schedule after token refresh
@@ -45,10 +44,4 @@ export class App implements OnInit {
       this.router.navigate(['/']);
     });
   }
-
-
-
-
-
-
 }

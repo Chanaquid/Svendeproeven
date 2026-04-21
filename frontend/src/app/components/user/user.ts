@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { Navbar } from "../navbar/navbar";
+import { Navbar } from '../navbar/navbar';
 import { UserListForUsersDto, UserPublicProfileDto } from '../../dtos/userDTO';
 import { ItemListDto } from '../../dtos/itemDTO';
 import { UserReviewDto, UserReviewListDto } from '../../dtos/userReviewDto';
@@ -19,7 +19,6 @@ import { ItemAvailability, ItemCondition } from '../../dtos/enums';
   styleUrl: './user.css',
 })
 export class UserProfile implements OnInit {
-
   userId = '';
   profile: UserPublicProfileDto | null = null;
   items: ItemListDto[] = [];
@@ -40,7 +39,9 @@ export class UserProfile implements OnInit {
 
   get averageRating(): number {
     if (!this.reviews.length) return 0;
-    return Math.round((this.reviews.reduce((s, r) => s + r.rating, 0) / this.reviews.length) * 10) / 10;
+    return (
+      Math.round((this.reviews.reduce((s, r) => s + r.rating, 0) / this.reviews.length) * 10) / 10
+    );
   }
 
   /** Plain CSS class for score tier — styled in user.css */
@@ -60,10 +61,24 @@ export class UserProfile implements OnInit {
   }
 
   private emojiMap: Record<string, string> = {
-    electronics: '📱', tools: '🔧', sports: '⚽', music: '🎸',
-    books: '📚', camping: '⛺', photography: '📷', gaming: '🎮',
-    gardening: '🌱', biking: '🚲', kitchen: '🍳', cleaning: '🧹',
-    fashion: '👗', art: '🎨', baby: '👶', events: '🎉', auto: '🚗', other: '📦',
+    electronics: '📱',
+    tools: '🔧',
+    sports: '⚽',
+    music: '🎸',
+    books: '📚',
+    camping: '⛺',
+    photography: '📷',
+    gaming: '🎮',
+    gardening: '🌱',
+    biking: '🚲',
+    kitchen: '🍳',
+    cleaning: '🧹',
+    fashion: '👗',
+    art: '🎨',
+    baby: '👶',
+    events: '🎉',
+    auto: '🚗',
+    other: '📦',
   };
 
   constructor(
@@ -82,7 +97,7 @@ export class UserProfile implements OnInit {
       return;
     }
 
-    this.route.params.subscribe(params => {
+    this.route.params.subscribe((params) => {
       this.userId = params['id'];
       this.load();
     });
@@ -106,14 +121,10 @@ export class UserProfile implements OnInit {
       error: () => {
         this.isLoadingProfile = false;
         this.cdr.detectChanges();
-      }
+      },
     });
 
-    this.itemService.getPublicByOwner(
-      this.userId,
-      {},
-      { page: 1, pageSize: 50 }
-    ).subscribe({
+    this.itemService.getPublicByOwner(this.userId, {}, { page: 1, pageSize: 50 }).subscribe({
       next: (res) => {
         this.items = res.data?.items ?? [];
         this.applyFilters();
@@ -123,14 +134,10 @@ export class UserProfile implements OnInit {
       error: () => {
         this.isLoadingItems = false;
         this.cdr.detectChanges();
-      }
+      },
     });
 
-    this.reviewService.getReviewsForUser(
-      this.userId,
-      {},
-      { page: 1, pageSize: 50 }
-    ).subscribe({
+    this.reviewService.getReviewsForUser(this.userId, {}, { page: 1, pageSize: 50 }).subscribe({
       next: (res) => {
         this.reviews = res.data?.items ?? [];
         this.updateDisplayedReviews();
@@ -140,7 +147,7 @@ export class UserProfile implements OnInit {
       error: () => {
         this.isLoadingReviews = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -149,15 +156,18 @@ export class UserProfile implements OnInit {
 
     if (this.searchQuery.trim()) {
       const q = this.searchQuery.toLowerCase();
-      result = result.filter(i =>
-        i.title.toLowerCase().includes(q) ||
-        i.categoryName.toLowerCase().includes(q)
+      result = result.filter(
+        (i) => i.title.toLowerCase().includes(q) || i.categoryName.toLowerCase().includes(q),
       );
     }
 
     switch (this.activeFilter) {
-      case 'available': result = result.filter(i => i.isActive && i.availability === ItemAvailability.Available); break;
-      case 'onloan':    result = result.filter(i => i.availability === ItemAvailability.OnRent); break;
+      case 'available':
+        result = result.filter((i) => i.isActive && i.availability === ItemAvailability.Available);
+        break;
+      case 'onloan':
+        result = result.filter((i) => i.availability === ItemAvailability.OnRent);
+        break;
     }
 
     this.filteredItems = result;
@@ -180,15 +190,27 @@ export class UserProfile implements OnInit {
   /** Plain CSS class for item condition — styled in user.css */
   getConditionClass(condition: ItemCondition): string {
     switch (condition) {
-      case ItemCondition.Excellent: return 'condition-badge--excellent';
-      case ItemCondition.Good:      return 'condition-badge--good';
-      case ItemCondition.Fair:      return 'condition-badge--fair';
-      case ItemCondition.Poor:      return 'condition-badge--poor';
-      default:                      return 'condition-badge--default';
+      case ItemCondition.Excellent:
+        return 'condition-badge--excellent';
+      case ItemCondition.Good:
+        return 'condition-badge--good';
+      case ItemCondition.Fair:
+        return 'condition-badge--fair';
+      case ItemCondition.Poor:
+        return 'condition-badge--poor';
+      default:
+        return 'condition-badge--default';
     }
   }
 
   getInitials(name: string): string {
-    return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) ?? '';
+    return (
+      name
+        ?.split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2) ?? ''
+    );
   }
 }

@@ -1,11 +1,17 @@
 /* Login — wireframe #3 "Login (Bruger)"
    Layout, card, form, error, footer all come from styles.css */
 
-.auth-card { max-width: 420px; }
+.auth-card {
+  max-width: 420px;
+}
 
 /* Password toggle */
-.password-wrapper { position: relative; }
-.password-wrapper input { padding-right: 64px; }
+.password-wrapper {
+  position: relative;
+}
+.password-wrapper input {
+  padding-right: 64px;
+}
 
 .toggle-btn {
   position: absolute;
@@ -20,7 +26,9 @@
   cursor: pointer;
 }
 
-.toggle-btn:hover { color: var(--color-text); }
+.toggle-btn:hover {
+  color: var(--color-text);
+}
 
 /* Forgot password link */
 .forgot-link {
@@ -30,4 +38,6 @@
   text-decoration: underline;
 }
 
-.forgot-link:hover { color: var(--color-text); }
+.forgot-link:hover {
+  color: var(--color-text);
+}

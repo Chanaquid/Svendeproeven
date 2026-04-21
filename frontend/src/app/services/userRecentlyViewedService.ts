@@ -15,16 +15,11 @@ export class UserRecentlyViewedService {
 
   // GET /api/recently-viewed
   getRecentlyViewed(): Observable<ApiResponse<UserRecentlyViewedItemDto[]>> {
-    return this.http.get<ApiResponse<UserRecentlyViewedItemDto[]>>(
-      this.baseUrl
-    );
+    return this.http.get<ApiResponse<UserRecentlyViewedItemDto[]>>(this.baseUrl);
   }
 
   // POST /api/recently-viewed/{itemId}
   trackView(itemId: number): Observable<ApiResponse<string>> {
-    return this.http.post<ApiResponse<string>>(
-      `${this.baseUrl}/${itemId}`,
-      {}
-    );
+    return this.http.post<ApiResponse<string>>(`${this.baseUrl}/${itemId}`, {});
   }
 }

@@ -1,16 +1,11 @@
 <nav class="navbar">
-
   <!-- Brand -->
   <a routerLink="/home" class="brand">RentIt</a>
 
   <!-- Right actions -->
   <div class="actions">
-
     <!-- Messages shortcut -->
-    <a
-      class="action-link"
-      (click)="router.navigate(['/my-chats']); showUserMenu = false"
-    >
+    <a class="action-link" (click)="router.navigate(['/my-chats']); showUserMenu = false">
       Beskeder
     </a>
 
@@ -38,19 +33,13 @@
       <div *ngIf="showNotifications" class="dropdown dropdown--notifications">
         <header class="dropdown-header">
           <h3>Notifikationer</h3>
-          <button
-            *ngIf="unreadCount > 0"
-            (click)="markAllAsRead()"
-            class="dropdown-action"
-          >
+          <button *ngIf="unreadCount > 0" (click)="markAllAsRead()" class="dropdown-action">
             Markér alle som læst
           </button>
         </header>
 
         <div class="notif-list">
-          <p *ngIf="notifications.length === 0" class="notif-empty">
-            Ingen notifikationer
-          </p>
+          <p *ngIf="notifications.length === 0" class="notif-empty">Ingen notifikationer</p>
 
           <button
             *ngFor="let n of notifications"
@@ -61,17 +50,14 @@
             <span class="notif-icon">{{ getNotificationIcon(n.type) }}</span>
             <span class="notif-body">
               <span class="notif-message">{{ n.message }}</span>
-              <span class="notif-time">{{ n.createdAt | date:'d MMM, HH:mm' }}</span>
+              <span class="notif-time">{{ n.createdAt | date: 'd MMM, HH:mm' }}</span>
             </span>
             <span *ngIf="!n.isRead" class="notif-dot" aria-hidden="true"></span>
           </button>
         </div>
 
         <footer *ngIf="notifications.length > 0" class="dropdown-footer">
-          <a
-            routerLink="/notifications"
-            (click)="showNotifications = false"
-          >
+          <a routerLink="/notifications" (click)="showNotifications = false">
             Se alle notifikationer
           </a>
         </footer>
@@ -80,10 +66,7 @@
 
     <!-- User menu -->
     <div class="dropdown-wrap">
-      <button
-        class="user-btn"
-        (click)="showUserMenu = !showUserMenu; showNotifications = false"
-      >
+      <button class="user-btn" (click)="showUserMenu = !showUserMenu; showNotifications = false">
         <span class="avatar">
           <img *ngIf="userAvatarUrl" [src]="userAvatarUrl" [alt]="userName" />
           <span *ngIf="!userAvatarUrl" class="avatar-initials">{{ userInitials }}</span>
@@ -115,10 +98,7 @@
 
               <!-- Action (dynamic navigation) -->
               <ng-template #actionItem>
-                <a
-                  class="menu-item"
-                  (click)="onMenuItemClick(item)"
-                >
+                <a class="menu-item" (click)="onMenuItemClick(item)">
                   {{ item.label }}
                 </a>
               </ng-template>
@@ -127,12 +107,7 @@
         </div>
 
         <div class="menu-group menu-group--bordered">
-          <button
-            class="menu-item menu-item--danger"
-            (click)="logout()"
-          >
-            Log ud
-          </button>
+          <button class="menu-item menu-item--danger" (click)="logout()">Log ud</button>
         </div>
       </div>
     </div>

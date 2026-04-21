@@ -27,7 +27,6 @@ interface MenuItem {
   styleUrl: './navbar.css',
 })
 export class Navbar implements OnInit, OnDestroy {
-
   // ─── User info ───────────────────────────────────────────────────────
   userName = '';
   userEmail = '';
@@ -81,13 +80,13 @@ export class Navbar implements OnInit, OnDestroy {
    * identical <a> blocks in the template.
    */
   readonly menuItems: MenuItem[] = [
-    { label: 'Min Profil',       action: () => this.router.navigate(['/users', this.currentUserId]) },
-    { label: 'Mit Dashboard',    link: '/my-dashboard' },
-    { label: 'Mine Annoncer',    link: '/my-items' },
-    { label: 'Mine Lejer',       link: '/my-loans' },
-    { label: 'Favoritter',       link: '/favorites' },
-    { label: 'Løsningscenter',   link: '/my-resolution-center' },
-    { label: 'Admin Dashboard',  link: '/admin-dashboard', adminOnly: true },
+    { label: 'Min Profil', action: () => this.router.navigate(['/users', this.currentUserId]) },
+    { label: 'Mit Dashboard', link: '/my-dashboard' },
+    { label: 'Mine Annoncer', link: '/my-items' },
+    { label: 'Mine Lejer', link: '/my-loans' },
+    { label: 'Favoritter', link: '/favorites' },
+    { label: 'Løsningscenter', link: '/my-resolution-center' },
+    { label: 'Admin Dashboard', link: '/admin-dashboard', adminOnly: true },
   ];
 
   // ─── Event handlers ──────────────────────────────────────────────────
@@ -113,7 +112,7 @@ export class Navbar implements OnInit, OnDestroy {
 
   markAllAsRead(): void {
     this.notificationService.markAllAsRead().subscribe(() => {
-      this.notifications.forEach(n => (n.isRead = true));
+      this.notifications.forEach((n) => (n.isRead = true));
       this.unreadCount = 0;
       this.cdr.detectChanges();
     });
@@ -169,7 +168,7 @@ export class Navbar implements OnInit, OnDestroy {
     this.hub = new NotificationHubService(token);
 
     this.hub.onReceiveNotification((notification: NotificationDto) => {
-      const exists = this.notifications.some(n => n.id === notification.id);
+      const exists = this.notifications.some((n) => n.id === notification.id);
       if (exists) return;
 
       this.notifications.unshift({
@@ -190,43 +189,46 @@ export class Navbar implements OnInit, OnDestroy {
       this.cdr.detectChanges();
     });
 
-    this.hub.start().catch(err =>
-      console.warn('Notification hub failed to start:', err),
-    );
+    this.hub.start().catch((err) => console.warn('Notification hub failed to start:', err));
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────
   private getInitials(name: string): string {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   }
 
   getNotificationIcon(type: NotificationType): string {
     const ICON_MAP: Partial<Record<NotificationType, string>> = {
-      [NotificationType.LoanRequested]:             '📋',
-      [NotificationType.LoanApproved]:              '✅',
-      [NotificationType.LoanRejected]:              '❌',
-      [NotificationType.LoanCancelled]:             '🚫',
-      [NotificationType.LoanActive]:                '🤝',
-      [NotificationType.LoanReturned]:              '📦',
-      [NotificationType.DueSoon]:                   '⏰',
-      [NotificationType.LoanOverdue]:               '🔴',
-      [NotificationType.ItemApproved]:              '✅',
-      [NotificationType.ItemRejected]:              '❌',
-      [NotificationType.ItemAvailable]:             '🟢',
-      [NotificationType.FineIssued]:                '⚠️',
-      [NotificationType.FinePaid]:                  '💰',
-      [NotificationType.ScoreChanged]:              '📊',
-      [NotificationType.DisputeFiled]:              '⚖️',
-      [NotificationType.DisputeResponseSubmitted]:  '📝',
-      [NotificationType.DisputeResolved]:           '🏛️',
-      [NotificationType.AppealSubmitted]:           '📤',
-      [NotificationType.AppealApproved]:            '✅',
-      [NotificationType.AppealRejected]:            '❌',
-      [NotificationType.VerificationApproved]:      '🏅',
-      [NotificationType.VerificationRejected]:      '❌',
-      [NotificationType.LoanMessageReceived]:       '💬',
-      [NotificationType.DirectMessageReceived]:     '✉️',
-      [NotificationType.SupportMessageReceived]:    '🎧',
+      [NotificationType.LoanRequested]: '📋',
+      [NotificationType.LoanApproved]: '✅',
+      [NotificationType.LoanRejected]: '❌',
+      [NotificationType.LoanCancelled]: '🚫',
+      [NotificationType.LoanActive]: '🤝',
+      [NotificationType.LoanReturned]: '📦',
+      [NotificationType.DueSoon]: '⏰',
+      [NotificationType.LoanOverdue]: '🔴',
+      [NotificationType.ItemApproved]: '✅',
+      [NotificationType.ItemRejected]: '❌',
+      [NotificationType.ItemAvailable]: '🟢',
+      [NotificationType.FineIssued]: '⚠️',
+      [NotificationType.FinePaid]: '💰',
+      [NotificationType.ScoreChanged]: '📊',
+      [NotificationType.DisputeFiled]: '⚖️',
+      [NotificationType.DisputeResponseSubmitted]: '📝',
+      [NotificationType.DisputeResolved]: '🏛️',
+      [NotificationType.AppealSubmitted]: '📤',
+      [NotificationType.AppealApproved]: '✅',
+      [NotificationType.AppealRejected]: '❌',
+      [NotificationType.VerificationApproved]: '🏅',
+      [NotificationType.VerificationRejected]: '❌',
+      [NotificationType.LoanMessageReceived]: '💬',
+      [NotificationType.DirectMessageReceived]: '✉️',
+      [NotificationType.SupportMessageReceived]: '🎧',
     };
     return ICON_MAP[type] ?? '🔔';
   }

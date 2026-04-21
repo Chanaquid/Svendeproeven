@@ -1,7 +1,9 @@
 /* Register — wireframe #2 "Tilmeld"
    Top bar comes from .topbar in styles.css */
 
-.auth-card { max-width: 520px; }
+.auth-card {
+  max-width: 520px;
+}
 
 .field-row {
   display: grid;
@@ -17,7 +19,9 @@
 }
 
 /* Address autocomplete */
-.address-field { position: relative; }
+.address-field {
+  position: relative;
+}
 
 .suggestions {
   position: absolute;
@@ -43,7 +47,9 @@
   cursor: pointer;
 }
 
-.suggestions li:hover { background: var(--color-surface-alt); }
+.suggestions li:hover {
+  background: var(--color-surface-alt);
+}
 
 /* Avatar upload */
 .avatar-upload {
@@ -56,7 +62,9 @@
   border-radius: var(--radius-md);
   background: var(--color-surface-alt);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
 }
 
 .avatar-upload:hover {
@@ -64,11 +72,23 @@
   background: var(--color-surface);
 }
 
-.avatar-placeholder-icon { font-size: 24px; }
-.avatar-placeholder-text { font-size: 14px; font-weight: 500; }
-.avatar-placeholder-hint { font-size: 12px; color: var(--color-text-muted); }
+.avatar-placeholder-icon {
+  font-size: 24px;
+}
+.avatar-placeholder-text {
+  font-size: 14px;
+  font-weight: 500;
+}
+.avatar-placeholder-hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
 
-.avatar-preview-wrap { display: flex; align-items: center; gap: 16px; }
+.avatar-preview-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
 
 .avatar-preview {
   width: 80px;
@@ -78,7 +98,11 @@
   border-radius: var(--radius-md);
 }
 
-.avatar-actions { display: flex; flex-direction: column; gap: 6px; }
+.avatar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 
 .btn-link {
   background: none;
@@ -90,10 +114,18 @@
   cursor: pointer;
 }
 
-.btn-link:hover          { color: var(--color-text-muted); }
-.btn-link--danger        { color: var(--color-danger); }
-.btn-link--danger:hover  { color: #991b1b; }
+.btn-link:hover {
+  color: var(--color-text-muted);
+}
+.btn-link--danger {
+  color: var(--color-danger);
+}
+.btn-link--danger:hover {
+  color: #991b1b;
+}
 
 @media (max-width: 480px) {
-  .field-row { grid-template-columns: 1fr; }
+  .field-row {
+    grid-template-columns: 1fr;
+  }
 }

@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Navbar } from '../navbar/navbar';
@@ -26,7 +33,6 @@ import {
   styleUrl: './home.css',
 })
 export class Home implements OnInit, AfterViewInit {
-
   @ViewChild('categoryStrip') categoryStrip!: ElementRef;
   ItemAvailability = ItemAvailability;
 
@@ -42,7 +48,6 @@ export class Home implements OnInit, AfterViewInit {
   sortDescending = true;
   availableOnly = false;
   freeOnly = false;
-
 
   showLeftArrow = false;
   showRightArrow = false;
@@ -86,11 +91,24 @@ export class Home implements OnInit, AfterViewInit {
   private scrollStartX = 0;
 
   private categoryIdMap: Record<string, number> = {
-    'Electronics': 1, 'Tools': 2, 'Sports': 3, 'Music': 4,
-    'Books': 5, 'Camping': 6, 'Photography': 7, 'Gaming': 8,
-    'Gardening': 9, 'Biking': 10, 'Kitchen': 11, 'Cleaning': 12,
-    'Fashion': 13, 'Art': 14, 'Baby': 15, 'Events': 16,
-    'Auto': 17, 'Other': 18,
+    Electronics: 1,
+    Tools: 2,
+    Sports: 3,
+    Music: 4,
+    Books: 5,
+    Camping: 6,
+    Photography: 7,
+    Gaming: 8,
+    Gardening: 9,
+    Biking: 10,
+    Kitchen: 11,
+    Cleaning: 12,
+    Fashion: 13,
+    Art: 14,
+    Baby: 15,
+    Events: 16,
+    Auto: 17,
+    Other: 18,
   };
 
   constructor(
@@ -100,7 +118,7 @@ export class Home implements OnInit, AfterViewInit {
     private userService: UserService,
     private itemService: ItemService,
     private favoriteService: UserFavoriteService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
@@ -111,9 +129,9 @@ export class Home implements OnInit, AfterViewInit {
 
     this.loadUserInfo();
     this.loadFavorites();
-    this.loadItems(); 
+    this.loadItems();
 
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe((params) => {
       const q = params['q'] || '';
       if (q !== this.searchQuery) {
         this.searchQuery = q;
@@ -121,7 +139,7 @@ export class Home implements OnInit, AfterViewInit {
         this.loadItems();
       }
     });
-    }
+  }
 
   ngAfterViewInit(): void {
     const el = this.categoryStrip.nativeElement;
@@ -165,14 +183,17 @@ export class Home implements OnInit, AfterViewInit {
       }
     });
 
-    el.addEventListener('click', (e: MouseEvent) => {
-      if (hasDragged) {
-        e.stopPropagation();
-        hasDragged = false;
-      }
-    }, true);
+    el.addEventListener(
+      'click',
+      (e: MouseEvent) => {
+        if (hasDragged) {
+          e.stopPropagation();
+          hasDragged = false;
+        }
+      },
+      true,
+    );
   }
-
 
   private loadUserInfo(): void {
     this.userService.getMyProfile().subscribe({
@@ -181,7 +202,7 @@ export class Home implements OnInit, AfterViewInit {
         this.currentUserId = user.data?.id ?? '';
         this.cdr.detectChanges();
       },
-      error: (err) => console.error('Failed to load user info:', err)
+      error: (err) => console.error('Failed to load user info:', err),
     });
   }
 
@@ -191,8 +212,8 @@ export class Home implements OnInit, AfterViewInit {
     const filter: ItemFilter = {
       ...(this.searchQuery.trim() && { search: this.searchQuery.trim() }),
       ...(this.selectedCategory && { categoryId: this.categoryIdMap[this.selectedCategory] }),
-      ...(this.availableOnly && { availability: ItemAvailability.Available }),    
-      ...(this.freeOnly ? { isFree: true } : (this.sortBy === 'pricePerDay' && { isFree: false })),
+      ...(this.availableOnly && { availability: ItemAvailability.Available }),
+      ...(this.freeOnly ? { isFree: true } : this.sortBy === 'pricePerDay' && { isFree: false }),
     };
 
     const request: PagedRequest = {
@@ -213,7 +234,7 @@ export class Home implements OnInit, AfterViewInit {
         console.error('Failed to load items:', err);
         this.isLoading = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -221,10 +242,10 @@ export class Home implements OnInit, AfterViewInit {
     const request: PagedRequest = { page: 1, pageSize: 100 };
     this.favoriteService.getMyFavorites(request).subscribe({
       next: (favs) => {
-        this.favoriteIds = new Set((favs.data?.items ?? []).map(i => i.id));
+        this.favoriteIds = new Set((favs.data?.items ?? []).map((i) => i.id));
         this.cdr.detectChanges();
       },
-      error: (err) => console.error('Failed to load favorites:', err)
+      error: (err) => console.error('Failed to load favorites:', err),
     });
   }
 
@@ -247,14 +268,37 @@ export class Home implements OnInit, AfterViewInit {
   onSortChange(value: string): void {
     this.sortLabel = value;
     switch (value) {
-      case 'newest': this.sortBy = 'createdAt'; this.sortDescending = true;  break;
-      case 'oldest': this.sortBy = 'createdAt'; this.sortDescending = false; break;
-      case 'rating': this.sortBy = 'averageRating'; this.sortDescending = true;  break;
-      case 'az': this.sortBy = 'title'; this.sortDescending = false; break;
-      case 'za': this.sortBy = 'title'; this.sortDescending = true;  break;
-      case 'price_asc':  this.sortBy = 'pricePerDay'; this.sortDescending = false; break;
-      case 'price_desc': this.sortBy = 'pricePerDay'; this.sortDescending = true;  break;
-      default:  this.sortBy = 'createdAt'; this.sortDescending = true;
+      case 'newest':
+        this.sortBy = 'createdAt';
+        this.sortDescending = true;
+        break;
+      case 'oldest':
+        this.sortBy = 'createdAt';
+        this.sortDescending = false;
+        break;
+      case 'rating':
+        this.sortBy = 'averageRating';
+        this.sortDescending = true;
+        break;
+      case 'az':
+        this.sortBy = 'title';
+        this.sortDescending = false;
+        break;
+      case 'za':
+        this.sortBy = 'title';
+        this.sortDescending = true;
+        break;
+      case 'price_asc':
+        this.sortBy = 'pricePerDay';
+        this.sortDescending = false;
+        break;
+      case 'price_desc':
+        this.sortBy = 'pricePerDay';
+        this.sortDescending = true;
+        break;
+      default:
+        this.sortBy = 'createdAt';
+        this.sortDescending = true;
     }
     this.currentPage = 1;
     this.loadItems();
@@ -286,10 +330,9 @@ export class Home implements OnInit, AfterViewInit {
         this.showToast(error.error?.message ?? 'Something went wrong.');
         this.togglingIds.delete(itemId);
         this.cdr.detectChanges();
-      }
+      },
     });
   }
-
 
   onDragStart(e: MouseEvent) {
     this.isDragging = true;
@@ -341,7 +384,7 @@ export class Home implements OnInit, AfterViewInit {
   //Helpers
 
   goToItem(slug: string): void {
-  this.router.navigate(['/items', slug]);
+    this.router.navigate(['/items', slug]);
   }
 
   getCategoryEmoji(name: string): string {
@@ -359,7 +402,6 @@ export class Home implements OnInit, AfterViewInit {
   getAvailabilityLabel(availability: ItemAvailability): string {
     return getAvailabilityLabel(availability);
   }
-
 
   showToast(message: string): void {
     this.toastMessage = message;

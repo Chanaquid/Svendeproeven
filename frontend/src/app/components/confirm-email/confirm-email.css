@@ -10,8 +10,15 @@
   border-radius: var(--radius-lg);
 }
 
-.confirm-card h1 { font-size: 22px; margin: 8px 0; }
-.confirm-card p  { color: var(--color-text-muted); font-size: 14px; line-height: 1.5; }
+.confirm-card h1 {
+  font-size: 22px;
+  margin: 8px 0;
+}
+.confirm-card p {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
 
 .eyebrow {
   font-size: 11px;
@@ -22,7 +29,9 @@
   margin-bottom: 4px;
 }
 
-.eyebrow--error { color: var(--color-danger); }
+.eyebrow--error {
+  color: var(--color-danger);
+}
 
 /* Status icons — two color variants share the same shape */
 .status-icon {
@@ -40,8 +49,14 @@
   line-height: 1;
 }
 
-.status-icon--success { color: var(--color-success); border-color: var(--color-success); }
-.status-icon--error   { color: var(--color-danger);  border-color: var(--color-danger); }
+.status-icon--success {
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+.status-icon--error {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
 
 .spinner {
   width: 32px;
@@ -60,5 +75,7 @@
 }
 
 @media (max-width: 480px) {
-  .confirm-card { padding: 24px 20px; }
+  .confirm-card {
+    padding: 24px 20px;
+  }
 }
