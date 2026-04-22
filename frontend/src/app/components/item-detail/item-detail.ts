@@ -529,6 +529,24 @@ export class ItemDetail implements OnInit {
     });
   }
 
+
+  get totalLoanPrice(): number | null {
+    if (!this.item || this.item.isFree) return null;
+    if (!this.loanForm.startDate || !this.loanForm.endDate) return null;
+    const start = new Date(this.loanForm.startDate);
+    const end   = new Date(this.loanForm.endDate);
+    const days  = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    if (days <= 0) return null;
+    return days * this.item.pricePerDay;
+  }
+
+  get loanDays(): number {
+    if (!this.loanForm.startDate || !this.loanForm.endDate) return 0;
+    const start = new Date(this.loanForm.startDate);
+    const end   = new Date(this.loanForm.endDate);
+    return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  }
+
   // ── Helpers ───────────────────────────────────────────────────
 
   private toDateInputValue(value: string | Date | null | undefined): string {

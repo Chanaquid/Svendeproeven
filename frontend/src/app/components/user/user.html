@@ -23,9 +23,10 @@
     <div *ngIf="!isLoadingProfile && profile" class="profile-info">
 
       <!-- Avatar -->
-      <div class="profile-avatar">
+      <div class="profile-avatar" [class.cursor-pointer]="profile?.avatarUrl" 
+     (click)="togglePfpModal()">
         <img *ngIf="profile.avatarUrl" [src]="profile.avatarUrl" class="profile-avatar__img" />
-        <span *ngIf="!profile.avatarUrl">{{ getInitials(profile.fullName) }}</span>
+        <span *ngIf="!profile.avatarUrl">{{ getInitials(profile.fullName) || ''}}</span>
       </div>
 
       <!-- Info -->
@@ -70,7 +71,7 @@
           </div>
           <div class="stat-chip stat-chip--default">
             <span class="stat-chip__label">Items</span>
-            <span class="stat-chip__value">{{ items.length }}</span>
+            <span class="stat-chip__value">{{ profileTotalItems }}</span>
           </div>
           <div class="stat-chip stat-chip--default">
             <span class="stat-chip__label">Completed Loans</span>
@@ -94,35 +95,48 @@
         <button (click)="itemsCollapsed = !itemsCollapsed" class="section-toggle">
           <h2 class="section-title">
             Listed Items
-            <span class="section-count">({{ filteredItems.length }})</span>
+            <span class="section-count">({{ itemTotalCount }})</span>
           </h2>
           <svg class="section-toggle__chevron" [class.section-toggle__chevron--open]="!itemsCollapsed" fill="none"
             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
         </button>
-
-        <div *ngIf="!itemsCollapsed" class="filters">
-          <div class="filter-tabs">
-            <button (click)="activeFilter = 'all'; applyFilters()" class="filter-tab"
-              [class.filter-tab--active]="activeFilter === 'all'">All</button>
-            <button (click)="activeFilter = 'available'; applyFilters()" class="filter-tab"
-              [class.filter-tab--active]="activeFilter === 'available'">Available</button>
-          </div>
-          <div class="search-wrapper">
-            <svg class="search-wrapper__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-            </svg>
-            <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="applyFilters()" placeholder="Search items..."
-              class="search-input" />
-          </div>
-        </div>
       </div>
 
       <div *ngIf="!itemsCollapsed">
 
-        <!-- Loading -->
+        <!-- Search bar -->
+        <div class="search-bar">
+          <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearch()" 
+            placeholder="Search items..." class="search-input search-input--full" />
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+          <p class="toolbar-count">
+            <span class="toolbar-count-num">{{ itemTotalCount }}</span> items found
+          </p>
+          <div class="toolbar-controls">
+            <select [ngModel]="sortLabel" (ngModelChange)="onSortChange($event)" class="select">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="rating">Top rated</option>
+              <option value="az">A → Z</option>
+              <option value="za">Z → A</option>
+              <option value="price_asc">Price: Low to high</option>
+              <option value="price_desc">Price: High to low</option>
+            </select>
+            <button (click)="onAvailableToggle()" [class.active]="availableOnly" class="filter-btn">
+              Available only
+            </button>
+            <button (click)="onFreeToggle()" [class.active]="freeOnly" class="filter-btn">
+              Free only
+            </button>
+          </div>
+        </div>
+
+        <!-- Loading skeleton — only shown on initial page load -->
         <div *ngIf="isLoadingItems" class="grid-grid">
           <div *ngFor="let _ of [1,2,3,4,5,6,7,8]" class="skeleton-card"></div>
         </div>
@@ -132,13 +146,13 @@
           <div class="empty-icon">📦</div>
           <h3 class="empty-title">No items found</h3>
           <p class="empty-sub">
-            {{ activeFilter === 'all' ? 'This user has no listed items.' : 'No items match this filter.' }}
+            {{ !searchQuery && !availableOnly && !freeOnly ? 'This user has no listed items.' : 'No items match your filters.' }}
           </p>
         </div>
 
         <!-- Items grid -->
         <div *ngIf="!isLoadingItems && filteredItems.length > 0" class="grid-grid">
-          <div *ngFor="let item of pagedItems" (click)="goToItem(item.slug)" class="card">
+          <div *ngFor="let item of filteredItems; trackBy: trackByItemId" (click)="goToItem(item.slug)" class="card">
             <div class="card-image">
               <img *ngIf="item.mainPhotoUrl" [src]="item.mainPhotoUrl" [alt]="item.title" />
               <div *ngIf="!item.mainPhotoUrl" class="card-fallback">
@@ -177,13 +191,13 @@
         <!-- Items pagination -->
         <div *ngIf="itemTotalPages > 1" class="pagination">
           <button (click)="goToItemPage(itemPage - 1)" [disabled]="itemPage === 1" class="page-btn">← Prev</button>
-          <ng-container *ngFor="let page of itemPageNumbers">
+          <ng-container *ngFor="let page of itemPageNumbers; trackBy: trackByIndex">
             <span *ngIf="page === -1" class="page-ellipsis">…</span>
             <button *ngIf="page !== -1" (click)="goToItemPage(page)" class="page-btn"
               [class.page-btn--active]="page === itemPage">{{ page }}</button>
           </ng-container>
-          <button (click)="goToItemPage(itemPage + 1)" [disabled]="itemPage === itemTotalPages" class="page-btn">Next
-            →</button>
+          <button (click)="goToItemPage(itemPage + 1)" [disabled]="itemPage === itemTotalPages"
+            class="page-btn">Next →</button>
         </div>
 
       </div>
@@ -226,13 +240,14 @@
 
       <!-- Reviews list -->
       <div *ngIf="!isLoadingReviews && reviews.length > 0" class="reviews-list">
-        <div *ngFor="let review of displayedReviews" class="review-card"
+        <div *ngFor="let review of displayedReviews; trackBy: trackByReviewId" class="review-card"
           [class.review-card--admin]="review.isAdminReview">
 
           <div class="review-card__header">
             <div class="review-card__reviewer">
               <div class="reviewer-avatar">
-                <img *ngIf="review.reviewerAvatarUrl" [src]="review.reviewerAvatarUrl" class="reviewer-avatar__img" />
+                <img *ngIf="review.reviewerAvatarUrl" [src]="review.reviewerAvatarUrl"
+                  class="reviewer-avatar__img" />
                 <span *ngIf="!review.reviewerAvatarUrl">{{ review.reviewerName.charAt(0).toUpperCase() }}</span>
               </div>
               <p class="reviewer-name" (click)="router.navigate(['/users', review.reviewerId])">
@@ -243,7 +258,8 @@
             </div>
             <div class="review-card__meta">
               <div class="stars">
-                <span *ngFor="let s of [1,2,3,4,5]" class="stars__star" [class.stars__star--on]="s <= review.rating"
+                <span *ngFor="let s of [1,2,3,4,5]" class="stars__star"
+                  [class.stars__star--on]="s <= review.rating"
                   [class.stars__star--off]="s > review.rating">★</span>
               </div>
               <span class="review-date">{{ review.createdAt | date:'MMM d, yyyy' }}</span>
@@ -259,9 +275,9 @@
 
         <!-- Reviews pagination -->
         <div *ngIf="reviewTotalPages > 1" class="pagination">
-          <button (click)="goToReviewPage(reviewPage - 1)" [disabled]="reviewPage === 1" class="page-btn">←
-            Prev</button>
-          <ng-container *ngFor="let page of reviewPageNumbers">
+          <button (click)="goToReviewPage(reviewPage - 1)" [disabled]="reviewPage === 1"
+            class="page-btn">← Prev</button>
+          <ng-container *ngFor="let page of reviewPageNumbers; trackBy: trackByIndex">
             <span *ngIf="page === -1" class="page-ellipsis">…</span>
             <button *ngIf="page !== -1" (click)="goToReviewPage(page)" class="page-btn"
               [class.page-btn--active]="page === reviewPage">{{ page }}</button>
@@ -275,6 +291,26 @@
 
   </div>
 </main>
+
+
+<div *ngIf="showPfpModal" class="modal-overlay" (click)="togglePfpModal()" style="z-index: 200;">
+  <div class="modal-backdrop" style="background: rgba(0,0,0,0.9);"></div>
+  
+  <div class="pfp-expanded-container" (click)="$event.stopPropagation()">
+    <button class="modal-close pfp-close-btn" (click)="togglePfpModal()">
+      <svg style="width:2rem; height:2rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+    
+    <img [src]="profile?.avatarUrl" class="pfp-expanded-img" alt="Profile Picture" />
+    
+    <div class="pfp-expanded-info">
+      <h2 class="modal-title" style="text-align: center; font-size: 1.5rem;">{{ profile?.fullName }}</h2>
+      <p class="modal-sub" style="text-align: center;">@{{ profile?.username }}</p>
+    </div>
+  </div>
+</div>
 
 <!-- ── Report Modal ── -->
 <div *ngIf="showReportModal" class="modal-overlay">

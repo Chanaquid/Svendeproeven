@@ -11,9 +11,9 @@
     //Item condition
     public enum ItemCondition
     {
-        Excellent = 0,  //Like new, no visible wear
-        Good = 1,  //Minor signs of use, fully functional
-        Fair = 2,   //Visible wear or cosmetic damage 
+        Excellent = 0, //Like new, no visible wear
+        Good = 1, //Minor signs of use, fully functional
+        Fair = 2, //Visible wear or cosmetic damage 
         Poor = 3 //a lot of damage but still functional
     }
 
@@ -21,7 +21,7 @@
     public enum ItemStatus
     {
         Pending = 0,  //Awaiting admin approval — not visible to borrowers
-        Approved = 1,  //Live and browseable
+        Approved = 1,  //Approved by admin
         Rejected = 2,   //Admin rejected — owner can edit and resubmit
         Deleted = 3 //user soft deletes thier item
     }

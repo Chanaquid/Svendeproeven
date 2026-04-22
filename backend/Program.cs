@@ -192,6 +192,8 @@ builder.Services.AddScoped<IUserRecentlyViewedService, UserRecentlyViewedService
 builder.Services.AddScoped<IScoreHistoryService, ScoreHistoryService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IUserBanHistoryService, UserBanHistoryService>();
+builder.Services.AddScoped<CloudinaryService>();
+
 
 builder.Services.AddHttpClient();
 builder.Services.AddAuthorization();

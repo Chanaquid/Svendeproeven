@@ -39,6 +39,7 @@ namespace backend.Repositories
         {
             return await _context.Loans
                 .AsSplitQuery()
+                .IgnoreQueryFilters()
                 .Include(l => l.Item)
                     .ThenInclude(i => i.Photos)
                 .Include(l => l.Borrower)
@@ -84,6 +85,7 @@ namespace backend.Repositories
         {
             return await _context.Loans
                 .AsSplitQuery()
+                .IgnoreQueryFilters()
                 .Include(l => l.Item)
                     .ThenInclude(i => i.Photos)
                 .Include(l => l.Borrower)
@@ -96,6 +98,7 @@ namespace backend.Repositories
         public async Task<List<Loan>> GetActiveAndOverdueAsync()
         {
             return await _context.Loans
+                .IgnoreQueryFilters()
                 .Include(l => l.Item)
                 .Include(l => l.Borrower)
                 .Include(l => l.Lender)
@@ -113,6 +116,7 @@ namespace backend.Repositories
         public async Task<List<Loan>> GetLoanHistoryByItemIdAsync(int itemId)
         {
             return await _context.Loans
+                .IgnoreQueryFilters()
                 .Include(l => l.Borrower)
                 .Where(l => l.ItemId == itemId)
                 .OrderByDescending(l => l.CreatedAt)
@@ -152,6 +156,7 @@ namespace backend.Repositories
             var query = _context.Loans
                 .AsNoTracking()
                 .AsSplitQuery()
+                .IgnoreQueryFilters()
                 .Include(l => l.Item)
                     .ThenInclude(i => i.Photos)
                 .Include(l => l.Lender)
@@ -174,6 +179,7 @@ namespace backend.Repositories
             var query = _context.Loans
                 .AsNoTracking()
                 .AsSplitQuery()
+                .IgnoreQueryFilters() 
                 .Include(l => l.Item)
                     .ThenInclude(i => i.Photos)
                 .Include(l => l.Borrower)
@@ -195,6 +201,7 @@ namespace backend.Repositories
             var query = _context.Loans
                 .AsNoTracking()
                 .AsSplitQuery()
+                .IgnoreQueryFilters()
                 .Include(l => l.Item)
                     .ThenInclude(i => i.Photos)
                 .Include(l => l.Borrower)

@@ -1,0 +1,15 @@
+<input type="file" multiple (change)="onFileSelected($event)" />
+
+<button (click)="upload()" [disabled]="isUploading">
+  Upload
+</button>
+
+<div *ngIf="uploadResponses.length">
+  <p>Uploaded Images:</p>
+
+  <div *ngFor="let url of uploadResponses">
+    <img [src]="url" width="150" />
+  </div>
+</div>
+
+<p *ngIf="errorMessage">{{ errorMessage }}</p>

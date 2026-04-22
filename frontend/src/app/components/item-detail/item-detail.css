@@ -955,6 +955,79 @@
 .modal-footer .btn-secondary,
 .modal-footer .btn-loan { flex: 1; justify-content: center; }
 
+
+
+/* ── Loan modal price summary ─────────────────────────────────── */
+.price-summary {
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.price-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.price-summary-label {
+  color: #71717a;
+  font-size: 12px;
+}
+
+.price-summary-value {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.price-per-day {
+  color: #71717a;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.price-summary-divider {
+  height: 1px;
+  background: #3f3f46;
+  margin: 2px 0;
+}
+
+.price-summary-row--total {
+  margin-top: 2px;
+}
+
+.price-summary-total-label {
+  color: #d4d4d8;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.price-summary-total-value {
+  font-family: 'Syne', sans-serif;
+  font-weight: 900;
+  font-size: 20px;
+  color: #fbbf24;
+}
+
+/* ── Free item badge ──────────────────────────────────────────── */
+.free-badge {
+  text-align: center;
+  padding: 10px 14px;
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.2);
+  border-radius: 12px;
+  color: #34d399;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+
+
 /* Forms */
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 
