@@ -1,0 +1,381 @@
+<!-- Background -->
+<div class="bg-base"></div>
+<div class="bg-grid"></div>
+
+<app-navbar></app-navbar>
+
+<main class="main-content">
+
+    <!-- Header -->
+    <div class="page-header">
+        <div class="page-header__row">
+            <div>
+                <p class="page-header__sub">Manage your listings</p>
+                <h1 class="page-header__title">My Items</h1>
+            </div>
+            <button (click)="openAddModal()" class="btn-primary">
+                <svg class="btn-primary__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                List a new item
+            </button>
+        </div>
+        <div class="stats-row">
+            <div class="stat-dot">
+                <span class="stat-dot__indicator stat-dot__indicator--green"></span>
+                <span class="stat-dot__text"><span class="stat-dot__value">{{ approvedCount }}</span> Active</span>
+            </div>
+            <div class="stat-dot">
+                <span class="stat-dot__indicator stat-dot__indicator--amber"></span>
+                <span class="stat-dot__text"><span class="stat-dot__value">{{ pendingCount }}</span> Pending</span>
+            </div>
+            <div class="stat-dot">
+                <span class="stat-dot__indicator stat-dot__indicator--red"></span>
+                <span class="stat-dot__text"><span class="stat-dot__value">{{ rejectedCount }}</span> Rejected</span>
+            </div>
+            <div class="stat-dot">
+                <span class="stat-dot__indicator stat-dot__indicator--zinc"></span>
+                <span class="stat-dot__text"><span class="stat-dot__value">{{ inactiveCount }}</span> Inactive</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-body">
+
+        <!-- Tabs + Search -->
+ <div class="toolbar">
+    <div class="tab-group">
+        <button *ngFor="let tab of tabs" (click)="onTabChange(tab.key)" class="tab-btn"
+            [class.tab-btn--active]="activeTab === tab.key">
+            {{ tab.label }}
+            <span class="tab-btn__count" [class.tab-btn__count--active]="activeTab === tab.key">
+                {{ getTabCount(tab.key) }}
+            </span>
+        </button>
+    </div>
+
+    <div class="toolbar-actions" style="display: flex; gap: 0.75rem; align-items: center;">
+        <div class="sort-wrapper">
+            <select [ngModel]="sortLabel" (ngModelChange)="onSortChange($event)" 
+                class="form-input form-select" style="padding: 0.5rem 2rem 0.5rem 0.75rem; font-size: 0.75rem; width: auto; background-color: #18181b;">
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="az">Name: A → Z</option>
+                <option value="za">Name: Z → A</option>
+                <option value="price_asc">Price: Low to High</option>
+                <option value="price_desc">Price: High to Low</option>
+                <option value="rating">Top Rated</option>
+            </select>
+        </div>
+
+        <div class="search-wrapper">
+            <svg class="search-wrapper__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+            </svg>
+            <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()"
+                placeholder="Search your items..." class="search-input" />
+        </div>
+    </div>
+</div>
+
+        <!-- Loading skeleton -->
+        <div *ngIf="isLoading" class="grid-grid">
+            <div *ngFor="let _ of [1,2,3,4,5,6]" class="skeleton-card">
+                <div class="skeleton-card__image"></div>
+                <div class="skeleton-card__body">
+                    <div class="skeleton skeleton--line-sm"></div>
+                    <div class="skeleton skeleton--line-lg"></div>
+                    <div class="skeleton skeleton--line-md"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty state -->
+        <div *ngIf="!isLoading && filteredItems.length === 0" class="empty-state">
+            <div class="empty-icon">📦</div>
+            <h3 class="empty-title">No items found</h3>
+            <p class="empty-sub">
+                {{ activeTab === 'all' ? "You haven't listed any items yet." : "No items in this category." }}
+            </p>
+            <button (click)="openAddModal()" class="btn-primary">List your first item</button>
+        </div>
+
+        <!-- Items grid -->
+        <div *ngIf="!isLoading && filteredItems.length > 0" class="grid-grid">
+            <div *ngFor="let item of pagedItems" (click)="goToItem(item.slug)" class="card">
+
+                <!-- Image -->
+                <div class="card-image">
+                    <img *ngIf="item.mainPhotoUrl" [src]="item.mainPhotoUrl" [alt]="item.title"
+                        class="card-image__img" />
+                    <div *ngIf="!item.mainPhotoUrl" class="card-fallback">
+                        {{ getCategoryEmoji(item.categoryName) }}
+                    </div>
+
+                    <!-- Status badge — top right (Active / Pending / Rejected / Inactive — never raw "Approved") -->
+                    <span class="status-badge" [ngClass]="getStatusClass(item)">
+                        {{ getStatusLabel(item) }}
+                    </span>
+                </div>
+
+                <!-- Body -->
+                <div class="card-body">
+                    <div class="card-header">
+                        <div class="card-header__info">
+                            <p class="card-category">{{ item.categoryName }}</p>
+                            <h3 class="card-title">{{ item.title }}</h3>
+                        </div>
+                        <span class="card-condition" [ngClass]="getConditionClass(item.condition)">
+                            {{ item.condition }}
+                        </span>
+                    </div>
+
+                    <p class="card-location">📍 {{ item.pickupAddress }}</p>
+                    <p *ngIf="item.description" class="card-desc">{{ item.description }}</p>
+
+                    <!-- Rating -->
+                    <div class="card-rating">
+                        <span class="card-rating__star">★</span>
+                        <span class="card-rating__value">{{ item.averageRating ? item.averageRating.toFixed(1) : 'New'
+                            }}</span>
+                        <span *ngIf="item.totalReviews" class="card-rating__count">({{ item.totalReviews }})</span>
+                    </div>
+
+                    <!-- Price + verification -->
+                    <div class="card-price-row">
+                        <span class="card-price">{{ item.isFree ? 'Free' : item.pricePerDay + ' kr/day' }}</span>
+                        <span *ngIf="item.requiresVerification" class="verification-badge">
+                            ⚠️ Verification required
+                        </span>
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div class="card-actions" (click)="$event.stopPropagation()">
+                        <button (click)="copyShareLink(item.slug, $event)" class="action-btn"
+                            [class.action-btn--copied]="copiedSlug === item.slug">
+                            <svg *ngIf="copiedSlug !== item.slug" class="action-btn__icon" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 100-5.368 3 3 0 000 5.368zm0 10.736a3 3 0 100-5.368 3 3 0 000 5.368z" />
+                            </svg>
+                            <svg *ngIf="copiedSlug === item.slug" class="action-btn__icon" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7" />
+                            </svg>
+                            {{ copiedSlug === item.slug ? 'Copied!' : 'Share' }}
+                        </button>
+
+                        <button (click)="toggleActive(item)" [disabled]="item.status !== 'Approved'" class="action-btn"
+                            [class.action-btn--activate]="item.isActive === false">
+                            <svg *ngIf="item.isActive !== false" class="action-btn__icon" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                            </svg>
+                            <svg *ngIf="item.isActive === false" class="action-btn__icon" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {{ item.isActive === false ? 'Activate' : 'Deactivate' }}
+                        </button>
+
+                        <button (click)="confirmDelete(item)" class="action-btn--delete">
+                            <svg class="action-btn__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div *ngIf="totalPages > 1" class="pagination">
+            <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1" class="page-btn">← Prev</button>
+            <ng-container *ngFor="let page of pageNumbers">
+                <span *ngIf="page === -1" class="page-ellipsis">…</span>
+                <button *ngIf="page !== -1" (click)="goToPage(page)" class="page-btn"
+                    [class.page-btn--active]="page === currentPage">{{ page }}</button>
+            </ng-container>
+            <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages" class="page-btn">Next
+                →</button>
+        </div>
+
+    </div>
+
+    <!-- Add Item Modal -->
+    <div *ngIf="showAddModal" class="modal-overlay">
+        <div class="modal-backdrop"></div>
+        <div class="modal modal--wide" (click)="$event.stopPropagation()">
+
+            <div class="modal-header modal-header--sticky">
+                <div>
+                    <h2 class="modal-title">List a new item</h2>
+                    <p class="modal-sub">Fill in the details to list your item for borrowing</p>
+                </div>
+                <button (click)="showAddModal = false" class="modal-close">
+                    <svg style="width:1.25rem;height:1.25rem" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="modal-body modal-body--form">
+
+                <div class="form-group">
+                    <label class="form-label">Title <span class="required">*</span></label>
+                    <input type="text" [(ngModel)]="createForm.title" placeholder="e.g. Makita Cordless Drill"
+                        class="form-input" />
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Category <span class="required">*</span></label>
+                        <select [(ngModel)]="createForm.categoryId" class="form-input form-select">
+                            <option [value]="0" disabled>Select category</option>
+                            <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.icon }} {{ cat.name }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Condition <span class="required">*</span></label>
+                        <select [(ngModel)]="createForm.condition" class="form-input form-select">
+                            <option value="Excellent">Excellent</option>
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Description <span class="required">*</span></label>
+                    <textarea [(ngModel)]="createForm.description" rows="3" placeholder="Describe your item..."
+                        class="form-input form-textarea"></textarea>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Current Value (kr) <span class="required">*</span></label>
+                        <input type="number" [(ngModel)]="createForm.currentValue" placeholder="0" class="form-input" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Price per Day (kr)</label>
+                        <input type="number" [(ngModel)]="createForm.pricePerDay" [disabled]="createForm.isFree"
+                            placeholder="0" class="form-input" [class.form-input--disabled]="createForm.isFree" />
+                    </div>
+                </div>
+
+                <div class="toggle-row">
+                    <div>
+                        <p class="toggle-row__title">List as Free</p>
+                        <p class="toggle-row__sub">Borrowers won't be charged anything</p>
+                    </div>
+                    <button (click)="createForm.isFree = !createForm.isFree; createForm.pricePerDay = 0" class="toggle"
+                        [class.toggle--on]="createForm.isFree">
+                        <span class="toggle__knob" [class.toggle__knob--on]="createForm.isFree"></span>
+                    </button>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Min Loan Days</label>
+                        <input type="number" [(ngModel)]="createForm.minLoanDays" placeholder="No minimum"
+                            class="form-input" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Max Loan Days</label>
+                        <input type="number" [(ngModel)]="createForm.maxLoanDays" placeholder="No maximum"
+                            class="form-input" />
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Available From <span class="required">*</span></label>
+                        <input type="date" [(ngModel)]="createForm.availableFrom" class="form-input" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Available Until <span class="required">*</span></label>
+                        <input type="date" [(ngModel)]="createForm.availableUntil" class="form-input" />
+                    </div>
+                </div>
+
+                <div class="form-group form-group--relative">
+                    <label class="form-label">Pickup Address</label>
+                    <input type="text" [(ngModel)]="createForm.pickupAddress" (ngModelChange)="onAddressInput($event)"
+                        autocomplete="off" placeholder="Start typing your address..." class="form-input" />
+                    <ul *ngIf="showAddressSuggestions && addressSuggestions.length" class="address-dropdown">
+                        <li *ngFor="let place of addressSuggestions"
+                            (mousedown)="$event.preventDefault(); selectAddress(place)" class="address-dropdown__item">
+                            {{ place.properties.formatted }}
+                        </li>
+                    </ul>
+                    <p *ngIf="createForm.pickupLatitude && createForm.pickupLongitude" class="coords-hint">
+                        📍 {{ createForm.pickupLatitude?.toFixed(4) }}, {{ createForm.pickupLongitude?.toFixed(4) }}
+                    </p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Photo URL</label>
+                    <input type="text" [(ngModel)]="createForm.photoUrl" placeholder="https://example.com/photo.jpg"
+                        class="form-input" />
+                    <p class="form-hint">Optional — you can add more photos after listing</p>
+                </div>
+
+                <div class="toggle-row">
+                    <div>
+                        <p class="toggle-row__title">Requires Verification</p>
+                        <p class="toggle-row__sub">Only verified users can borrow this item</p>
+                    </div>
+                    <button (click)="createForm.requiresVerification = !createForm.requiresVerification" class="toggle"
+                        [class.toggle--on]="createForm.requiresVerification">
+                        <span class="toggle__knob" [class.toggle__knob--on]="createForm.requiresVerification"></span>
+                    </button>
+                </div>
+
+                <p *ngIf="createError" class="error-msg">{{ createError }}</p>
+                <p *ngIf="!isAdmin" class="info-msg">ℹ️ Your item will be reviewed by an admin before becoming visible
+                    to others.</p>
+
+            </div>
+
+            <div class="modal-footer modal-footer--sticky">
+                <button (click)="showAddModal = false" class="btn-secondary">Cancel</button>
+                <button (click)="createItem()" [disabled]="isCreating" class="btn-primary">
+                    {{ isCreating ? 'Listing...' : 'List item' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<!-- Delete modal -->
+<div *ngIf="showDeleteModal" class="modal-overlay" (click)="showDeleteModal = false">
+    <div class="modal-backdrop"></div>
+    <div class="modal modal--sm" (click)="$event.stopPropagation()">
+        <div class="delete-icon-wrap">
+            <svg class="delete-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+        </div>
+        <h3 class="modal-title">Delete item?</h3>
+        <p class="modal-delete-text">
+            "<span class="modal-delete-text__name">{{ itemToDelete?.title }}</span>" will be permanently deleted. This
+            cannot be undone.
+        </p>
+        <div class="modal-footer">
+            <button (click)="showDeleteModal = false" class="btn-secondary">Cancel</button>
+            <button (click)="deleteItem()" [disabled]="isDeleting" class="btn-danger">
+                {{ isDeleting ? 'Deleting...' : 'Delete' }}
+            </button>
+        </div>
+    </div>
+</div>

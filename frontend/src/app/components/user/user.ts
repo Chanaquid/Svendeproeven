@@ -1,4 +1,6 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { Subject } from 'rxjs';
+import { debounceTime, takeUntil } from 'rxjs/operators';
 import { Navbar } from "../navbar/navbar";
 import { UserPublicProfileDto } from '../../dtos/userDto';
 import { ItemListDto } from '../../dtos/itemDto';
@@ -19,6 +21,8 @@ import {
   getAvailabilityLabel,
 } from '../../utils/item.utils';
 import { ReportService } from '../../services/reportService';
+import { ItemFilter } from '../../dtos/filterDto';
+import { PagedRequest } from '../../dtos/paginationDto';
 
 @Component({
   selector: 'app-user',
@@ -26,12 +30,11 @@ import { ReportService } from '../../services/reportService';
   templateUrl: './user.html',
   styleUrl: './user.css',
 })
-export class UserProfile implements OnInit {
+export class UserProfile implements OnInit, OnDestroy {
 
   userId = '';
   currentUserId = '';
   profile: UserPublicProfileDto | null = null;
-  items: ItemListDto[] = [];
   filteredItems: ItemListDto[] = [];
   reviews: UserReviewListDto[] = [];
   ItemAvailability = ItemAvailability;
@@ -40,54 +43,77 @@ export class UserProfile implements OnInit {
   isLoadingProfile = true;
   isLoadingItems = true;
   isLoadingReviews = true;
+  isInitialItemLoad = true;
 
   // Item filters
   searchQuery = '';
-  activeFilter: 'all' | 'available' = 'all';
+  availableOnly = false;
+  freeOnly = false;
+  sortLabel = 'newest';
+  sortBy = 'createdAt';
+  sortDescending = true;
 
-  // Items pagination
+  itemTotalCount = 0;
+  //Items pagination
   itemPage = 1;
-  itemPageSize = 20;
+  profileTotalItems = 0;
 
+  //pfp modal
+  showPfpModal = false;
 
+  get itemPageSize(): number {
+    const cardMinWidth = 240;
+    const gap = 16;
+    const pagePadding = 80;
+    const availableWidth = window.innerWidth - pagePadding;
+    const cols = Math.max(1, Math.floor((availableWidth + gap) / (cardMinWidth + gap)));
+    return cols * 3;
+  }
 
   get itemTotalPages(): number {
-    return getTotalPages(this.filteredItems.length, this.itemPageSize);
+    return getTotalPages(this.itemTotalCount, this.itemPageSize);
   }
+
   get itemPageNumbers(): number[] {
     return getPageNumbers(this.itemPage, this.itemTotalPages);
   }
-  get pagedItems(): ItemListDto[] {
-    const start = (this.itemPage - 1) * this.itemPageSize;
-    return this.filteredItems.slice(start, start + this.itemPageSize);
-  }
+
   goToItemPage(page: number): void {
     if (page < 1 || page > this.itemTotalPages) return;
     this.itemPage = page;
-    this.cdr.detectChanges();
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { page },
+      queryParamsHandling: 'merge',
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.loadItems();
   }
 
-  // Reviews pagination
+  // ── Reviews pagination (client-side, independent) ────────────────────────
   reviewPage = 1;
   reviewPageSize = 5;
 
   get reviewTotalPages(): number {
     return getTotalPages(this.reviews.length, this.reviewPageSize);
   }
+
   get reviewPageNumbers(): number[] {
     return getPageNumbers(this.reviewPage, this.reviewTotalPages);
   }
+
   get displayedReviews(): UserReviewListDto[] {
     const start = (this.reviewPage - 1) * this.reviewPageSize;
     return this.reviews.slice(start, start + this.reviewPageSize);
   }
+
   goToReviewPage(page: number): void {
     if (page < 1 || page > this.reviewTotalPages) return;
     this.reviewPage = page;
     this.cdr.detectChanges();
   }
 
-  // Report modal
+  // ── Report modal ──────────────────────────────────────────────────────────
   showReportModal = false;
   reportReason: ReportReason | '' = '';
   reportDetails = '';
@@ -95,6 +121,17 @@ export class UserProfile implements OnInit {
   reportSuccess = '';
   reportError = '';
 
+  // ── RxJS subjects ─────────────────────────────────────────────────────────
+  private searchSubject = new Subject<string>();
+  private destroy$ = new Subject<void>();
+
+  // ── Resize listener ref ───────────────────────────────────────────────────
+  private resizeHandler = () => {
+    this.itemPage = 1;
+    this.loadItems();
+  };
+
+  // ── Computed ──────────────────────────────────────────────────────────────
   get averageRating(): number {
     if (!this.reviews.length) return 0;
     return Math.round((this.reviews.reduce((s, r) => s + r.rating, 0) / this.reviews.length) * 10) / 10;
@@ -114,6 +151,13 @@ export class UserProfile implements OnInit {
     return 'score-chip--red';
   }
 
+  // ── trackBy helpers ───────────────────────────────────────────────────────
+  trackByIndex(_index: number, value: number): number { return value; }
+  trackByItemId(_index: number, item: ItemListDto): string { return item.slug; }
+  trackByReviewId(_index: number, review: UserReviewListDto): string {
+    return review.reviewerId + review.createdAt;
+  }
+
   constructor(
     private authService: AuthService,
     private userService: UserService,
@@ -130,60 +174,187 @@ export class UserProfile implements OnInit {
       this.router.navigate(['/']);
       return;
     }
+
+    // Debounce search input — fires 350ms after user stops typing
+    this.searchSubject.pipe(
+      debounceTime(350),
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      this.itemPage = 1;
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { page: 1 },
+        queryParamsHandling: 'merge',
+      });
+      this.loadItems();
+    });
+
+    window.addEventListener('resize', this.resizeHandler);
+
+    // Read userId from route params, then read page from query params
     this.route.params.subscribe(params => {
       this.userId = params['id'];
+
+      const qp = this.route.snapshot.queryParams;
+      this.itemPage = parseInt(qp['page']) || 1;
+
       this.load();
     });
   }
 
+  ngOnDestroy(): void {
+    window.removeEventListener('resize', this.resizeHandler);
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   private load(): void {
     this.isLoadingProfile = true;
-    this.isLoadingItems = true;
     this.isLoadingReviews = true;
+    this.isInitialItemLoad = true;
     this.profile = null;
-    this.items = [];
+    this.filteredItems = [];
     this.reviews = [];
-    this.itemPage = 1;
     this.reviewPage = 1;
+    this.itemTotalCount = 0;
 
     this.userService.getMyProfile().subscribe({
-      next: (res) => { this.currentUserId = res.data?.id ?? ''; this.cdr.detectChanges(); },
+      next: (res) => {
+        this.currentUserId = res.data?.id ?? '';
+        this.cdr.detectChanges();
+      },
       error: () => { }
     });
 
     this.userService.getPublicProfile(this.userId).subscribe({
-      next: (res) => { this.profile = res.data; this.isLoadingProfile = false; this.cdr.detectChanges(); },
-      error: () => { this.isLoadingProfile = false; this.cdr.detectChanges(); }
-    });
-
-    this.itemService.getPublicByOwner(this.userId, {}, { page: 1, pageSize: 200 }).subscribe({
       next: (res) => {
-        this.items = res.data?.items ?? [];
-        this.applyFilters();
-        this.isLoadingItems = false;
+        this.profile = res.data;
+        this.isLoadingProfile = false;
         this.cdr.detectChanges();
       },
-      error: () => { this.isLoadingItems = false; this.cdr.detectChanges(); }
+      error: () => {
+        this.isLoadingProfile = false;
+        this.cdr.detectChanges();
+      }
     });
 
+    this.loadInitialTotal();
+    this.loadItems();
+
     this.reviewService.getReviewsForUser(this.userId, {}, { page: 1, pageSize: 200 }).subscribe({
-      next: (res) => { this.reviews = res.data?.items ?? []; this.isLoadingReviews = false; this.cdr.detectChanges(); },
-      error: () => { this.isLoadingReviews = false; this.cdr.detectChanges(); }
+      next: (res) => {
+        this.reviews = res.data?.items ?? [];
+        this.isLoadingReviews = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isLoadingReviews = false;
+        this.cdr.detectChanges();
+      }
     });
   }
 
-  applyFilters(): void {
-    let result = [...this.items];
-    if (this.searchQuery.trim()) {
-      const q = this.searchQuery.toLowerCase();
-      result = result.filter(i => i.title.toLowerCase().includes(q) || i.categoryName.toLowerCase().includes(q));
+  private loadInitialTotal(): void {
+    this.itemService.getPublicByOwner(this.userId, {}, { page: 1, pageSize: 1 }).subscribe({
+      next: (res) => {
+        this.profileTotalItems = res.data?.totalCount ?? 0;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  /**
+   * Fetches items from backend. Shows skeleton only on first load —
+   * subsequent calls (search, filter, sort, page change) swap content silently.
+   */
+  private loadItems(): void {
+    if (this.isInitialItemLoad) {
+      this.isLoadingItems = true;
+      this.cdr.detectChanges();
     }
-    if (this.activeFilter === 'available') {
-      result = result.filter(i => i.isActive && i.availability === ItemAvailability.Available);
+
+    const pageSize = Math.max(this.itemPageSize, 1);
+
+    const filter: ItemFilter = {};
+    if (this.searchQuery.trim()) filter.search = this.searchQuery.trim();
+    if (this.availableOnly) filter.availability = ItemAvailability.Available;
+
+    if (this.freeOnly) {
+      filter.isFree = true;
+    } else if (this.sortBy === 'pricePerDay') {
+      // When sorting by price, explicitly exclude free items
+      filter.isFree = false;
     }
-    this.filteredItems = result;
-    this.itemPage = 1;
+
+    const paging: PagedRequest = {
+      page: this.itemPage,
+      pageSize,
+      sortBy: this.sortBy,
+      sortDescending: this.sortDescending,
+    };
+
+    this.itemService.getPublicByOwner(this.userId, filter, paging).subscribe({
+      next: (res) => {
+        this.filteredItems = res.data?.items ?? [];
+        this.itemTotalCount = res.data?.totalCount ?? 0;
+        this.isLoadingItems = false;
+        this.isInitialItemLoad = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isLoadingItems = false;
+        this.isInitialItemLoad = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  onSearch(): void {
     this.cdr.detectChanges();
+    this.searchSubject.next(this.searchQuery);
+  }
+
+  onAvailableToggle(): void {
+    this.availableOnly = !this.availableOnly;
+    this.itemPage = 1;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { page: 1 },
+      queryParamsHandling: 'merge',
+    });
+    this.loadItems();
+  }
+
+  onSortChange(value: string): void {
+    this.sortLabel = value;
+    switch (value) {
+      case 'newest':     this.sortBy = 'createdAt';     this.sortDescending = true;  break;
+      case 'oldest':     this.sortBy = 'createdAt';     this.sortDescending = false; break;
+      case 'rating':     this.sortBy = 'averageRating'; this.sortDescending = true;  break;
+      case 'az':         this.sortBy = 'title';         this.sortDescending = false; break;
+      case 'za':         this.sortBy = 'title';         this.sortDescending = true;  break;
+      case 'price_asc':  this.sortBy = 'pricePerDay';   this.sortDescending = false; break;
+      case 'price_desc': this.sortBy = 'pricePerDay';   this.sortDescending = true;  break;
+      default:           this.sortBy = 'createdAt';     this.sortDescending = true;
+    }
+    this.itemPage = 1;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { page: 1 },
+      queryParamsHandling: 'merge',
+    });
+    this.loadItems();
+  }
+
+  onFreeToggle(): void {
+    this.freeOnly = !this.freeOnly;
+    this.itemPage = 1;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { page: 1 },
+      queryParamsHandling: 'merge',
+    });
+    this.loadItems();
   }
 
   openReportModal(): void {
@@ -195,7 +366,10 @@ export class UserProfile implements OnInit {
   }
 
   submitReport(): void {
-    if (!this.reportReason) { this.reportError = 'Please select a reason.'; return; }
+    if (!this.reportReason) {
+      this.reportError = 'Please select a reason.';
+      return;
+    }
     this.isSubmittingReport = true;
     this.reportError = '';
 
@@ -217,6 +391,20 @@ export class UserProfile implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  togglePfpModal(): void {
+    // Only allow expanding if there is an actual image
+    if (this.profile?.avatarUrl) {
+      this.showPfpModal = !this.showPfpModal;
+      
+      // Prevent scrolling when modal is open
+      if (this.showPfpModal) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = 'auto';
+      }
+    }
   }
 
   goToItem(slug: string): void { this.router.navigate(['/items', slug]); }

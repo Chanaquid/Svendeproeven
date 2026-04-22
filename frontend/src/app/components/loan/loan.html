@@ -1,0 +1,241 @@
+<div class="fixed inset-0 bg-zinc-950 -z-10"></div>
+<div
+    class="fixed inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:52px_52px] -z-10">
+</div>
+
+<app-navbar></app-navbar>
+
+<main class="pt-16 min-h-screen">
+
+    <div class="px-6 md:px-10 pt-10 pb-8 border-b border-zinc-800/60">
+        <div class="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+                <p class="text-zinc-500 text-sm font-medium mb-1">Track your loans</p>
+                <h1 class="font-black text-3xl md:text-4xl text-white tracking-tight"
+                    style="font-family:'Syne',sans-serif">
+                    My Loans
+                </h1>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-6 mt-6 flex-wrap">
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 bg-emerald-400 rounded-full"></span>
+                <span class="text-zinc-400 text-sm"><span class="text-white font-semibold">{{ activeCount }}</span>
+                    Active</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 bg-blue-400 rounded-full"></span>
+                <span class="text-zinc-400 text-sm"><span class="text-white font-semibold">{{ approvedCount }}</span>
+                    Approved</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 bg-amber-400 rounded-full"></span>
+                <span class="text-zinc-400 text-sm"><span class="text-white font-semibold">{{ pendingCount }}</span>
+                    Pending</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 bg-rose-500 rounded-full"></span>
+                <span class="text-zinc-400 text-sm"><span class="text-white font-semibold">{{ rejectedCount }}</span>
+                    Rejected</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 bg-red-400 rounded-full"></span>
+                <span class="text-zinc-400 text-sm"><span class="text-white font-semibold">{{ lateCount }}</span>
+                    Late</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                <span class="text-zinc-400 text-sm"><span class="text-white font-semibold">{{ completedCount }}</span>
+                    Completed</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 bg-zinc-500 rounded-full"></span>
+                <span class="text-zinc-400 text-sm"><span class="text-white font-semibold">{{ cancelledCount }}</span>
+                    Cancelled</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="px-6 md:px-10 py-8">
+
+        <div class="flex items-center justify-between gap-4 mb-6 flex-wrap">
+            <div class="flex items-center gap-3 flex-wrap">
+
+                <div class="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-xl p-1">
+                    <button (click)="onViewChange('borrowed')"
+                        class="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer"
+                        [class.bg-amber-400]="loanView === 'borrowed'" [class.text-zinc-900]="loanView === 'borrowed'"
+                        [class.text-zinc-300]="loanView !== 'borrowed'">
+                        📦 Borrowed
+                        <span class="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                            [class.bg-zinc-900]="loanView === 'borrowed'"
+                            [class.text-amber-400]="loanView === 'borrowed'"
+                            [class.bg-zinc-800]="loanView !== 'borrowed'"
+                            [class.text-zinc-300]="loanView !== 'borrowed'">
+                            {{ borrowedLoans.length }}
+                        </span>
+                    </button>
+                    <button (click)="onViewChange('lent')"
+                        class="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer"
+                        [class.bg-amber-400]="loanView === 'lent'" [class.text-zinc-900]="loanView === 'lent'"
+                        [class.text-zinc-300]="loanView !== 'lent'">
+                        🤝 Lent out
+                        <span class="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                            [class.bg-zinc-900]="loanView === 'lent'" [class.text-amber-400]="loanView === 'lent'"
+                            [class.bg-zinc-800]="loanView !== 'lent'" [class.text-zinc-300]="loanView !== 'lent'">
+                            {{ ownedLoans.length }}
+                        </span>
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-xl p-1">
+                    <button *ngFor="let tab of tabs" (click)="onTabChange(tab.key)"
+                        class="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer"
+                        [class.bg-amber-400]="activeTab === tab.key" [class.text-zinc-900]="activeTab === tab.key"
+                        [class.text-zinc-300]="activeTab !== tab.key">
+                        {{ tab.label }}
+                        <span class="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                            [class.bg-zinc-900]="activeTab === tab.key" [class.text-amber-400]="activeTab === tab.key"
+                            [class.bg-zinc-800]="activeTab !== tab.key" [class.text-zinc-300]="activeTab !== tab.key">
+                            {{ getTabCount(tab.key) }}
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <div class="relative">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                    </svg>
+                    <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="applyFilters()"
+                        placeholder="Search loans..."
+                        class="bg-zinc-900 border border-zinc-800 text-white text-sm rounded-xl pl-9 pr-4 py-2 outline-none placeholder-zinc-600 focus:border-amber-400/50 transition-all duration-200 w-56" />
+                </div>
+
+                <select [ngModel]="sortLabel" (ngModelChange)="onSortChange($event)"
+                    class="bg-zinc-900 border border-zinc-800 text-zinc-300 text-sm rounded-xl px-3 py-2 outline-none focus:border-amber-400/50 cursor-pointer h-[38px]">
+                    <option value="newest">Newest</option>
+                    <option value="oldest">Oldest</option>
+                    <option value="price_high">Price: High</option>
+                    <option value="price_low">Price: Low</option>
+                </select>
+            </div>
+        </div>
+
+        <div *ngIf="isLoading" class="space-y-3">
+            <div *ngFor="let _ of [1,2,3,4,5]" class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 animate-pulse">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 bg-zinc-800 rounded-xl shrink-0"></div>
+                    <div class="flex-1 space-y-2">
+                        <div class="h-4 bg-zinc-800 rounded w-1/3"></div>
+                        <div class="h-3 bg-zinc-800 rounded w-1/2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div *ngIf="!isLoading && filteredLoans.length === 0"
+            class="flex flex-col items-center justify-center py-24 text-center">
+            <div
+                class="w-16 h-16 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-center text-3xl mb-4">
+                📋
+            </div>
+            <h3 class="font-bold text-white text-lg mb-2" style="font-family:'Syne',sans-serif">No loans found</h3>
+            <p class="text-zinc-500 text-sm max-w-xs">
+                {{ loanView === 'borrowed' ? "You haven't borrowed any items yet." : "You haven't lent out any items yet." }}
+            </p>
+        </div>
+
+        <div *ngIf="!isLoading && filteredLoans.length > 0" class="space-y-3">
+            <div *ngFor="let loan of pagedItems" (click)="goToLoan(loan.id)"
+                class="bg-zinc-900 border border-zinc-800 hover:border-zinc-600 rounded-2xl p-4 transition-all duration-200 cursor-pointer group">
+                <div class="flex items-center gap-4">
+
+                    <div
+                        class="w-16 h-16 rounded-xl bg-zinc-800 overflow-hidden shrink-0 flex items-center justify-center text-2xl">
+                        <img *ngIf="loan.itemMainPhotoUrl" [src]="loan.itemMainPhotoUrl" [alt]="loan.itemTitle"
+                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <span *ngIf="!loan.itemMainPhotoUrl">📦</span>
+                    </div>
+
+                    <div class="flex-1 min-w-0">
+                        <p class="text-white text-sm font-semibold truncate" style="font-family:'Syne',sans-serif">
+                            {{ loan.itemTitle }}
+                        </p>
+
+                        <div class="flex items-center gap-2 mt-1">
+                            <div
+                                class="w-5 h-5 rounded-full overflow-hidden bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
+                                <img *ngIf="loan.otherPartyAvatarUrl" [src]="loan.otherPartyAvatarUrl"
+                                    class="w-full h-full object-cover" />
+                                <span *ngIf="!loan.otherPartyAvatarUrl" class="text-[7px] font-bold text-amber-400">{{
+                                    getInitials(loan.otherPartyName) }}</span>
+                            </div>
+                            <p class="text-zinc-400 text-xs">
+                                {{ loanView === 'borrowed' ? 'From' : 'To' }}:
+                                <span class="text-zinc-300 font-medium">{{ loan.otherPartyName }}</span>
+                            </p>
+                        </div>
+
+                        <div class="flex items-center gap-3 mt-1.5 flex-wrap">
+                            <p class="text-zinc-500 text-xs">
+                                {{ loan.startDate | date:'MMM d, yyyy' }} →
+                                <span *ngIf="loan.status === 'Completed'">{{ loan.actualReturnDate | date:'MMM d, yyyy'
+                                    }}</span>
+                                <span *ngIf="loan.status !== 'Completed'">{{ loan.endDate | date:'MMM d, yyyy' }}</span>
+                            </p>
+                            <span class="text-amber-400 text-xs font-semibold">{{ loan.totalPrice }} kr</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 shrink-0">
+                        <span *ngIf="loan.isOverdue && (loan.status === 'Active' || loan.status === 'Late')"
+                            class="text-red-500 font-bold uppercase tracking-tighter text-[10px] bg-red-500/10 px-1.5 py-0.5 rounded">
+                            ⚠️ Overdue
+                        </span>
+
+                        <span class="text-[10px] font-bold uppercase px-2.5 py-1 rounded-lg"
+                            [ngClass]="getLoanStatusClass(loan.status)">
+                            {{ loan.status === 'AdminPending' ? 'Admin Review' : loan.status }}
+                        </span>
+
+                        <svg class="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div *ngIf="totalPages > 1" class="flex items-center justify-center gap-1.5 mt-8">
+            <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1"
+                class="px-3 py-1.5 rounded-lg text-sm text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer">
+                ← Prev
+            </button>
+
+            <ng-container *ngFor="let p of pageNumbers">
+                <span *ngIf="p === -1" class="text-zinc-600 px-1">…</span>
+
+                <button *ngIf="p !== -1" (click)="goToPage(p)"
+                    class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold border transition-all cursor-pointer"
+                    [class.bg-amber-400]="p === currentPage" [class.text-zinc-900]="p === currentPage"
+                    [class.border-amber-400]="p === currentPage" [class.border-zinc-700]="p !== currentPage"
+                    [class.text-zinc-400]="p !== currentPage">
+                    {{ p }}
+                </button>
+            </ng-container>
+
+            <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages"
+                class="px-3 py-1.5 rounded-lg text-sm text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer">
+                Next →
+            </button>
+        </div>
+
+    </div>
+</main>

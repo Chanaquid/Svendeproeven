@@ -1,6 +1,8 @@
 <!-- Background -->
 <div class="fixed inset-0 bg-zinc-950 -z-10"></div>
-<div class="fixed inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:52px_52px] -z-10"></div>
+<div
+    class="fixed inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:52px_52px] -z-10">
+</div>
 
 <!-- NAVBAR -->
 <app-navbar></app-navbar>
@@ -28,14 +30,18 @@
                     class="absolute -bottom-1.5 -right-1.5 w-6 h-6 bg-emerald-400 rounded-full flex items-center justify-center border-2 border-zinc-950"
                     title="Verified">
                     <svg class="w-3 h-3 text-zinc-900" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        <path fill-rule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clip-rule="evenodd" />
                     </svg>
                 </div>
                 <div *ngIf="!profile?.isVerified"
                     class="absolute -bottom-1.5 -right-1.5 w-6 h-6 bg-zinc-600 rounded-full flex items-center justify-center border-2 border-zinc-950"
                     title="Not verified">
                     <svg class="w-3 h-3 text-zinc-300" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        <path fill-rule="evenodd"
+                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
                     </svg>
                 </div>
             </div>
@@ -43,7 +49,8 @@
             <!-- Info -->
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-3 mb-1 flex-wrap">
-                    <h1 class="font-black text-2xl md:text-3xl text-white tracking-tight" style="font-family:'Syne',sans-serif">
+                    <h1 class="font-black text-2xl md:text-3xl text-white tracking-tight"
+                        style="font-family:'Syne',sans-serif">
                         {{ profile?.fullName }}
                     </h1>
                     <span *ngIf="profile?.isVerified"
@@ -51,13 +58,15 @@
                         Verified
                     </span>
                     <ng-container *ngIf="!profile?.isVerified">
-                        <span class="text-[10px] font-bold uppercase tracking-widest bg-rose-600/10 text-rose-400 border border-rose-400/20 px-2 py-0.5 rounded-full">
+                        <span
+                            class="text-[10px] font-bold uppercase tracking-widest bg-rose-600/10 text-rose-400 border border-rose-400/20 px-2 py-0.5 rounded-full">
                             Not Verified
                         </span>
                         <button *ngIf="!verificationStatus" (click)="showVerifyModal = true"
                             class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest bg-amber-400/10 text-amber-400 border border-amber-400/20 hover:bg-amber-400/20 px-2 py-0.5 rounded-full transition-all duration-200 cursor-pointer">
                             <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                             </svg>
                             Verify Now
                         </button>
@@ -74,7 +83,8 @@
                 </div>
                 <p class="text-zinc-400 text-sm mb-1">@{{ profile?.username }}</p>
                 <!-- Bio -->
-                <p *ngIf="profile?.bio" class="text-zinc-300 text-sm mb-2 max-w-lg leading-relaxed">{{ profile?.bio }}</p>
+                <p *ngIf="profile?.bio" class="text-zinc-300 text-sm mb-2 max-w-lg leading-relaxed">{{ profile?.bio }}
+                </p>
                 <p *ngIf="!profile?.bio" class="text-zinc-600 text-sm mb-2 italic">No bio yet.</p>
                 <p class="text-zinc-400 text-sm">📍 {{ profile?.address || 'No address set' }}</p>
                 <p class="text-zinc-400 text-xs mt-1">Member since {{ profile?.membershipDate | date:'MMMM yyyy' }}</p>
@@ -84,22 +94,21 @@
             <div class="flex flex-col sm:flex-row gap-3 shrink-0">
 
                 <!-- Trust Score -->
-                <div class="flex flex-col items-center bg-zinc-900 border border-zinc-800 rounded-2xl px-6 py-4 min-w-[120px]">
+                <div
+                    class="flex flex-col items-center bg-zinc-900 border border-zinc-800 rounded-2xl px-6 py-4 min-w-[120px]">
                     <span class="text-2xl mb-1">🏅</span>
                     <span class="text-xs text-zinc-500 uppercase tracking-widest font-medium mb-1">User Score</span>
                     <span class="font-black text-4xl leading-none"
                         [class.text-emerald-400]="(profile?.score ?? 0) >= 70"
                         [class.text-amber-400]="(profile?.score ?? 0) >= 40 && (profile?.score ?? 0) < 70"
-                        [class.text-red-400]="(profile?.score ?? 0) < 40"
-                        style="font-family:'Syne',sans-serif">
+                        [class.text-red-400]="(profile?.score ?? 0) < 40" style="font-family:'Syne',sans-serif">
                         {{ profile?.score ?? 0 }}
                     </span>
                     <div class="w-full bg-zinc-800 rounded-full h-1.5 mt-2">
                         <div class="h-1.5 rounded-full transition-all duration-500"
                             [class.bg-emerald-400]="(profile?.score ?? 0) >= 70"
                             [class.bg-amber-400]="(profile?.score ?? 0) >= 40 && (profile?.score ?? 0) < 70"
-                            [class.bg-red-400]="(profile?.score ?? 0) < 40"
-                            [style.width.%]="profile?.score ?? 0">
+                            [class.bg-red-400]="(profile?.score ?? 0) < 40" [style.width.%]="profile?.score ?? 0">
                         </div>
                     </div>
                 </div>
@@ -122,8 +131,7 @@
                         style="font-family:'Syne',sans-serif">
                         {{ (profile?.unpaidFinesTotal ?? 0) > 0 ? ('kr ' + profile?.unpaidFinesTotal) : 'None' }}
                     </span>
-                    <p class="text-[12px] mt-1.5"
-                        [class.text-red-400]="(profile?.unpaidFinesTotal ?? 0) > 0"
+                    <p class="text-[12px] mt-1.5" [class.text-red-400]="(profile?.unpaidFinesTotal ?? 0) > 0"
                         [class.text-zinc-400]="(profile?.unpaidFinesTotal ?? 0) === 0">
                         {{ (profile?.unpaidFinesTotal ?? 0) > 0 ? 'Payment required' : 'All clear' }}
                     </p>
@@ -141,9 +149,11 @@
 
                 <!-- Stats grid -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div *ngFor="let stat of stats" class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-center">
+                    <div *ngFor="let stat of stats"
+                        class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-center">
                         <span class="text-2xl block mb-1">{{ stat.icon }}</span>
-                        <span class="flex items-baseline justify-center gap-1 font-black text-white" style="font-family:'Syne',sans-serif">
+                        <span class="flex items-baseline justify-center gap-1 font-black text-white"
+                            style="font-family:'Syne',sans-serif">
                             <span *ngIf="stat.currency" class="text-sm text-zinc-400">{{ stat.currency }}</span>
                             <span class="text-2xl">{{ stat.value }}</span>
                         </span>
@@ -156,11 +166,9 @@
 
                     <!-- Tab header -->
                     <div class="flex border-b border-zinc-800">
-                        <button *ngFor="let tab of tabs" (click)="activeTab = tab.key"
-                            [class.border-b-2]="activeTab === tab.key"
-                            [class.border-amber-400]="activeTab === tab.key"
-                            [class.text-white]="activeTab === tab.key"
-                            [class.text-zinc-500]="activeTab !== tab.key"
+                        <button *ngFor="let tab of tabs"  (click)="activeTab = tab.key; syncQueryParams()" 
+                            [class.border-b-2]="activeTab === tab.key" [class.border-amber-400]="activeTab === tab.key"
+                            [class.text-white]="activeTab === tab.key" [class.text-zinc-500]="activeTab !== tab.key"
                             class="flex-1 py-3.5 text-xs font-semibold uppercase tracking-widest transition-colors duration-200 hover:text-zinc-300 cursor-pointer">
                             {{ tab.label }}
                         </button>
@@ -170,7 +178,9 @@
                     <div *ngIf="activeTab === 'items'" class="p-4">
                         <!-- Loading -->
                         <div *ngIf="itemsLoading" class="py-12 flex items-center justify-center">
-                            <div class="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+                            <div
+                                class="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin">
+                            </div>
                         </div>
 
                         <ng-container *ngIf="!itemsLoading">
@@ -185,9 +195,12 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div *ngFor="let item of itemsResult?.items" (click)="goToItem(item.slug)"
                                     class="flex items-center gap-3 bg-zinc-800 hover:bg-zinc-700/80 border border-zinc-700 rounded-xl p-3 transition-colors cursor-pointer">
-                                    <div class="w-14 h-14 rounded-xl bg-zinc-700 overflow-hidden shrink-0 flex items-center justify-center text-2xl">
-                                        <img *ngIf="item.mainPhotoUrl" [src]="item.mainPhotoUrl" [alt]="item.title" class="w-full h-full object-cover" />
-                                        <span *ngIf="!item.mainPhotoUrl">{{ getCategoryEmoji(item.categoryName) }}</span>
+                                    <div
+                                        class="w-14 h-14 rounded-xl bg-zinc-700 overflow-hidden shrink-0 flex items-center justify-center text-2xl">
+                                        <img *ngIf="item.mainPhotoUrl" [src]="item.mainPhotoUrl" [alt]="item.title"
+                                            class="w-full h-full object-cover" />
+                                        <span *ngIf="!item.mainPhotoUrl">{{ getCategoryEmoji(item.categoryName)
+                                            }}</span>
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <p class="text-white text-sm font-semibold truncate">{{ item.title }}</p>
@@ -206,19 +219,17 @@
                             </div>
 
                             <!-- Items pagination -->
-                            <div *ngIf="(itemsResult?.totalPages ?? 1) > 1" class="flex items-center justify-center gap-1.5 mt-5">
+                            <div *ngIf="(itemsResult?.totalPages ?? 1) > 1"
+                                class="flex items-center justify-center gap-1.5 mt-5">
                                 <button (click)="loadItems(itemsPage - 1)" [disabled]="!itemsResult?.hasPreviousPage"
                                     class="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer">
                                     ‹
                                 </button>
                                 <button *ngFor="let p of itemPages" (click)="loadItems(p)"
                                     class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold border transition-all cursor-pointer"
-                                    [class.bg-amber-400]="p === itemsPage"
-                                    [class.text-zinc-900]="p === itemsPage"
-                                    [class.border-amber-400]="p === itemsPage"
-                                    [class.border-zinc-700]="p !== itemsPage"
-                                    [class.text-zinc-400]="p !== itemsPage"
-                                    [class.hover:text-white]="p !== itemsPage">
+                                    [class.bg-amber-400]="p === itemsPage" [class.text-zinc-900]="p === itemsPage"
+                                    [class.border-amber-400]="p === itemsPage" [class.border-zinc-700]="p !== itemsPage"
+                                    [class.text-zinc-400]="p !== itemsPage" [class.hover:text-white]="p !== itemsPage">
                                     {{ p }}
                                 </button>
                                 <button (click)="loadItems(itemsPage + 1)" [disabled]="!itemsResult?.hasNextPage"
@@ -234,7 +245,7 @@
 
                         <!-- Borrowed / Lent toggle -->
                         <div class="flex items-center gap-1 bg-zinc-800 rounded-xl p-1 mb-4 w-fit">
-                            <button (click)="loanView = 'borrowed'"
+                            <button (click)="loanView = 'borrowed'; syncQueryParams()"
                                 class="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer"
                                 [class.bg-zinc-900]="loanView === 'borrowed'"
                                 [class.text-white]="loanView === 'borrowed'"
@@ -248,10 +259,9 @@
                                     {{ borrowedResult?.totalCount ?? 0 }}
                                 </span>
                             </button>
-                            <button (click)="loanView = 'lent'"
+                            <button (click)="loanView = 'lent'; syncQueryParams()"
                                 class="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer"
-                                [class.bg-zinc-900]="loanView === 'lent'"
-                                [class.text-white]="loanView === 'lent'"
+                                [class.bg-zinc-900]="loanView === 'lent'" [class.text-white]="loanView === 'lent'"
                                 [class.text-zinc-500]="loanView !== 'lent'">
                                 🤝 Lent out
                                 <span class="ml-1 text-[10px] px-1.5 py-0.5 rounded-full"
@@ -267,7 +277,9 @@
                         <!-- Borrowed loans -->
                         <div *ngIf="loanView === 'borrowed'">
                             <div *ngIf="borrowedLoading" class="py-12 flex items-center justify-center">
-                                <div class="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+                                <div
+                                    class="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin">
+                                </div>
                             </div>
                             <ng-container *ngIf="!borrowedLoading">
                                 <div *ngIf="(borrowedResult?.items?.length ?? 0) === 0" class="py-12 text-center">
@@ -277,29 +289,39 @@
                                 <div class="space-y-3">
                                     <div *ngFor="let loan of borrowedResult?.items" (click)="goToLoan(loan.id)"
                                         class="flex items-center gap-3 bg-zinc-800 border border-zinc-700 rounded-xl p-3 cursor-pointer hover:bg-zinc-700/80 transition-colors">
-                                        <div class="w-10 h-10 rounded-xl bg-zinc-700 overflow-hidden shrink-0 flex items-center justify-center text-lg">
-                                            <img *ngIf="loan.itemMainPhotoUrl" [src]="loan.itemMainPhotoUrl" class="w-full h-full object-cover" />
+                                        <div
+                                            class="w-10 h-10 rounded-xl bg-zinc-700 overflow-hidden shrink-0 flex items-center justify-center text-lg">
+                                            <img *ngIf="loan.itemMainPhotoUrl" [src]="loan.itemMainPhotoUrl"
+                                                class="w-full h-full object-cover" />
                                             <span *ngIf="!loan.itemMainPhotoUrl">📦</span>
                                         </div>
                                         <div class="flex-1 min-w-0">
-                                            <p class="text-white text-sm font-semibold truncate">{{ loan.itemTitle }}</p>
-                                            <p class="text-zinc-300 text-xs">{{ loan.startDate | date:'MMM d' }} → {{ loan.endDate | date:'MMM d, yyyy' }}</p>
+                                            <p class="text-white text-sm font-semibold truncate">{{ loan.itemTitle }}
+                                            </p>
+                                            <p class="text-zinc-300 text-xs">{{ loan.startDate | date:'MMM d' }} → {{
+                                                loan.endDate | date:'MMM d, yyyy' }}</p>
                                         </div>
-                                        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md shrink-0" [ngClass]="getLoanStatusClass(loan.status)">
+                                        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md shrink-0"
+                                            [ngClass]="getLoanStatusClass(loan.status)">
                                             {{ loan.status }}
                                         </span>
                                     </div>
                                 </div>
                                 <!-- Borrowed pagination -->
-                                <div *ngIf="(borrowedResult?.totalPages ?? 1) > 1" class="flex items-center justify-center gap-1.5 mt-5">
-                                    <button (click)="loadBorrowedLoans(borrowedPage - 1)" [disabled]="!borrowedResult?.hasPreviousPage"
+                                <div *ngIf="(borrowedResult?.totalPages ?? 1) > 1"
+                                    class="flex items-center justify-center gap-1.5 mt-5">
+                                    <button (click)="loadBorrowedLoans(borrowedPage - 1)"
+                                        [disabled]="!borrowedResult?.hasPreviousPage"
                                         class="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer">‹</button>
                                     <button *ngFor="let p of borrowedPages" (click)="loadBorrowedLoans(p)"
                                         class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold border transition-all cursor-pointer"
-                                        [class.bg-amber-400]="p === borrowedPage" [class.text-zinc-900]="p === borrowedPage"
-                                        [class.border-amber-400]="p === borrowedPage" [class.border-zinc-700]="p !== borrowedPage"
+                                        [class.bg-amber-400]="p === borrowedPage"
+                                        [class.text-zinc-900]="p === borrowedPage"
+                                        [class.border-amber-400]="p === borrowedPage"
+                                        [class.border-zinc-700]="p !== borrowedPage"
                                         [class.text-zinc-400]="p !== borrowedPage">{{ p }}</button>
-                                    <button (click)="loadBorrowedLoans(borrowedPage + 1)" [disabled]="!borrowedResult?.hasNextPage"
+                                    <button (click)="loadBorrowedLoans(borrowedPage + 1)"
+                                        [disabled]="!borrowedResult?.hasNextPage"
                                         class="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer">›</button>
                                 </div>
                             </ng-container>
@@ -308,7 +330,9 @@
                         <!-- Lent out loans -->
                         <div *ngIf="loanView === 'lent'">
                             <div *ngIf="lentLoading" class="py-12 flex items-center justify-center">
-                                <div class="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+                                <div
+                                    class="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin">
+                                </div>
                             </div>
                             <ng-container *ngIf="!lentLoading">
                                 <div *ngIf="(lentResult?.items?.length ?? 0) === 0" class="py-12 text-center">
@@ -318,32 +342,41 @@
                                 <div class="space-y-3">
                                     <div *ngFor="let loan of lentResult?.items" (click)="goToLoan(loan.id)"
                                         class="flex items-center gap-3 bg-zinc-800 border border-zinc-700 rounded-xl p-3 cursor-pointer hover:bg-zinc-700/80 transition-colors">
-                                        <div class="w-10 h-10 rounded-xl bg-zinc-700 overflow-hidden shrink-0 flex items-center justify-center text-lg">
-                                            <img *ngIf="loan.itemMainPhotoUrl" [src]="loan.itemMainPhotoUrl" class="w-full h-full object-cover" />
+                                        <div
+                                            class="w-10 h-10 rounded-xl bg-zinc-700 overflow-hidden shrink-0 flex items-center justify-center text-lg">
+                                            <img *ngIf="loan.itemMainPhotoUrl" [src]="loan.itemMainPhotoUrl"
+                                                class="w-full h-full object-cover" />
                                             <span *ngIf="!loan.itemMainPhotoUrl">📦</span>
                                         </div>
                                         <div class="flex-1 min-w-0">
-                                            <p class="text-white text-sm font-semibold truncate">{{ loan.itemTitle }}</p>
+                                            <p class="text-white text-sm font-semibold truncate">{{ loan.itemTitle }}
+                                            </p>
                                             <p class="text-zinc-200 text-xs">To: {{ loan.otherPartyName }}</p>
                                             <p class="text-zinc-300 text-xs">
                                                 {{ loan.startDate | date:'MMM d' }} →
-                                                <span *ngIf="loan.status === 'Completed'">{{ loan.actualReturnDate | date:'MMM d, yyyy' }}</span>
-                                                <span *ngIf="loan.status !== 'Completed'">{{ loan.endDate | date:'MMM d, yyyy' }}</span>
+                                                <span *ngIf="loan.status === 'Completed'">{{ loan.actualReturnDate |
+                                                    date:'MMM d, yyyy' }}</span>
+                                                <span *ngIf="loan.status !== 'Completed'">{{ loan.endDate | date:'MMM d,
+                                                    yyyy' }}</span>
                                             </p>
                                         </div>
-                                        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md shrink-0" [ngClass]="getLoanStatusClass(loan.status)">
+                                        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md shrink-0"
+                                            [ngClass]="getLoanStatusClass(loan.status)">
                                             {{ loan.status }}
                                         </span>
                                     </div>
                                 </div>
                                 <!-- Lent pagination -->
-                                <div *ngIf="(lentResult?.totalPages ?? 1) > 1" class="flex items-center justify-center gap-1.5 mt-5">
-                                    <button (click)="loadLentLoans(lentPage - 1)" [disabled]="!lentResult?.hasPreviousPage"
+                                <div *ngIf="(lentResult?.totalPages ?? 1) > 1"
+                                    class="flex items-center justify-center gap-1.5 mt-5">
+                                    <button (click)="loadLentLoans(lentPage - 1)"
+                                        [disabled]="!lentResult?.hasPreviousPage"
                                         class="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer">‹</button>
                                     <button *ngFor="let p of lentPages" (click)="loadLentLoans(p)"
                                         class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold border transition-all cursor-pointer"
                                         [class.bg-amber-400]="p === lentPage" [class.text-zinc-900]="p === lentPage"
-                                        [class.border-amber-400]="p === lentPage" [class.border-zinc-700]="p !== lentPage"
+                                        [class.border-amber-400]="p === lentPage"
+                                        [class.border-zinc-700]="p !== lentPage"
                                         [class.text-zinc-400]="p !== lentPage">{{ p }}</button>
                                     <button (click)="loadLentLoans(lentPage + 1)" [disabled]="!lentResult?.hasNextPage"
                                         class="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer">›</button>
@@ -356,7 +389,9 @@
                     <!-- Tab: Score History -->
                     <div *ngIf="activeTab === 'score'" class="p-4">
                         <div *ngIf="scoreLoading" class="py-12 flex items-center justify-center">
-                            <div class="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+                            <div
+                                class="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin">
+                            </div>
                         </div>
                         <ng-container *ngIf="!scoreLoading">
                             <div *ngIf="(scoreResult?.items?.length ?? 0) === 0" class="py-12 text-center">
@@ -375,35 +410,41 @@
                                             [class.bg-zinc-700]="entry.pointsChanged === 0"
                                             [class.text-zinc-400]="entry.pointsChanged === 0">
                                             {{ entry.pointsChanged > 0 ? '↑' : entry.pointsChanged < 0 ? '↓' : '–' }}
+                                                </div>
+                                                <div>
+                                                    <p class="text-white text-xs font-medium">{{ entry.reason }}</p>
+                                                    <p *ngIf="entry.note" class="text-zinc-400 text-xs">{{ entry.note }}
+                                                    </p>
+                                                </div>
                                         </div>
-                                        <div>
-                                            <p class="text-white text-xs font-medium">{{ entry.reason }}</p>
-                                            <p *ngIf="entry.note" class="text-zinc-400 text-xs">{{ entry.note }}</p>
+                                        <div class="text-right">
+                                            <span class="font-bold text-sm"
+                                                [class.text-emerald-400]="entry.pointsChanged > 0"
+                                                [class.text-red-400]="entry.pointsChanged < 0"
+                                                [class.text-zinc-400]="entry.pointsChanged === 0">
+                                                {{ entry.pointsChanged > 0 ? '+' : '' }}{{ entry.pointsChanged }}
+                                            </span>
+                                            <p class="text-zinc-400 text-[10px]">{{ entry.createdAt | date:'MMM d, yyyy'
+                                                }}</p>
                                         </div>
-                                    </div>
-                                    <div class="text-right">
-                                        <span class="font-bold text-sm"
-                                            [class.text-emerald-400]="entry.pointsChanged > 0"
-                                            [class.text-red-400]="entry.pointsChanged < 0"
-                                            [class.text-zinc-400]="entry.pointsChanged === 0">
-                                            {{ entry.pointsChanged > 0 ? '+' : '' }}{{ entry.pointsChanged }}
-                                        </span>
-                                        <p class="text-zinc-400 text-[10px]">{{ entry.createdAt | date:'MMM d, yyyy' }}</p>
                                     </div>
                                 </div>
-                            </div>
-                            <!-- Score pagination -->
-                            <div *ngIf="(scoreResult?.totalPages ?? 1) > 1" class="flex items-center justify-center gap-1.5 mt-5">
-                                <button (click)="loadScoreHistory(scorePage - 1)" [disabled]="!scoreResult?.hasPreviousPage"
-                                    class="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer">‹</button>
-                                <button *ngFor="let p of scorePages" (click)="loadScoreHistory(p)"
-                                    class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold border transition-all cursor-pointer"
-                                    [class.bg-amber-400]="p === scorePage" [class.text-zinc-900]="p === scorePage"
-                                    [class.border-amber-400]="p === scorePage" [class.border-zinc-700]="p !== scorePage"
-                                    [class.text-zinc-400]="p !== scorePage">{{ p }}</button>
-                                <button (click)="loadScoreHistory(scorePage + 1)" [disabled]="!scoreResult?.hasNextPage"
-                                    class="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer">›</button>
-                            </div>
+                                <!-- Score pagination -->
+                                <div *ngIf="(scoreResult?.totalPages ?? 1) > 1"
+                                    class="flex items-center justify-center gap-1.5 mt-5">
+                                    <button (click)="loadScoreHistory(scorePage - 1)"
+                                        [disabled]="!scoreResult?.hasPreviousPage"
+                                        class="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer">‹</button>
+                                    <button *ngFor="let p of scorePages" (click)="loadScoreHistory(p)"
+                                        class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold border transition-all cursor-pointer"
+                                        [class.bg-amber-400]="p === scorePage" [class.text-zinc-900]="p === scorePage"
+                                        [class.border-amber-400]="p === scorePage"
+                                        [class.border-zinc-700]="p !== scorePage"
+                                        [class.text-zinc-400]="p !== scorePage">{{ p }}</button>
+                                    <button (click)="loadScoreHistory(scorePage + 1)"
+                                        [disabled]="!scoreResult?.hasNextPage"
+                                        class="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer">›</button>
+                                </div>
                         </ng-container>
                     </div>
 
@@ -417,40 +458,52 @@
                 <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
                     <div class="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
                         <h3 class="font-bold text-white text-sm" style="font-family:'Syne',sans-serif">Edit Profile</h3>
-                        <button (click)="editMode = !editMode"
+                        <button (click)="editMode = !editMode; updateError = ''"
                             class="text-xs text-amber-400 hover:text-amber-300 font-medium transition-colors cursor-pointer">
                             {{ editMode ? 'Cancel' : 'Edit' }}
                         </button>
                     </div>
-                    <div class="p-5 space-y-4">
+
+                    <!-- Success message — visible in both states -->
+                    <div *ngIf="updateSuccess"
+                        class="mx-5 mt-4 mb-4 text-emerald-400 text-xs bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
+                        ✓ Profile updated successfully.
+                    </div>
+
+                    <!-- Collapsed state -->
+                    <div *ngIf="!editMode && !updateSuccess" class="px-5 py-4">
+                        <p class="text-zinc-500 text-xs">Update your profile information.</p>
+                    </div>
+
+                    <!-- Expanded state -->
+                    <div *ngIf="editMode" class="p-5 space-y-4">
                         <!-- Full Name -->
                         <div class="space-y-1.5">
-                            <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Full Name</label>
-                            <input type="text" [(ngModel)]="editForm.fullName" [disabled]="!editMode"
-                                class="w-full bg-zinc-800 border text-white text-sm rounded-xl px-3 py-2.5 outline-none transition-all duration-200"
-                                [class.border-zinc-700]="!editMode" [class.border-amber-400/50]="editMode" [class.opacity-50]="!editMode" />
+                            <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Full
+                                Name</label>
+                            <input type="text" [(ngModel)]="editForm.fullName"
+                                class="w-full bg-zinc-800 border border-amber-400/50 text-white text-sm rounded-xl px-3 py-2.5 outline-none transition-all duration-200" />
                         </div>
                         <!-- Username -->
                         <div class="space-y-1.5">
-                            <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Username</label>
-                            <input type="text" [(ngModel)]="editForm.userName" [disabled]="!editMode"
-                                class="w-full bg-zinc-800 border text-white text-sm rounded-xl px-3 py-2.5 outline-none transition-all duration-200"
-                                [class.border-zinc-700]="!editMode" [class.border-amber-400/50]="editMode" [class.opacity-50]="!editMode" />
+                            <label
+                                class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Username</label>
+                            <input type="text" [(ngModel)]="editForm.userName"
+                                class="w-full bg-zinc-800 border border-amber-400/50 text-white text-sm rounded-xl px-3 py-2.5 outline-none transition-all duration-200" />
                         </div>
                         <!-- Bio -->
                         <div class="space-y-1.5">
                             <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Bio</label>
-                            <textarea [(ngModel)]="editForm.bio" [disabled]="!editMode" rows="3"
+                            <textarea [(ngModel)]="editForm.bio" rows="3"
                                 placeholder="Tell people a bit about yourself..."
-                                class="w-full bg-zinc-800 border text-white text-sm rounded-xl px-3 py-2.5 outline-none transition-all duration-200 resize-none placeholder-zinc-600"
-                                [class.border-zinc-700]="!editMode" [class.border-amber-400/50]="editMode" [class.opacity-50]="!editMode"></textarea>
+                                class="w-full bg-zinc-800 border border-amber-400/50 text-white text-sm rounded-xl px-3 py-2.5 outline-none transition-all duration-200 resize-none placeholder-zinc-600"></textarea>
                         </div>
                         <!-- Gender -->
                         <div class="space-y-1.5">
-                            <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Gender</label>
-                            <select [(ngModel)]="editForm.gender" [disabled]="!editMode"
-                                class="w-full bg-zinc-800 border text-white text-sm rounded-xl px-3 py-2.5 outline-none transition-all duration-200"
-                                [class.border-zinc-700]="!editMode" [class.border-amber-400/50]="editMode" [class.opacity-50]="!editMode">
+                            <label
+                                class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Gender</label>
+                            <select [(ngModel)]="editForm.gender"
+                                class="w-full bg-zinc-800 border border-amber-400/50 text-white text-sm rounded-xl px-3 py-2.5 outline-none transition-all duration-200">
                                 <option value="">Prefer not to say</option>
                                 <option value="Male">Male</option>
                                 <option value="Female">Female</option>
@@ -459,38 +512,36 @@
                         </div>
                         <!-- Avatar URL -->
                         <div class="space-y-1.5">
-                            <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Avatar URL</label>
-                            <input type="text" [(ngModel)]="editForm.avatarUrl" [disabled]="!editMode" placeholder="https://..."
-                                class="w-full bg-zinc-800 border text-white text-sm rounded-xl px-3 py-2.5 outline-none transition-all duration-200 placeholder-zinc-600"
-                                [class.border-zinc-700]="!editMode" [class.border-amber-400/50]="editMode" [class.opacity-50]="!editMode" />
+                            <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Avatar
+                                URL</label>
+                            <input type="text" [(ngModel)]="editForm.avatarUrl" placeholder="https://..."
+                                class="w-full bg-zinc-800 border border-amber-400/50 text-white text-sm rounded-xl px-3 py-2.5 outline-none transition-all duration-200 placeholder-zinc-600" />
                         </div>
                         <!-- Address -->
                         <div class="space-y-1.5 relative">
-                            <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Address</label>
+                            <label
+                                class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Address</label>
                             <input type="text" [(ngModel)]="editForm.address" (ngModelChange)="onAddressInput($event)"
-                                [disabled]="!editMode" autocomplete="off" placeholder="Start typing your address..."
-                                class="w-full bg-zinc-800 border text-white text-sm rounded-xl px-3 py-2.5 outline-none transition-all duration-200 placeholder-zinc-600"
-                                [class.border-zinc-700]="!editMode" [class.border-amber-400/50]="editMode" [class.opacity-50]="!editMode" />
-                            <ul *ngIf="editMode && showAddressSuggestions && addressSuggestions.length"
+                                autocomplete="off" placeholder="Start typing your address..."
+                                class="w-full bg-zinc-800 border border-amber-400/50 text-white text-sm rounded-xl px-3 py-2.5 outline-none transition-all duration-200 placeholder-zinc-600" />
+                            <ul *ngIf="showAddressSuggestions && addressSuggestions.length"
                                 class="absolute z-50 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden shadow-2xl shadow-black/60">
                                 <li *ngFor="let place of addressSuggestions" (mousedown)="selectAddress(place)"
                                     class="px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-white cursor-pointer truncate transition-colors duration-150">
                                     {{ place.display_name }}
                                 </li>
                             </ul>
-                            <p *ngIf="editForm.latitude && editForm.longitude && editMode" class="text-green-400 text-[12px] mt-1">
+                            <p *ngIf="editForm.latitude && editForm.longitude" class="text-green-400 text-[12px] mt-1">
                                 📍 {{ editForm.latitude?.toFixed(4) }}, {{ editForm.longitude?.toFixed(4) }}
                             </p>
                         </div>
 
-                        <p *ngIf="updateSuccess" class="text-emerald-400 text-xs bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
-                            Profile updated successfully.
-                        </p>
-                        <p *ngIf="updateError" class="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                        <p *ngIf="updateError"
+                            class="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
                             {{ updateError }}
                         </p>
-                        <button *ngIf="editMode" (click)="saveProfile()" [disabled]="isSaving"
-                            class="w-full bg-amber-400 hover:bg-amber-300 disabled:bg-zinc-700 disabled:text-zinc-500 text-zinc-900 font-semibold text-sm rounded-xl py-2.5 transition-all duration-200">
+                        <button (click)="saveProfile()" [disabled]="isSaving"
+                            class="w-full bg-amber-400 cursor-pointer hover:bg-amber-300 disabled:bg-zinc-700 disabled:text-zinc-500 text-zinc-900 font-semibold text-sm rounded-xl py-2.5 transition-all duration-200">
                             {{ isSaving ? 'Saving...' : 'Save changes' }}
                         </button>
                     </div>
@@ -499,20 +550,30 @@
                 <!-- Change Password -->
                 <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
                     <div class="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
-                        <h3 class="font-bold text-white text-sm" style="font-family:'Syne',sans-serif">Change Password</h3>
+                        <h3 class="font-bold text-white text-sm" style="font-family:'Syne',sans-serif">Change Password
+                        </h3>
                         <button (click)="passwordMode = !passwordMode; resetPasswordForm()"
                             class="text-xs text-amber-400 hover:text-amber-300 font-medium transition-colors cursor-pointer">
                             {{ passwordMode ? 'Cancel' : 'Change' }}
                         </button>
                     </div>
+
+                    <!-- Success message — visible in both states -->
+                    <div *ngIf="passwordSuccess"
+                        class="mx-5 mt-4 mb-4 text-emerald-400 text-xs bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
+                        ✓ Password updated successfully.
+                    </div>
+
                     <div *ngIf="passwordMode" class="p-5 space-y-4">
                         <div class="space-y-1.5">
-                            <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Current Password</label>
+                            <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Current
+                                Password</label>
                             <input type="password" [(ngModel)]="passwordForm.currentPassword" placeholder="••••••••"
                                 class="w-full bg-zinc-800 border border-zinc-700 focus:border-amber-400/50 text-white text-sm rounded-xl px-3 py-2.5 outline-none placeholder-zinc-600 transition-all duration-200" />
                         </div>
                         <div class="space-y-1.5">
-                            <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">New Password</label>
+                            <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">New
+                                Password</label>
                             <input type="password" [(ngModel)]="passwordForm.newPassword" placeholder="••••••••"
                                 class="w-full bg-zinc-800 border text-white text-sm rounded-xl px-3 py-2.5 outline-none placeholder-zinc-600 transition-all duration-200"
                                 [class.border-zinc-700]="!passwordForm.newPassword"
@@ -520,7 +581,8 @@
                                 [class.border-red-400/50]="passwordForm.newPassword && passwordForm.newPassword !== passwordForm.confirmPassword" />
                         </div>
                         <div class="space-y-1.5">
-                            <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Confirm New Password</label>
+                            <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Confirm New
+                                Password</label>
                             <input type="password" [(ngModel)]="passwordForm.confirmPassword" placeholder="••••••••"
                                 class="w-full bg-zinc-800 border text-white text-sm rounded-xl px-3 py-2.5 outline-none placeholder-zinc-600 transition-all duration-200"
                                 [class.border-zinc-700]="!passwordForm.confirmPassword"
@@ -531,11 +593,12 @@
                             <p *ngIf="passwordForm.confirmPassword && passwordForm.newPassword === passwordForm.confirmPassword"
                                 class="text-emerald-400 text-[10px] mt-1">Passwords match ✓</p>
                         </div>
-                        <p *ngIf="passwordError" class="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{{ passwordError }}</p>
-                        <p *ngIf="passwordSuccess" class="text-emerald-400 text-xs bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">Password updated successfully.</p>
+                        <p *ngIf="passwordError"
+                            class="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{{
+                            passwordError }}</p>
                         <button (click)="changePassword()"
                             [disabled]="isSavingPassword || !passwordForm.currentPassword || !passwordForm.newPassword || passwordForm.newPassword !== passwordForm.confirmPassword"
-                            class="w-full bg-amber-400 hover:bg-amber-300 disabled:bg-zinc-700 disabled:text-zinc-500 disabled:cursor-not-allowed text-zinc-900 font-semibold text-sm rounded-xl py-2.5 transition-all duration-200">
+                            class="w-full cursor-pointer bg-amber-400 hover:bg-amber-300 disabled:bg-zinc-700 disabled:text-zinc-500 disabled:cursor-not-allowed text-zinc-900 font-semibold text-sm rounded-xl py-2.5 transition-all duration-200">
                             {{ isSavingPassword ? 'Updating...' : 'Update password' }}
                         </button>
                     </div>
@@ -546,7 +609,8 @@
 
                 <!-- Account Info -->
                 <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-3">
-                    <h3 class="font-bold text-white text-sm mb-3" style="font-family:'Syne',sans-serif">Account Info</h3>
+                    <h3 class="font-bold text-white text-sm mb-3" style="font-family:'Syne',sans-serif">Account Info
+                    </h3>
                     <div class="flex items-center justify-between">
                         <span class="text-zinc-500 text-xs">Username</span>
                         <span class="text-white text-xs font-medium truncate ml-4">{{ profile?.username }}</span>
@@ -587,20 +651,23 @@
                     <div class="flex items-center gap-3">
                         <span class="text-xl">🚫</span>
                         <div class="text-left">
-                            <p class="text-white text-sm font-semibold" style="font-family:'Syne',sans-serif">Blocked Users</p>
+                            <p class="text-white text-sm font-semibold" style="font-family:'Syne',sans-serif">Blocked
+                                Users</p>
                             <p class="text-zinc-500 text-xs">Manage who you've blocked</p>
                         </div>
                     </div>
-                    <svg class="w-4 h-4 text-zinc-500 group-hover:text-zinc-300 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <svg class="w-4 h-4 text-zinc-500 group-hover:text-zinc-300 transition-colors" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
                 </button>
 
                 <!-- Danger Zone -->
                 <div class="bg-zinc-900 border border-red-500/20 rounded-2xl p-5">
-                    <h3 class="font-bold text-red-400 text-sm mb-1" style="font-family:'Syne',sans-serif">Danger Zone</h3>
+                    <h3 class="font-bold text-red-400 text-sm mb-1" style="font-family:'Syne',sans-serif">Danger Zone
+                    </h3>
                     <p class="text-zinc-500 text-xs mb-4">Permanently delete your account.</p>
-                    <button (click)="showDeleteConfirm = !showDeleteConfirm"
+                    <button (click)="showDeleteConfirm = !showDeleteConfirm; deletePassword = ''; deleteError = ''"
                         class="w-full border cursor-pointer border-red-500/30 hover:bg-red-500/10 text-red-400 hover:text-red-300 font-semibold text-xs rounded-xl py-2.5 transition-all duration-200">
                         Delete my account
                     </button>
@@ -608,11 +675,47 @@
                         <p class="text-zinc-400 text-xs">Enter your password to confirm:</p>
                         <input type="password" [(ngModel)]="deletePassword" placeholder="Your password"
                             class="w-full bg-zinc-800 border border-red-500/30 text-white text-sm rounded-xl px-3 py-2.5 outline-none placeholder-zinc-600 transition-all duration-200" />
-                        <p *ngIf="deleteError" class="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{{ deleteError }}</p>
-                        <button (click)="deleteAccount()" [disabled]="isDeletingAccount"
-                            class="w-full cursor-pointer bg-red-500 hover:bg-red-400 disabled:opacity-50 text-white font-semibold text-xs rounded-xl py-2.5 transition-all duration-200">
-                            {{ isDeletingAccount ? 'Deleting...' : 'Confirm — delete my account' }}
+                        <p *ngIf="deleteError"
+                            class="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{{
+                            deleteError }}</p>
+                        <button (click)="verifyDeletePassword()" [disabled]="!deletePassword || isDeletingAccount"
+                            class="w-full cursor-pointer bg-red-500 hover:bg-red-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-xs rounded-xl py-2.5 transition-all duration-200">
+                            {{ isDeletingAccount ? 'Verifying...' : 'Continue' }}
                         </button>
+                    </div>
+                </div>
+
+                <!-- Delete Final Confirmation Modal -->
+                <div *ngIf="showDeleteFinalConfirm" class="fixed inset-0 z-[110] flex items-center justify-center p-4"
+                    (click)="showDeleteFinalConfirm = false">
+                    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
+                    <div class="relative z-10 bg-zinc-900 border border-red-500/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl shadow-black/80"
+                        (click)="$event.stopPropagation()">
+                        <div class="flex items-center justify-center w-12 h-12 bg-red-500/10 rounded-full mx-auto mb-4">
+                            <svg class="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                            </svg>
+                        </div>
+                        <h3 class="font-black text-white text-lg text-center mb-1"
+                            style="font-family:'Syne',sans-serif">
+                            Are you absolutely sure?
+                        </h3>
+                        <p class="text-zinc-400 text-xs text-center mb-1">This action <span
+                                class="text-red-400 font-semibold">cannot be undone</span>.</p>
+                        <p class="text-zinc-500 text-xs text-center mb-6">All your items, loans, and data will be
+                            permanently erased.</p>
+                        <div class="flex flex-col gap-2">
+                            <button (click)="deleteAccount()" [disabled]="isDeletingAccount"
+                                class="w-full cursor-pointer bg-red-500 hover:bg-red-400 disabled:opacity-50 text-white font-semibold text-xs rounded-xl py-2.5 transition-all duration-200">
+                                {{ isDeletingAccount ? 'Deleting...' : 'Yes, permanently delete my account' }}
+                            </button>
+                            <button (click)="showDeleteFinalConfirm = false"
+                                class="w-full cursor-pointer border border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-white font-semibold text-xs rounded-xl py-2.5 transition-all duration-200">
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -621,7 +724,8 @@
     </div>
 
     <!-- Avatar Lightbox Modal -->
-    <div *ngIf="showAvatarModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4" (click)="showAvatarModal = false">
+    <div *ngIf="showAvatarModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+        (click)="showAvatarModal = false">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
         <div class="relative z-10 flex flex-col items-center gap-4" (click)="$event.stopPropagation()">
             <button (click)="showAvatarModal = false"
@@ -630,7 +734,8 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
-            <div class="w-72 h-72 md:w-96 md:h-96 rounded-3xl overflow-hidden border-2 border-zinc-700 shadow-2xl shadow-black/80">
+            <div
+                class="w-72 h-72 md:w-96 md:h-96 rounded-3xl overflow-hidden border-2 border-zinc-700 shadow-2xl shadow-black/80">
                 <img [src]="profile!.avatarUrl!" [alt]="profile?.fullName" class="w-full h-full object-cover" />
             </div>
             <p class="text-white font-bold text-lg" style="font-family:'Syne',sans-serif">{{ profile?.fullName }}</p>
@@ -638,16 +743,19 @@
     </div>
 
     <!-- Verify Identity Modal -->
-    <div *ngIf="showVerifyModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4" (click)="showVerifyModal = false">
+    <div *ngIf="showVerifyModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+        (click)="showVerifyModal = false">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
         <div class="relative z-10 bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-black/80"
             (click)="$event.stopPropagation()">
             <div class="flex items-center justify-between mb-5">
                 <div>
-                    <h3 class="font-black text-white text-lg" style="font-family:'Syne',sans-serif">Verify your identity</h3>
+                    <h3 class="font-black text-white text-lg" style="font-family:'Syne',sans-serif">Verify your identity
+                    </h3>
                     <p class="text-zinc-500 text-xs mt-0.5">Submit a government-issued ID to get verified</p>
                 </div>
-                <button (click)="showVerifyModal = false" class="text-zinc-500 hover:text-white transition-colors cursor-pointer">
+                <button (click)="showVerifyModal = false"
+                    class="text-zinc-500 hover:text-white transition-colors cursor-pointer">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -671,10 +779,14 @@
                 <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Document URL</label>
                 <input type="text" [(ngModel)]="verifyForm.documentUrl" placeholder="https://..."
                     class="w-full bg-zinc-800 border border-zinc-700 focus:border-amber-400/50 text-white text-sm rounded-xl px-3 py-2.5 outline-none placeholder-zinc-600 transition-all duration-200" />
-                <p class="text-zinc-600 text-[10px]">Upload your ID image to a service like Imgur and paste the link here.</p>
+                <p class="text-zinc-600 text-[10px]">Upload your ID image to a service like Imgur and paste the link
+                    here.</p>
             </div>
-            <p *ngIf="verifyError" class="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 mb-4">{{ verifyError }}</p>
-            <button (click)="submitVerification()" [disabled]="isSubmittingVerify || !verifyForm.documentUrl || !verifyForm.documentType"
+            <p *ngIf="verifyError"
+                class="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 mb-4">{{
+                verifyError }}</p>
+            <button (click)="submitVerification()"
+                [disabled]="isSubmittingVerify || !verifyForm.documentUrl || !verifyForm.documentType"
                 class="w-full bg-amber-400 hover:bg-amber-300 disabled:bg-zinc-700 disabled:text-zinc-500 disabled:cursor-not-allowed text-zinc-900 font-semibold text-sm rounded-xl py-2.5 transition-all duration-200">
                 {{ isSubmittingVerify ? 'Submitting…' : 'Submit for review' }}
             </button>

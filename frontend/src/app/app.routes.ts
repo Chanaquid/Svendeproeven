@@ -10,6 +10,9 @@ import { ConfirmEmail } from './components/confirm-email/confirm-email';
 import { ItemDetail } from './components/item-detail/item-detail';
 import { PageNotFound } from './components/page-not-found/page-not-found';
 import { UserDashboard } from './components/user-dashboard/user-dashboard';
+import { TestUpload } from './components/test-upload/test-upload';
+import { Item } from './components/item/item';
+import { Loan } from './components/loan/loan';
 
 
 export const authGuard : CanActivateFn = () => {
@@ -27,6 +30,12 @@ export const routes: Routes = [
     {path: 'items/:slug', component: ItemDetail, canActivate: [authGuard]},
     {path: 'users/:id', component: UserProfile, canActivate: [authGuard]},
     {path: 'my-dashboard', component: UserDashboard, canActivate: [authGuard]},
+    {path: 'my-items', component: Item, canActivate: [authGuard]},
+    {path: 'my-loans', component: Loan, canActivate: [authGuard]},
+
+
+
+    {path: 'test', component: TestUpload},
 
 
     { path: '404', component: PageNotFound },

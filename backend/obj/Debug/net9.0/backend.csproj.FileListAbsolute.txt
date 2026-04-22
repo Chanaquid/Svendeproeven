@@ -176,3 +176,5 @@ C:\Users\subar\Desktop\RentIt\backend\bin\Debug\net9.0\MailKit.dll
 C:\Users\subar\Desktop\RentIt\backend\bin\Debug\net9.0\MimeKit.dll
 C:\Users\subar\Desktop\RentIt\backend\obj\Debug\net9.0\backend.sourcelink.json
 C:\Users\subar\Desktop\RentIt\backend\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt
+C:\Users\subar\Desktop\RentIt\backend\bin\Debug\net9.0\CloudinaryDotNet.dll
+C:\Users\subar\Desktop\RentIt\backend\bin\Debug\net9.0\Newtonsoft.Json.dll

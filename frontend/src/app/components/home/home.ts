@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Subject } from 'rxjs';
+import { debounceTime, takeUntil } from 'rxjs/operators';
 import { Navbar } from '../navbar/navbar';
 import { ItemListDto } from '../../dtos/itemDto';
 import { AuthService } from '../../services/authService';
@@ -25,16 +27,17 @@ import {
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
-export class Home implements OnInit, AfterViewInit {
+export class Home implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild('categoryStrip') categoryStrip!: ElementRef;
   ItemAvailability = ItemAvailability;
 
   userName = '';
   isLoading = true;
+  isInitialLoad = true;
   items: ItemListDto[] = [];
 
-  //Search and filters
+  // Search and filters
   searchQuery = '';
   selectedCategory: string | null = null;
   sortLabel = 'newest';
@@ -42,7 +45,6 @@ export class Home implements OnInit, AfterViewInit {
   sortDescending = true;
   availableOnly = false;
   freeOnly = false;
-
 
   showLeftArrow = false;
   showRightArrow = false;
@@ -53,12 +55,20 @@ export class Home implements OnInit, AfterViewInit {
   toastMessage = '';
   toastVisible = false;
   private toastTimeout: any;
-  private searchDebounce: any;
 
   currentPage = 1;
-  pageSize = 20;
   totalCount = 0;
   currentUserId = '';
+
+  // ── Dynamic page size — cols × 3 rows, matches CSS minmax(240px, 1fr) ────
+  get pageSize(): number {
+    const cardMinWidth = 240;
+    const gap = 16;
+    const pagePadding = 80; // page body padding both sides
+    const availableWidth = window.innerWidth - pagePadding;
+    const cols = Math.max(1, Math.floor((availableWidth + gap) / (cardMinWidth + gap)));
+    return cols * 3;
+  }
 
   categories = [
     { icon: '📱', name: 'Electronics' },
@@ -81,7 +91,6 @@ export class Home implements OnInit, AfterViewInit {
     { icon: '📦', name: 'Other' },
   ];
 
-
   private isDragging = false;
   private dragStartX = 0;
   private scrollStartX = 0;
@@ -92,6 +101,16 @@ export class Home implements OnInit, AfterViewInit {
     'Gardening': 9, 'Biking': 10, 'Kitchen': 11, 'Cleaning': 12,
     'Fashion': 13, 'Art': 14, 'Baby': 15, 'Events': 16,
     'Auto': 17, 'Other': 18,
+  };
+
+  // ── RxJS ──────────────────────────────────────────────────────────────────
+  private searchSubject = new Subject<string>();
+  private destroy$ = new Subject<void>();
+
+  // ── Resize listener ───────────────────────────────────────────────────────
+  private resizeHandler = () => {
+    this.currentPage = 1;
+    this.loadItems();
   };
 
   constructor(
@@ -113,10 +132,26 @@ export class Home implements OnInit, AfterViewInit {
     this.loadUserInfo();
     this.loadFavorites();
 
+    // Debounce search — 350ms after user stops typing
+    this.searchSubject.pipe(
+      debounceTime(350),
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      this.currentPage = 1;
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { page: 1 },
+        queryParamsHandling: 'merge',
+      });
+      this.loadItems();
+    });
+
+    window.addEventListener('resize', this.resizeHandler);
+
+    // Read page + search query from URL so back-navigation restores state
     this.route.queryParams.subscribe(params => {
       const q = params['q'] || '';
       const page = parseInt(params['page']) || 1;
-
       this.searchQuery = q;
       this.currentPage = page;
       this.loadItems();
@@ -173,6 +208,11 @@ export class Home implements OnInit, AfterViewInit {
     }, true);
   }
 
+  ngOnDestroy(): void {
+    window.removeEventListener('resize', this.resizeHandler);
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
   private loadUserInfo(): void {
     this.userService.getMyProfile().subscribe({
@@ -185,9 +225,15 @@ export class Home implements OnInit, AfterViewInit {
     });
   }
 
+  /**
+   * Fetches items from backend using dynamic pageSize (cols × 3 rows).
+   * Shows skeleton only on first load — subsequent fetches swap content silently.
+   */
   loadItems(): void {
-    this.isLoading = true;
-    this.cdr.detectChanges();
+    if (this.isInitialLoad) {
+      this.isLoading = true;
+      this.cdr.detectChanges();
+    }
 
     const filter: ItemFilter = {
       ...(this.searchQuery.trim() && { search: this.searchQuery.trim() }),
@@ -198,7 +244,7 @@ export class Home implements OnInit, AfterViewInit {
 
     const request: PagedRequest = {
       page: this.currentPage,
-      pageSize: this.pageSize,
+      pageSize: Math.max(this.pageSize, 1),
       sortBy: this.sortBy,
       sortDescending: this.sortDescending,
     };
@@ -207,16 +253,14 @@ export class Home implements OnInit, AfterViewInit {
       next: (res) => {
         this.items = res.data?.items ?? [];
         this.totalCount = res.data?.totalCount ?? 0;
-
-        console.log(this.items);
-        setTimeout(() => {
-          this.isLoading = false;
-          this.cdr.detectChanges();
-        }, 0);
+        this.isLoading = false;
+        this.isInitialLoad = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load items:', err);
         this.isLoading = false;
+        this.isInitialLoad = false;
         this.cdr.detectChanges();
       }
     });
@@ -233,46 +277,65 @@ export class Home implements OnInit, AfterViewInit {
     });
   }
 
-  //Search and filters
+  // Search and filters
 
+  /** Keystroke handler — debounced, no immediate fetch */
   onSearch(): void {
-    clearTimeout(this.searchDebounce);
-    this.searchDebounce = setTimeout(() => {
-      this.currentPage = 1;
-      this.router.navigate([], {
-        relativeTo: this.route,
-        queryParams: { page: 1 },
-        queryParamsHandling: 'merge',
-      });
-      this.loadItems();
-    }, 400);
+    this.cdr.detectChanges();
+    this.searchSubject.next(this.searchQuery);
   }
 
   selectCategory(name: string | null): void {
     this.selectedCategory = name;
     this.currentPage = 1;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { page: 1 },
+      queryParamsHandling: 'merge',
+    });
     this.loadItems();
   }
 
   onSortChange(value: string): void {
     this.sortLabel = value;
     switch (value) {
-      case 'newest': this.sortBy = 'createdAt'; this.sortDescending = true; break;
-      case 'oldest': this.sortBy = 'createdAt'; this.sortDescending = false; break;
-      case 'rating': this.sortBy = 'averageRating'; this.sortDescending = true; break;
-      case 'az': this.sortBy = 'title'; this.sortDescending = false; break;
-      case 'za': this.sortBy = 'title'; this.sortDescending = true; break;
-      case 'price_asc': this.sortBy = 'pricePerDay'; this.sortDescending = false; break;
-      case 'price_desc': this.sortBy = 'pricePerDay'; this.sortDescending = true; break;
-      default: this.sortBy = 'createdAt'; this.sortDescending = true;
+      case 'newest':     this.sortBy = 'createdAt';     this.sortDescending = true;  break;
+      case 'oldest':     this.sortBy = 'createdAt';     this.sortDescending = false; break;
+      case 'rating':     this.sortBy = 'averageRating'; this.sortDescending = true;  break;
+      case 'az':         this.sortBy = 'title';         this.sortDescending = false; break;
+      case 'za':         this.sortBy = 'title';         this.sortDescending = true;  break;
+      case 'price_asc':  this.sortBy = 'pricePerDay';   this.sortDescending = false; break;
+      case 'price_desc': this.sortBy = 'pricePerDay';   this.sortDescending = true;  break;
+      default:           this.sortBy = 'createdAt';     this.sortDescending = true;
     }
     this.currentPage = 1;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { page: 1 },
+      queryParamsHandling: 'merge',
+    });
     this.loadItems();
   }
 
   onAvailableToggle(): void {
     this.availableOnly = !this.availableOnly;
     this.currentPage = 1;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { page: 1 },
+      queryParamsHandling: 'merge',
+    });
+    this.loadItems();
+  }
+
+  onFreeToggle(): void {
+    this.freeOnly = !this.freeOnly;
+    this.currentPage = 1;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { page: 1 },
+      queryParamsHandling: 'merge',
+    });
     this.loadItems();
   }
 
@@ -300,6 +363,7 @@ export class Home implements OnInit, AfterViewInit {
     });
   }
 
+  // Category strip drag
 
   onDragStart(e: MouseEvent) {
     this.isDragging = true;
@@ -325,7 +389,7 @@ export class Home implements OnInit, AfterViewInit {
     });
   }
 
-  //Pagination
+  // Pagination
 
   get totalPages(): number {
     return getTotalPages(this.totalCount, this.pageSize);
@@ -347,38 +411,16 @@ export class Home implements OnInit, AfterViewInit {
     this.loadItems();
   }
 
-  onFreeToggle(): void {
-    this.freeOnly = !this.freeOnly;
-    this.currentPage = 1;
-    this.loadItems();
-  }
+  // Helpers
 
-  //Helpers
-
-  goToItem(slug: string): void {
-    this.router.navigate(['/items', slug]);
-  }
-
-  getCategoryEmoji(name: string): string {
-    return getCategoryEmoji(name);
-  }
-
-  getConditionClass(condition: ItemCondition): string {
-    return getConditionClass(condition);
-  }
-
-  getAvailabilityClass(availability: ItemAvailability): string {
-    return getAvailabilityClass(availability);
-  }
-
-  getAvailabilityLabel(availability: ItemAvailability): string {
-    return getAvailabilityLabel(availability);
-  }
-
+  goToItem(slug: string): void { this.router.navigate(['/items', slug]); }
+  getCategoryEmoji(name: string): string { return getCategoryEmoji(name); }
+  getConditionClass(condition: ItemCondition): string { return getConditionClass(condition); }
+  getAvailabilityClass(availability: ItemAvailability): string { return getAvailabilityClass(availability); }
+  getAvailabilityLabel(availability: ItemAvailability): string { return getAvailabilityLabel(availability); }
   getInitials(name: string): string {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   }
-
 
   showToast(message: string): void {
     this.toastMessage = message;
