@@ -63,6 +63,13 @@ namespace backend.Repositories
             await _context.LoanMessages.AddAsync(message);
         }
 
+        public async Task<List<LoanMessage>> GetUnreadMessagesForUserAsync(int loanId, string userId)
+        {
+            return await _context.LoanMessages
+                .Where(m => m.LoanId == loanId && m.SenderId != userId && !m.IsRead)
+                .ToListAsync();
+        }
+
         // Mark messages as read up to optional message ID
         public async Task MarkAsReadAsync(int loanId, string userId, int? upToMessageId = null)
         {

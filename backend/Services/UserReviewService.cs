@@ -28,16 +28,13 @@ namespace backend.Services
             if (loan.Status != LoanStatus.Completed)
                 throw new InvalidOperationException("You can only leave a review after the loan is completed.");
 
-            //Reviewer must be either the borrower or lender on this loan
             if (loan.BorrowerId != reviewerId && loan.LenderId != reviewerId)
                 throw new UnauthorizedAccessException("You were not part of this loan.");
 
-            //ReviewedUser is the other party on the loan
             var reviewedUserId = loan.BorrowerId == reviewerId
                 ? loan.LenderId
                 : loan.BorrowerId;
 
-            //One review per user - regardless of loans
             if (await _reviewRepository.HasReviewedUserAsync(reviewerId, reviewedUserId))
                 throw new InvalidOperationException("You have already reviewed this user.");
 
@@ -94,6 +91,7 @@ namespace backend.Services
             UserReviewFilter? filter,
             PagedRequest request)
         {
+            // GetByReviewedUserIdAsync must Include(r => r.Loan).ThenInclude(l => l.Item)
             var paged = await _reviewRepository.GetByReviewedUserIdAsync(reviewedUserId, filter, request);
             return MapPagedResultToListDto(paged, currentUserId: null);
         }
@@ -103,6 +101,7 @@ namespace backend.Services
             UserReviewFilter? filter,
             PagedRequest request)
         {
+            // GetByReviewerIdAsync must Include(r => r.Loan).ThenInclude(l => l.Item)
             var paged = await _reviewRepository.GetByReviewerIdAsync(reviewerId, filter, request);
             return MapPagedResultToListDto(paged, reviewerId);
         }
@@ -112,14 +111,13 @@ namespace backend.Services
             return await _reviewRepository.GetRatingSummaryAsync(reviewedUserId);
         }
 
-        //Admin
+        // Admin
 
         public async Task<UserReviewDto> AdminCreateReviewAsync(string adminId, AdminCreateUserReviewDto dto)
         {
             _ = await _userRepository.GetByIdAsync(dto.ReviewedUserId)
                 ?? throw new KeyNotFoundException("Reviewed user not found.");
 
-            //Admin reviews have no loan requirement and no duplicate check
             var review = new UserReview
             {
                 LoanId = null,
@@ -138,7 +136,6 @@ namespace backend.Services
             return MapToDto(created!, adminId);
         }
 
-        //Users cant delete reviews
         public async Task AdminDeleteReviewAsync(int reviewId)
         {
             var review = await _reviewRepository.GetByIdAsync(reviewId)
@@ -165,7 +162,7 @@ namespace backend.Services
             };
         }
 
-        //helper
+        // Helpers
 
         private static UserReviewDto MapToDto(UserReview r, string? currentUserId)
         {
@@ -200,7 +197,8 @@ namespace backend.Services
                 Items = source.Items.Select(r => new UserReviewListDto
                 {
                     Id = r.Id,
-                    ItemTitle = r.Loan?.Item?.Title ?? (r.IsAdminReview ? "Admin Review" : "Unknown Item"),
+                    ItemTitle = r.Loan?.Item?.Title
+                                ?? (r.IsAdminReview ? "Admin Review" : null),
                     ReviewerId = r.ReviewerId,
                     ReviewerName = r.Reviewer?.FullName ?? string.Empty,
                     ReviewerUserName = r.Reviewer?.UserName ?? string.Empty,
@@ -208,6 +206,7 @@ namespace backend.Services
                     IsAdminReview = r.IsAdminReview,
                     IsMine = currentUserId != null && r.ReviewerId == currentUserId,
                     IsEdited = r.IsEdited,
+                    EditedAt = r.EditedAt,
                     Rating = r.Rating,
                     Comment = r.Comment,
                     CreatedAt = r.CreatedAt

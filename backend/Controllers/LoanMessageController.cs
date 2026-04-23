@@ -1,7 +1,9 @@
 ﻿using backend.Dtos;
+using backend.Hubs;
 using backend.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace backend.Controllers
 {
@@ -11,13 +13,16 @@ namespace backend.Controllers
     public class LoanMessageController : BaseController
     {
         private readonly ILoanMessageService _loanMessageService;
+        private readonly IHubContext<LoanChatHub> _hubContext;
 
-        public LoanMessageController(ILoanMessageService loanMessageService)
+        public LoanMessageController(
+            ILoanMessageService loanMessageService,
+            IHubContext<LoanChatHub> hubContext)
         {
             _loanMessageService = loanMessageService;
+            _hubContext = hubContext;
         }
 
-        //GET /api/loans/{loanId}/messages
         [HttpGet]
         public async Task<ActionResult<ApiResponse<PagedResult<LoanMessageDto>>>> GetMessages(
             int loanId,
@@ -27,17 +32,20 @@ namespace backend.Controllers
             return Ok(ApiResponse<PagedResult<LoanMessageDto>>.Ok(result));
         }
 
-        //POST /api/loans/{loanId}/messages
         [HttpPost]
         public async Task<ActionResult<ApiResponse<LoanMessageDto>>> SendMessage(
             int loanId,
             [FromBody] SendLoanMessageDto dto)
         {
             var result = await _loanMessageService.SendMessageAsync(loanId, Caller.UserId, dto, Caller.IsAdmin);
+
+            await _hubContext.Clients
+                .Group($"loan_{loanId}")
+                .SendAsync("ReceiveMessage", result);
+
             return Ok(ApiResponse<LoanMessageDto>.Ok(result));
         }
 
-        // PATCH /api/loans/{loanId}/messages/read
         [HttpPatch("read")]
         public async Task<ActionResult<ApiResponse<string>>> MarkAsRead(
             int loanId,
@@ -47,7 +55,6 @@ namespace backend.Controllers
             return Ok(ApiResponse<string>.Ok(null));
         }
 
-        //GET /api/loans/{loanId}/messages/unread
         [HttpGet("unread")]
         public async Task<ActionResult<ApiResponse<LoanUnreadCountDto>>> GetUnreadCount(int loanId)
         {

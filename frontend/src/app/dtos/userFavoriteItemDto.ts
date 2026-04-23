@@ -1,3 +1,4 @@
+import { ItemAvailability, ItemCondition } from './enums';
 import { ItemDto } from './itemDto';
 
 export interface FavoriteResponseDto {
@@ -6,8 +7,39 @@ export interface FavoriteResponseDto {
   savedAt: string;
 }
 
-export interface ToggleNotifyDto {
+export interface UserFavoriteItemListDto {
+  id: number;
+  title: string;
+  description: string | null;
+  slug: string;
+  mainPhotoUrl: string | null;
+  pickupAddress: string;
+  categoryId: number;
+  categoryName: string;
+  categorySlug: string;
+  categoryIcon: string | null;
+  ownerId: string;
+  ownerName: string;
+  ownerUsername: string;
+  ownerAvatarUrl: string;
+  ownerScore: number;
+  isOwnerVerified: boolean;
+  isFree: boolean;
+  pricePerDay: number;
+  condition: ItemCondition;
+  availability: ItemAvailability;
+  isActive: boolean;
+  requiresVerification: boolean;
+  averageRating: number | null;
+  totalReviews: number;
+  maxLoanDays: number | null;
+  minLoanDays: number | null;
+  availableFrom: string;
+  availableUntil: string;
+  distanceFromUser: number | null;
+  createdAt: string;
   notifyWhenAvailable: boolean;
+  savedAt: string;
 }
 
 export interface FavoriteToggleResultDto {

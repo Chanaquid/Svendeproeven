@@ -194,6 +194,8 @@ namespace backend.Dtos
 
         public bool IsOverdue => !ActualReturnDate.HasValue && DateTime.UtcNow > EndDate;
         public bool IsBorrower { get; set; } //Current user is borrower
+
+        public bool HasDispute { get; set; }
         public DateTime CreatedAt { get; set; }
 
     }

@@ -287,7 +287,7 @@
   font-size: 64px;
 }
 
-
+/* ── Report button ────────────────────────────────────────────── */
 .btn-report {
   display: inline-flex;
   align-items: center;
@@ -737,7 +737,7 @@
 
 .rating-count { color: #71717a; font-size: 12px; margin: 4px 0 0; }
 
-/* Loan status rows */
+/* ── Loan status rows & action buttons ───────────────────────── */
 .loan-status-row {
   display: flex;
   align-items: center;
@@ -745,34 +745,38 @@
   margin-bottom: 12px;
 }
 
-.loan-actions { display: flex; gap: 8px; margin-top: 12px; }
+/* Equal-width action buttons in loan card */
+.loan-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
 
-.btn-secondary {
+/* Base for both action buttons — same size, no flex-grow */
+.btn-action {
   flex: 1;
-  padding: 10px;
-  background: #27272a;
-  color: #d4d4d8;
+  padding: 9px 14px;
   font-size: 13px;
   font-weight: 600;
   border-radius: 12px;
   border: none;
   cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
   transition: background 0.2s;
+}
+
+.btn-secondary {
+  background: #27272a;
+  color: #d4d4d8;
 }
 
 .btn-secondary:hover { background: #3f3f46; }
 
 .btn-danger {
-  flex: 1;
-  padding: 10px;
   background: rgba(239,68,68,0.1);
   color: #f87171;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 12px;
-  border: 1px solid rgba(239,68,68,0.2);
-  cursor: pointer;
-  transition: background 0.2s;
+  border: 1px solid rgba(239,68,68,0.2) !important;
 }
 
 .btn-danger:hover { background: rgba(239,68,68,0.2); }
@@ -955,7 +959,193 @@
 .modal-footer .btn-secondary,
 .modal-footer .btn-loan { flex: 1; justify-content: center; }
 
+/* ── Photo editor ─────────────────────────────────────────────── */
+.form-hint {
+  color: #71717a;
+  font-size: 11px;
+  margin: 0 0 10px;
+}
 
+.photo-editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Each draggable thumbnail */
+.photo-editor-thumb {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #27272a;
+  border: 2px solid #3f3f46;
+  cursor: grab;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  user-select: none;
+}
+
+.photo-editor-thumb:active { cursor: grabbing; }
+
+.photo-editor-thumb--primary {
+  border-color: #fbbf24;
+  box-shadow: 0 0 0 1px rgba(251,191,36,0.3);
+}
+
+.photo-editor-thumb--drag-over {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 2px rgba(96,165,250,0.3);
+  transform: scale(1.03);
+}
+
+.photo-editor-thumb--uploading {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.photo-editor-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Spinner overlay while uploading */
+.photo-thumb-spinner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.5);
+}
+
+.mini-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+/* Primary star badge */
+.primary-badge {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(251,191,36,0.9);
+  color: #09090b;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 5px;
+  pointer-events: none;
+}
+
+.primary-badge-icon {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+}
+
+/* Remove (×) button */
+.photo-remove-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.7);
+  border: none;
+  border-radius: 50%;
+  color: #ffffff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+  padding: 0;
+}
+
+.photo-remove-btn svg { width: 10px; height: 10px; }
+
+.photo-editor-thumb:hover .photo-remove-btn { opacity: 1; }
+.photo-remove-btn:hover { background: #dc2626; }
+
+/* Drag handle (bottom-left) */
+.drag-handle {
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.5);
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+
+.drag-handle svg { width: 14px; height: 14px; }
+
+.photo-editor-thumb:hover .drag-handle { opacity: 1; }
+
+/* Add-more tile */
+.photo-add-tile {
+  width: 100px;
+  height: 100px;
+  border-radius: 12px;
+  background: #27272a;
+  border: 2px dashed #3f3f46;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.photo-add-tile:hover {
+  border-color: #fbbf24;
+  background: rgba(251,191,36,0.04);
+}
+
+.photo-add-icon {
+  width: 22px;
+  height: 22px;
+  color: #71717a;
+  transition: color 0.2s;
+}
+
+.photo-add-tile:hover .photo-add-icon { color: #fbbf24; }
+
+.photo-add-tile span {
+  font-size: 10px;
+  color: #71717a;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.photo-add-tile:hover span { color: #fbbf24; }
+
+/* ── Toggle sub-label ─────────────────────────────────────────── */
+.toggle-sub {
+  display: block;
+  font-size: 10px;
+  color: #71717a;
+  font-weight: 400;
+  margin-top: 2px;
+}
 
 /* ── Loan modal price summary ─────────────────────────────────── */
 .price-summary {
@@ -974,10 +1164,7 @@
   justify-content: space-between;
 }
 
-.price-summary-label {
-  color: #71717a;
-  font-size: 12px;
-}
+.price-summary-label { color: #71717a; font-size: 12px; }
 
 .price-summary-value {
   color: #ffffff;
@@ -985,27 +1172,12 @@
   font-weight: 600;
 }
 
-.price-per-day {
-  color: #71717a;
-  font-size: 11px;
-  font-weight: 400;
-}
+.price-per-day { color: #71717a; font-size: 11px; font-weight: 400; }
 
-.price-summary-divider {
-  height: 1px;
-  background: #3f3f46;
-  margin: 2px 0;
-}
+.price-summary-divider { height: 1px; background: #3f3f46; margin: 2px 0; }
+.price-summary-row--total { margin-top: 2px; }
 
-.price-summary-row--total {
-  margin-top: 2px;
-}
-
-.price-summary-total-label {
-  color: #d4d4d8;
-  font-size: 13px;
-  font-weight: 600;
-}
+.price-summary-total-label { color: #d4d4d8; font-size: 13px; font-weight: 600; }
 
 .price-summary-total-value {
   font-family: 'Syne', sans-serif;
@@ -1014,7 +1186,18 @@
   color: #fbbf24;
 }
 
-/* ── Free item badge ──────────────────────────────────────────── */
+.btn-favorited {
+  color: #f76161;
+  border-color: rgba(247, 97, 97, 0.3);
+  background: rgba(247, 97, 97, 0.08);
+}
+
+.btn-favorited:hover {
+  background: rgba(247, 97, 97, 0.15);
+  border-color: rgba(247, 97, 97, 0.5);
+}
+
+/* Free item badge */
 .free-badge {
   text-align: center;
   padding: 10px 14px;
@@ -1026,9 +1209,7 @@
   font-weight: 600;
 }
 
-
-
-/* Forms */
+/* ── Forms ────────────────────────────────────────────────────── */
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 
 .form-row {
@@ -1072,24 +1253,6 @@
 .form-textarea { resize: none; }
 
 .form-select { cursor: pointer; }
-
-.photo-input-row { display: flex; gap: 12px; align-items: flex-start; }
-
-.photo-preview {
-  flex-shrink: 0;
-  width: 64px;
-  height: 64px;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #27272a;
-  border: 1px solid #3f3f46;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-}
-
-.photo-preview-img { width: 100%; height: 100%; object-fit: cover; }
 
 .expand-btn {
   display: flex;
@@ -1150,54 +1313,77 @@
 .coords-hint { color: #71717a; font-size: 10px; margin: 4px 0 0; }
 
 /* Toggles */
-.toggles-row { display: flex; gap: 24px; flex-wrap: wrap; }
 
-.toggle-label {
+/* ─── Replace the old .toggle-* block with these ──────────────────────────── */
+
+/* Row that holds all toggles */
+.toggles-row {
   display: flex;
-  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+/* One toggle item (pill + label) */
+.toggle-item {
+  display: flex;
+  align-items: flex-start;
   gap: 12px;
   cursor: pointer;
   user-select: none;
 }
 
-.toggle-wrap { position: relative; }
-
-.toggle-input {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-track {
+/* The pill track */
+.toggle-pill {
+  flex-shrink: 0;
+  position: relative;
   width: 36px;
   height: 20px;
-  background: #3f3f46;
   border-radius: 9999px;
+  background: #3f3f46;
   transition: background 0.2s;
+  margin-top: 2px;
 }
 
-.toggle-input:checked ~ .toggle-track.toggle-track--amber { background: #fbbf24; }
-.toggle-input:checked ~ .toggle-track.toggle-track--green { background: #34d399; }
+/* Coloured states */
+.toggle-pill--amber { background: #fbbf24; }
+.toggle-pill--green { background: #34d399; }
 
-.toggle-thumb {
+/* The sliding knob */
+.toggle-knob {
   position: absolute;
   top: 2px;
   left: 2px;
   width: 16px;
   height: 16px;
-  background: #ffffff;
   border-radius: 50%;
+  background: #ffffff;
   transition: transform 0.2s;
-  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
-.toggle-input:checked ~ .toggle-track + .toggle-thumb,
-.toggle-input:checked + .toggle-track + .toggle-thumb {
+/* Move knob to the right when "on" */
+.toggle-knob--on {
   transform: translateX(16px);
 }
 
-.toggle-text { color: #d4d4d8; font-size: 12px; font-weight: 500; }
+/* Text beside the toggle */
+.toggle-text {
+  color: #d4d4d8;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* Small hint line under the main label */
+.toggle-sub {
+  display: block;
+  font-size: 10px;
+  color: #71717a;
+  font-weight: 400;
+  margin-top: 2px;
+}
+
+
 
 /* Hint */
 .min-days-hint {
@@ -1254,3 +1440,67 @@
 /* Toggle thumb — fix for Angular checkbox rendering */
 .toggle-label input[type="checkbox"]:checked + .toggle-track { background: #fbbf24; }
 .toggle-label input[type="checkbox"]:checked + .toggle-track--green { background: #34d399; }
+
+
+/* ── Photo nav arrows ─────────────────────────────────────────── */
+.photo-primary {
+  position: relative;
+}
+
+.photo-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(9, 9, 11, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: #ffffff;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background 0.2s, transform 0.2s, opacity 0.2s;
+  opacity: 0;
+}
+
+.photo-primary:hover .photo-nav { opacity: 1; }
+
+.photo-nav:hover {
+  background: rgba(251, 191, 36, 0.85);
+  color: #09090b;
+  transform: translateY(-50%) scale(1.08);
+}
+
+.photo-nav svg { width: 16px; height: 16px; }
+
+.photo-nav--prev { left: 12px; }
+.photo-nav--next { right: 12px; }
+
+/* ── Dot indicators ───────────────────────────────────────────── */
+.photo-dots {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 10;
+}
+
+.photo-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.photo-dot--active {
+  background: #fbbf24;
+  transform: scale(1.3);
+}

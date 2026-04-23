@@ -20337,6 +20337,9 @@
           "isBorrower": {
             "type": "boolean"
           },
+          "hasDispute": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -22383,7 +22386,7 @@
             "type": "string",
             "nullable": true
           },
-          "pickUpAddress": {
+          "pickupAddress": {
             "type": "string",
             "nullable": true
           },
@@ -22440,6 +22443,9 @@
             "$ref": "#/components/schemas/ItemAvailability"
           },
           "isActive": {
+            "type": "boolean"
+          },
+          "requiresVerification": {
             "type": "boolean"
           },
           "averageRating": {
@@ -23075,6 +23081,11 @@
           },
           "isEdited": {
             "type": "boolean"
+          },
+          "editedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           },
           "rating": {
             "type": "integer",

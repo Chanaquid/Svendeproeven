@@ -9,7 +9,6 @@
   <!-- Profile Header -->
   <div class="profile-header">
 
-    <!-- Loading skeleton -->
     <div *ngIf="isLoadingProfile" class="skeleton-row">
       <div class="skeleton skeleton--avatar"></div>
       <div class="skeleton-info">
@@ -19,20 +18,13 @@
       </div>
     </div>
 
-    <!-- Profile info -->
     <div *ngIf="!isLoadingProfile && profile" class="profile-info">
-
-      <!-- Avatar -->
-      <div class="profile-avatar" [class.cursor-pointer]="profile?.avatarUrl" 
-     (click)="togglePfpModal()">
+      <div class="profile-avatar" [class.cursor-pointer]="profile?.avatarUrl" (click)="togglePfpModal()">
         <img *ngIf="profile.avatarUrl" [src]="profile.avatarUrl" class="profile-avatar__img" />
         <span *ngIf="!profile.avatarUrl">{{ getInitials(profile.fullName) || ''}}</span>
       </div>
 
-      <!-- Info -->
       <div class="profile-details">
-
-        <!-- Name + verified badge + report — all inline -->
         <div class="profile-name-row">
           <h1 class="profile-name">{{ profile.fullName }}</h1>
           <span *ngIf="profile.isVerified" class="badge badge--verified">
@@ -55,7 +47,6 @@
 
         <p class="profile-username">@{{ profile.username }}</p>
 
-        <!-- Stats row -->
         <div class="stats-row">
           <div class="stat-chip" [ngClass]="scoreBg">
             <span class="stat-chip__label">Score</span>
@@ -81,7 +72,6 @@
       </div>
     </div>
 
-    <!-- Not found -->
     <div *ngIf="!isLoadingProfile && !profile" class="not-found">
       <p class="not-found__text">User not found.</p>
     </div>
@@ -105,14 +95,11 @@
       </div>
 
       <div *ngIf="!itemsCollapsed">
-
-        <!-- Search bar -->
         <div class="search-bar">
-          <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearch()" 
+          <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearch()"
             placeholder="Search items..." class="search-input search-input--full" />
         </div>
 
-        <!-- Toolbar -->
         <div class="toolbar">
           <p class="toolbar-count">
             <span class="toolbar-count-num">{{ itemTotalCount }}</span> items found
@@ -127,21 +114,15 @@
               <option value="price_asc">Price: Low to high</option>
               <option value="price_desc">Price: High to low</option>
             </select>
-            <button (click)="onAvailableToggle()" [class.active]="availableOnly" class="filter-btn">
-              Available only
-            </button>
-            <button (click)="onFreeToggle()" [class.active]="freeOnly" class="filter-btn">
-              Free only
-            </button>
+            <button (click)="onAvailableToggle()" [class.active]="availableOnly" class="filter-btn">Available only</button>
+            <button (click)="onFreeToggle()" [class.active]="freeOnly" class="filter-btn">Free only</button>
           </div>
         </div>
 
-        <!-- Loading skeleton — only shown on initial page load -->
         <div *ngIf="isLoadingItems" class="grid-grid">
           <div *ngFor="let _ of [1,2,3,4,5,6,7,8]" class="skeleton-card"></div>
         </div>
 
-        <!-- Empty -->
         <div *ngIf="!isLoadingItems && filteredItems.length === 0" class="empty-state">
           <div class="empty-icon">📦</div>
           <h3 class="empty-title">No items found</h3>
@@ -150,14 +131,11 @@
           </p>
         </div>
 
-        <!-- Items grid -->
         <div *ngIf="!isLoadingItems && filteredItems.length > 0" class="grid-grid">
           <div *ngFor="let item of filteredItems; trackBy: trackByItemId" (click)="goToItem(item.slug)" class="card">
             <div class="card-image">
               <img *ngIf="item.mainPhotoUrl" [src]="item.mainPhotoUrl" [alt]="item.title" />
-              <div *ngIf="!item.mainPhotoUrl" class="card-fallback">
-                {{ getCategoryEmoji(item.categoryName) }}
-              </div>
+              <div *ngIf="!item.mainPhotoUrl" class="card-fallback">{{ getCategoryEmoji(item.categoryName) }}</div>
               <span class="card-badge" [ngClass]="getAvailabilityClass(item.availability)">
                 {{ getAvailabilityLabel(item.availability) }}
               </span>
@@ -165,9 +143,7 @@
             <div class="card-body">
               <div class="card-header">
                 <h3 class="card-title">{{ item.title }}</h3>
-                <span class="card-condition" [class]="getConditionClass(item.condition)">
-                  {{ item.condition }}
-                </span>
+                <span class="card-condition" [class]="getConditionClass(item.condition)">{{ item.condition }}</span>
               </div>
               <p class="card-location">📍 {{ item.pickupAddress }}</p>
               <p *ngIf="item.description" class="card-desc">{{ item.description }}</p>
@@ -188,7 +164,6 @@
           </div>
         </div>
 
-        <!-- Items pagination -->
         <div *ngIf="itemTotalPages > 1" class="pagination">
           <button (click)="goToItemPage(itemPage - 1)" [disabled]="itemPage === 1" class="page-btn">← Prev</button>
           <ng-container *ngFor="let page of itemPageNumbers; trackBy: trackByIndex">
@@ -196,11 +171,13 @@
             <button *ngIf="page !== -1" (click)="goToItemPage(page)" class="page-btn"
               [class.page-btn--active]="page === itemPage">{{ page }}</button>
           </ng-container>
-          <button (click)="goToItemPage(itemPage + 1)" [disabled]="itemPage === itemTotalPages"
-            class="page-btn">Next →</button>
+          <button (click)="goToItemPage(itemPage + 1)" [disabled]="itemPage === itemTotalPages" class="page-btn">Next →</button>
         </div>
-
       </div>
+    </div>
+
+    <div class="section-divider">
+      <span class="section-divider__label">xxx</span>
     </div>
 
     <!-- ── Reviews Section ── -->
@@ -210,12 +187,22 @@
           Reviews
           <span class="section-count">({{ reviews.length }})</span>
         </h2>
-        <div *ngIf="reviews.length > 0" class="rating-summary">
-          <div class="stars">
-            <span *ngFor="let s of [1,2,3,4,5]" class="stars__star" [class.stars__star--on]="s <= averageRating"
-              [class.stars__star--off]="s > averageRating">★</span>
+
+        <div class="reviews-header-right">
+          <div *ngIf="reviews.length > 0" class="rating-summary">
+            <div class="stars">
+              <span *ngFor="let s of [1,2,3,4,5]" class="stars__star" [class.stars__star--on]="s <= averageRating"
+                [class.stars__star--off]="s > averageRating">★</span>
+            </div>
+            <span class="rating-summary__value">{{ averageRating.toFixed(1) }}</span>
           </div>
-          <span class="rating-summary__value">{{ averageRating.toFixed(1) }}</span>
+          <!-- Admin-only: leave a review without needing a loan -->
+          <button
+            *ngIf="isAdmin && currentUserId !== userId && !hasAlreadyReviewed"
+            (click)="openAdminReviewModal()"
+            class="btn-admin-review">
+            ✍️ Add Review
+          </button>
         </div>
       </div>
 
@@ -240,74 +227,175 @@
 
       <!-- Reviews list -->
       <div *ngIf="!isLoadingReviews && reviews.length > 0" class="reviews-list">
+
         <div *ngFor="let review of displayedReviews; trackBy: trackByReviewId" class="review-card"
           [class.review-card--admin]="review.isAdminReview">
 
-          <div class="review-card__header">
-            <div class="review-card__reviewer">
-              <div class="reviewer-avatar">
-                <img *ngIf="review.reviewerAvatarUrl" [src]="review.reviewerAvatarUrl"
-                  class="reviewer-avatar__img" />
-                <span *ngIf="!review.reviewerAvatarUrl">{{ review.reviewerName.charAt(0).toUpperCase() }}</span>
-              </div>
-              <p class="reviewer-name" (click)="router.navigate(['/users', review.reviewerId])">
-                {{ review.reviewerName }}
-              </p>
-              <span *ngIf="review.isAdminReview" class="badge badge--admin">Admin</span>
-              <span *ngIf="review.isEdited" class="review-edited">(edited)</span>
+          <!-- ── Delete confirm (admin only, replaces card content) ── -->
+          <ng-container *ngIf="isAdmin && deletingReviewId === review.id">
+            <p class="review-delete-msg">Delete this review? This cannot be undone.</p>
+            <p *ngIf="deleteReviewError" class="error-msg" style="font-size:11px; margin-top:4px;">{{ deleteReviewError }}</p>
+            <div class="review-delete-actions">
+              <button (click)="cancelDeleteReview()" class="btn-secondary btn--sm">Cancel</button>
+              <button (click)="submitDeleteReview()" [disabled]="isDeletingReview" class="btn-danger btn--sm">
+                {{ isDeletingReview ? 'Deleting...' : 'Delete' }}
+              </button>
             </div>
-            <div class="review-card__meta">
-              <div class="stars">
-                <span *ngFor="let s of [1,2,3,4,5]" class="stars__star"
-                  [class.stars__star--on]="s <= review.rating"
-                  [class.stars__star--off]="s > review.rating">★</span>
-              </div>
-              <span class="review-date">{{ review.createdAt | date:'MMM d, yyyy' }}</span>
-            </div>
-          </div>
+          </ng-container>
 
-          <p *ngIf="review.itemTitle" class="review-item-context">
-            Loan: <span>{{ review.itemTitle }}</span>
-          </p>
-          <p *ngIf="review.comment" class="review-comment">{{ review.comment }}</p>
-          <p *ngIf="!review.comment" class="review-no-comment">No comment left.</p>
+          <!-- ── Normal card content ── -->
+          <ng-container *ngIf="deletingReviewId !== review.id">
+
+            <!-- Header row: reviewer info + stars + action buttons -->
+            <div class="review-card__header">
+              <div class="review-card__reviewer">
+                <div class="reviewer-avatar">
+                  <img *ngIf="review.reviewerAvatarUrl" [src]="review.reviewerAvatarUrl" class="reviewer-avatar__img" />
+                  <span *ngIf="!review.reviewerAvatarUrl">{{ review.reviewerName.charAt(0).toUpperCase() }}</span>
+                </div>
+                <p class="reviewer-name" (click)="router.navigate(['/users', review.reviewerId])">
+                  {{ review.reviewerName }}
+                </p>
+                <span *ngIf="review.isAdminReview" class="badge badge--admin">Admin</span>
+                <span *ngIf="review.isEdited" class="review-edited">(edited at {{ review.editedAt | date:'MMM d, yyyy' }})</span>
+              </div>
+
+              <div class="review-card__right">
+                <div class="review-card__meta">
+                  <div class="stars">
+                    <span *ngFor="let s of [1,2,3,4,5]" class="stars__star"
+                      [class.stars__star--on]="s <= review.rating"
+                      [class.stars__star--off]="s > review.rating">★</span>
+                  </div>
+                  <span class="review-date">{{ review.createdAt | date:'MMM d, yyyy' }}</span>
+                </div>
+
+                <div class="review-actions">
+                  <!-- Edit: own review only, not while already editing -->
+                  <button
+                    *ngIf="review.reviewerId === currentUserId && editingReviewId !== review.id"
+                    (click)="openEditReview(review)"
+                    class="review-action-btn"
+                    title="Edit">✏️</button>
+
+                  <!-- Delete: admin only, on any review (including own) -->
+                  <button
+                    *ngIf="isAdmin && editingReviewId !== review.id"
+                    (click)="confirmDeleteReview(review.id)"
+                    class="review-action-btn review-action-btn--delete"
+                    title="Delete">🗑️</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rented item context -->
+            <p *ngIf="review.itemTitle" class="review-item-context">
+              Rented Item: <span>{{ review.itemTitle }}</span>
+            </p>
+
+            <!-- Inline edit form -->
+            <div *ngIf="editingReviewId === review.id" class="review-edit-form">
+              <div class="star-row">
+                <button *ngFor="let s of [1,2,3,4,5]" (click)="setEditReviewRating(s)"
+                  class="star-btn"
+                  [class.star-btn--on]="s <= editReviewRating"
+                  [class.star-btn--off]="s > editReviewRating">★</button>
+              </div>
+              <textarea [(ngModel)]="editReviewComment" rows="3" placeholder="Update your comment..."
+                class="form-input form-textarea" style="font-size:13px;"></textarea>
+              <p *ngIf="editReviewError" class="error-msg" style="font-size:11px;">{{ editReviewError }}</p>
+              <div class="review-edit-actions">
+                <button (click)="cancelEditReview()" class="btn-secondary btn--sm">Cancel</button>
+                <button (click)="submitEditReview()"
+                  [disabled]="isSubmittingEditReview || editReviewRating === 0"
+                  class="btn-primary btn--sm">
+                  {{ isSubmittingEditReview ? 'Saving...' : 'Save' }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Comment display (hidden while editing) -->
+            <ng-container *ngIf="editingReviewId !== review.id">
+              <p *ngIf="review.comment" class="review-comment">{{ review.comment }}</p>
+              <p *ngIf="!review.comment" class="review-no-comment">No comment left.</p>
+            </ng-container>
+
+          </ng-container>
         </div>
 
         <!-- Reviews pagination -->
         <div *ngIf="reviewTotalPages > 1" class="pagination">
-          <button (click)="goToReviewPage(reviewPage - 1)" [disabled]="reviewPage === 1"
-            class="page-btn">← Prev</button>
+          <button (click)="goToReviewPage(reviewPage - 1)" [disabled]="reviewPage === 1" class="page-btn">← Prev</button>
           <ng-container *ngFor="let page of reviewPageNumbers; trackBy: trackByIndex">
             <span *ngIf="page === -1" class="page-ellipsis">…</span>
             <button *ngIf="page !== -1" (click)="goToReviewPage(page)" class="page-btn"
               [class.page-btn--active]="page === reviewPage">{{ page }}</button>
           </ng-container>
-          <button (click)="goToReviewPage(reviewPage + 1)" [disabled]="reviewPage === reviewTotalPages"
-            class="page-btn">Next →</button>
+          <button (click)="goToReviewPage(reviewPage + 1)" [disabled]="reviewPage === reviewTotalPages" class="page-btn">Next →</button>
         </div>
-
       </div>
     </div>
 
   </div>
 </main>
 
-
+<!-- ── PFP modal ── -->
 <div *ngIf="showPfpModal" class="modal-overlay" (click)="togglePfpModal()" style="z-index: 200;">
   <div class="modal-backdrop" style="background: rgba(0,0,0,0.9);"></div>
-  
   <div class="pfp-expanded-container" (click)="$event.stopPropagation()">
     <button class="modal-close pfp-close-btn" (click)="togglePfpModal()">
       <svg style="width:2rem; height:2rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
       </svg>
     </button>
-    
     <img [src]="profile?.avatarUrl" class="pfp-expanded-img" alt="Profile Picture" />
-    
     <div class="pfp-expanded-info">
-      <h2 class="modal-title" style="text-align: center; font-size: 1.5rem;">{{ profile?.fullName }}</h2>
-      <p class="modal-sub" style="text-align: center;">@{{ profile?.username }}</p>
+      <h2 class="modal-title" style="text-align:center; font-size:1.5rem;">{{ profile?.fullName }}</h2>
+      <p class="modal-sub" style="text-align:center;">@{{ profile?.username }}</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── Admin review modal ── -->
+<div *ngIf="showAdminReviewModal" class="modal-overlay">
+  <div class="modal-backdrop" (click)="showAdminReviewModal = false"></div>
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title">Admin Review</h2>
+        <p class="modal-sub">Reviewing @{{ profile?.username }}</p>
+      </div>
+      <button (click)="showAdminReviewModal = false" class="modal-close">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Rating <span class="required">*</span></label>
+        <div class="star-row">
+          <button *ngFor="let s of [1,2,3,4,5]" (click)="setAdminReviewRating(s)"
+            class="star-btn"
+            [class.star-btn--on]="s <= adminReviewRating"
+            [class.star-btn--off]="s > adminReviewRating">★</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Comment <span class="required">*</span></label>
+        <textarea [(ngModel)]="adminReviewComment" rows="3" placeholder="Leave a comment..."
+          class="form-input form-textarea"></textarea>
+      </div>
+      <p *ngIf="adminReviewError" class="error-msg">{{ adminReviewError }}</p>
+      <p *ngIf="adminReviewSuccess" class="success-msg">{{ adminReviewSuccess }}</p>
+    </div>
+    <div class="modal-footer">
+      <button (click)="showAdminReviewModal = false" class="btn-secondary">Cancel</button>
+      <button (click)="submitAdminReview()"
+        [disabled]="isSubmittingAdminReview || adminReviewRating === 0 || !adminReviewComment.trim()"
+        class="btn-primary">
+        {{ isSubmittingAdminReview ? 'Submitting...' : 'Submit Review' }}
+      </button>
     </div>
   </div>
 </div>

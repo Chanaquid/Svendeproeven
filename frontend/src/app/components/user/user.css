@@ -637,7 +637,7 @@
 }
 
 .reviewer-name:hover { color: #fbbf24; }
-.review-edited { font-size: 0.625rem; color: #52525b; }
+.review-edited { font-size: 0.625rem; color: #8a8a9c; }
 
 .review-card__meta { display: flex; align-items: center; gap: 0.5rem; }
 .review-date { font-size: 0.625rem; color: #71717a; }
@@ -848,6 +848,155 @@
 .pfp-expanded-info {
   animation: fadeInUp 0.4s ease-out;
 }
+
+
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 8px 0 32px;
+}
+
+.section-divider::before,
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #27272a;
+}
+
+.section-divider__label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #52525b;
+  white-space: nowrap;
+}
+
+
+/* ── REVIEWS HEADER RIGHT ── */
+.reviews-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ── ADMIN REVIEW BUTTON ── */
+.btn-admin-review {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.btn-admin-review:hover {
+  background: rgba(251, 191, 36, 0.15);
+  border-color: rgba(251, 191, 36, 0.5);
+}
+
+/* ── REVIEW CARD RIGHT SIDE ── */
+.review-card__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.review-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ── REVIEW ACTION BUTTONS ── */
+.review-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 3px 5px;
+  border-radius: 6px;
+  opacity: 0.4;
+  transition: opacity 0.2s, background 0.2s;
+  line-height: 1;
+}
+.review-action-btn:hover { opacity: 1; background: rgba(251, 191, 36, 0.1); }
+.review-action-btn--delete:hover { background: rgba(248, 113, 113, 0.1); }
+
+/* ── INLINE EDIT FORM ── */
+.review-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #09090b;
+  border: 1px solid #3f3f46;
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 4px;
+}
+
+.review-edit-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ── INLINE DELETE CONFIRM ── */
+.review-delete-msg {
+  font-size: 13px;
+  color: #fca5a5;
+  margin: 0;
+}
+
+.review-delete-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+/* ── STAR BUTTONS ── */
+.star-row { display: flex; gap: 4px; }
+
+.star-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  line-height: 1;
+  padding: 0 1px;
+  transition: transform 0.15s;
+}
+.star-btn:hover    { transform: scale(1.15); }
+.star-btn--on      { color: #fbbf24; }
+.star-btn--off     { color: #52525b; }
+
+/* ── PRIMARY BUTTON ── */
+.btn-primary {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #09090b;
+  background: #fbbf24;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-primary:hover    { background: #fcd34d; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── SMALL BUTTON MODIFIER ── */
+.btn--sm { padding: 5px 12px; font-size: 12px; }
+
 
 @keyframes zoomIn {
   from { transform: scale(0.8); opacity: 0; }

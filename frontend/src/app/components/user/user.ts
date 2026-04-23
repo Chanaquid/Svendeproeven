@@ -34,6 +34,7 @@ export class UserProfile implements OnInit, OnDestroy {
 
   userId = '';
   currentUserId = '';
+  isAdmin = false;
   profile: UserPublicProfileDto | null = null;
   filteredItems: ItemListDto[] = [];
   reviews: UserReviewListDto[] = [];
@@ -54,64 +55,31 @@ export class UserProfile implements OnInit, OnDestroy {
   sortDescending = true;
 
   itemTotalCount = 0;
-  //Items pagination
   itemPage = 1;
   profileTotalItems = 0;
 
-  //pfp modal
+  // pfp modal
   showPfpModal = false;
 
-  get itemPageSize(): number {
-    const cardMinWidth = 240;
-    const gap = 16;
-    const pagePadding = 80;
-    const availableWidth = window.innerWidth - pagePadding;
-    const cols = Math.max(1, Math.floor((availableWidth + gap) / (cardMinWidth + gap)));
-    return cols * 3;
-  }
+  // ── Admin review modal ────────────────────────────────────────────────────
+  showAdminReviewModal = false;
+  adminReviewRating = 0;
+  adminReviewComment = '';
+  isSubmittingAdminReview = false;
+  adminReviewError = '';
+  adminReviewSuccess = '';
 
-  get itemTotalPages(): number {
-    return getTotalPages(this.itemTotalCount, this.itemPageSize);
-  }
+  // ── Edit own review (inline) ──────────────────────────────────────────────
+  editingReviewId: number | null = null;
+  editReviewRating = 0;
+  editReviewComment = '';
+  isSubmittingEditReview = false;
+  editReviewError = '';
 
-  get itemPageNumbers(): number[] {
-    return getPageNumbers(this.itemPage, this.itemTotalPages);
-  }
-
-  goToItemPage(page: number): void {
-    if (page < 1 || page > this.itemTotalPages) return;
-    this.itemPage = page;
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { page },
-      queryParamsHandling: 'merge',
-    });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    this.loadItems();
-  }
-
-  // ── Reviews pagination (client-side, independent) ────────────────────────
-  reviewPage = 1;
-  reviewPageSize = 5;
-
-  get reviewTotalPages(): number {
-    return getTotalPages(this.reviews.length, this.reviewPageSize);
-  }
-
-  get reviewPageNumbers(): number[] {
-    return getPageNumbers(this.reviewPage, this.reviewTotalPages);
-  }
-
-  get displayedReviews(): UserReviewListDto[] {
-    const start = (this.reviewPage - 1) * this.reviewPageSize;
-    return this.reviews.slice(start, start + this.reviewPageSize);
-  }
-
-  goToReviewPage(page: number): void {
-    if (page < 1 || page > this.reviewTotalPages) return;
-    this.reviewPage = page;
-    this.cdr.detectChanges();
-  }
+  // ── Delete review confirm (inline, admin only) ────────────────────────────
+  deletingReviewId: number | null = null;
+  isDeletingReview = false;
+  deleteReviewError = '';
 
   // ── Report modal ──────────────────────────────────────────────────────────
   showReportModal = false;
@@ -121,42 +89,51 @@ export class UserProfile implements OnInit, OnDestroy {
   reportSuccess = '';
   reportError = '';
 
-  // ── RxJS subjects ─────────────────────────────────────────────────────────
+  // ── RxJS ─────────────────────────────────────────────────────────────────
   private searchSubject = new Subject<string>();
   private destroy$ = new Subject<void>();
+  private resizeHandler = () => { this.itemPage = 1; this.loadItems(); };
 
-  // ── Resize listener ref ───────────────────────────────────────────────────
-  private resizeHandler = () => {
-    this.itemPage = 1;
-    this.loadItems();
-  };
+  // ── Pagination ────────────────────────────────────────────────────────────
+  get itemPageSize(): number {
+    const cardMinWidth = 240, gap = 16, pagePadding = 80;
+    const cols = Math.max(1, Math.floor((window.innerWidth - pagePadding + gap) / (cardMinWidth + gap)));
+    return cols * 3;
+  }
+  get itemTotalPages(): number { return getTotalPages(this.itemTotalCount, this.itemPageSize); }
+  get itemPageNumbers(): number[] { return getPageNumbers(this.itemPage, this.itemTotalPages); }
+
+  reviewPage = 1;
+  reviewPageSize = 5;
+  get reviewTotalPages(): number { return getTotalPages(this.reviews.length, this.reviewPageSize); }
+  get reviewPageNumbers(): number[] { return getPageNumbers(this.reviewPage, this.reviewTotalPages); }
+  get displayedReviews(): UserReviewListDto[] {
+    const start = (this.reviewPage - 1) * this.reviewPageSize;
+    return this.reviews.slice(start, start + this.reviewPageSize);
+  }
 
   // ── Computed ──────────────────────────────────────────────────────────────
   get averageRating(): number {
     if (!this.reviews.length) return 0;
     return Math.round((this.reviews.reduce((s, r) => s + r.rating, 0) / this.reviews.length) * 10) / 10;
   }
-
   get scoreColor(): string {
     const s = this.profile?.score ?? 0;
-    if (s >= 70) return 'score--green';
-    if (s >= 40) return 'score--amber';
-    return 'score--red';
+    return s >= 70 ? 'score--green' : s >= 40 ? 'score--amber' : 'score--red';
   }
-
   get scoreBg(): string {
     const s = this.profile?.score ?? 0;
-    if (s >= 70) return 'score-chip--green';
-    if (s >= 40) return 'score-chip--amber';
-    return 'score-chip--red';
+    return s >= 70 ? 'score-chip--green' : s >= 40 ? 'score-chip--amber' : 'score-chip--red';
+  }
+  /** True if the current user has already left a review on this profile. */
+  get hasAlreadyReviewed(): boolean {
+    return this.reviews.some(r => r.reviewerId === this.currentUserId);
   }
 
-  // ── trackBy helpers ───────────────────────────────────────────────────────
-  trackByIndex(_index: number, value: number): number { return value; }
-  trackByItemId(_index: number, item: ItemListDto): string { return item.slug; }
-  trackByReviewId(_index: number, review: UserReviewListDto): string {
-    return review.reviewerId + review.createdAt;
-  }
+  // ── trackBy ───────────────────────────────────────────────────────────────
+  trackByIndex(_i: number, v: number): number { return v; }
+  trackByItemId(_i: number, item: ItemListDto): string { return item.slug; }
+  trackByReviewId(_i: number, review: UserReviewListDto): number { return review.id; }
 
   constructor(
     private authService: AuthService,
@@ -170,34 +147,20 @@ export class UserProfile implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
-    if (!this.authService.isLoggedIn()) {
-      this.router.navigate(['/']);
-      return;
-    }
+    if (!this.authService.isLoggedIn()) { this.router.navigate(['/']); return; }
+    this.isAdmin = this.authService.isAdmin();
 
-    // Debounce search input — fires 350ms after user stops typing
-    this.searchSubject.pipe(
-      debounceTime(350),
-      takeUntil(this.destroy$)
-    ).subscribe(() => {
+    this.searchSubject.pipe(debounceTime(350), takeUntil(this.destroy$)).subscribe(() => {
       this.itemPage = 1;
-      this.router.navigate([], {
-        relativeTo: this.route,
-        queryParams: { page: 1 },
-        queryParamsHandling: 'merge',
-      });
+      this.router.navigate([], { relativeTo: this.route, queryParams: { page: 1 }, queryParamsHandling: 'merge' });
       this.loadItems();
     });
 
     window.addEventListener('resize', this.resizeHandler);
 
-    // Read userId from route params, then read page from query params
     this.route.params.subscribe(params => {
       this.userId = params['id'];
-
-      const qp = this.route.snapshot.queryParams;
-      this.itemPage = parseInt(qp['page']) || 1;
-
+      this.itemPage = parseInt(this.route.snapshot.queryParams['page']) || 1;
       this.load();
     });
   }
@@ -219,80 +182,41 @@ export class UserProfile implements OnInit, OnDestroy {
     this.itemTotalCount = 0;
 
     this.userService.getMyProfile().subscribe({
-      next: (res) => {
-        this.currentUserId = res.data?.id ?? '';
-        this.cdr.detectChanges();
-      },
+      next: (res) => { this.currentUserId = res.data?.id ?? ''; this.cdr.detectChanges(); },
       error: () => { }
     });
-
     this.userService.getPublicProfile(this.userId).subscribe({
-      next: (res) => {
-        this.profile = res.data;
-        this.isLoadingProfile = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.isLoadingProfile = false;
-        this.cdr.detectChanges();
-      }
+      next: (res) => { this.profile = res.data; this.isLoadingProfile = false; this.cdr.detectChanges(); },
+      error: () => { this.isLoadingProfile = false; this.cdr.detectChanges(); }
     });
-
     this.loadInitialTotal();
     this.loadItems();
+    this.loadReviews();
+  }
 
+  loadReviews(): void {
+    this.isLoadingReviews = true;
     this.reviewService.getReviewsForUser(this.userId, {}, { page: 1, pageSize: 200 }).subscribe({
-      next: (res) => {
-        this.reviews = res.data?.items ?? [];
-        this.isLoadingReviews = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.isLoadingReviews = false;
-        this.cdr.detectChanges();
-      }
+      next: (res) => { this.reviews = res.data?.items ?? []; this.isLoadingReviews = false; this.cdr.detectChanges(); },
+      error: () => { this.isLoadingReviews = false; this.cdr.detectChanges(); }
     });
   }
 
   private loadInitialTotal(): void {
     this.itemService.getPublicByOwner(this.userId, {}, { page: 1, pageSize: 1 }).subscribe({
-      next: (res) => {
-        this.profileTotalItems = res.data?.totalCount ?? 0;
-        this.cdr.detectChanges();
-      }
+      next: (res) => { this.profileTotalItems = res.data?.totalCount ?? 0; this.cdr.detectChanges(); }
     });
   }
 
-  /**
-   * Fetches items from backend. Shows skeleton only on first load —
-   * subsequent calls (search, filter, sort, page change) swap content silently.
-   */
   private loadItems(): void {
-    if (this.isInitialItemLoad) {
-      this.isLoadingItems = true;
-      this.cdr.detectChanges();
-    }
-
+    if (this.isInitialItemLoad) { this.isLoadingItems = true; this.cdr.detectChanges(); }
     const pageSize = Math.max(this.itemPageSize, 1);
-
     const filter: ItemFilter = {};
     if (this.searchQuery.trim()) filter.search = this.searchQuery.trim();
     if (this.availableOnly) filter.availability = ItemAvailability.Available;
-
-    if (this.freeOnly) {
-      filter.isFree = true;
-    } else if (this.sortBy === 'pricePerDay') {
-      // When sorting by price, explicitly exclude free items
-      filter.isFree = false;
-    }
-
-    const paging: PagedRequest = {
-      page: this.itemPage,
-      pageSize,
-      sortBy: this.sortBy,
-      sortDescending: this.sortDescending,
-    };
-
+    if (this.freeOnly) { filter.isFree = true; }
+    else if (this.sortBy === 'pricePerDay') { filter.isFree = false; }
+    const paging: PagedRequest = { page: this.itemPage, pageSize, sortBy: this.sortBy, sortDescending: this.sortDescending };
     this.itemService.getPublicByOwner(this.userId, filter, paging).subscribe({
       next: (res) => {
         this.filteredItems = res.data?.items ?? [];
@@ -301,27 +225,37 @@ export class UserProfile implements OnInit, OnDestroy {
         this.isInitialItemLoad = false;
         this.cdr.detectChanges();
       },
-      error: () => {
-        this.isLoadingItems = false;
-        this.isInitialItemLoad = false;
-        this.cdr.detectChanges();
-      }
+      error: () => { this.isLoadingItems = false; this.isInitialItemLoad = false; this.cdr.detectChanges(); }
     });
   }
 
-  onSearch(): void {
-    this.cdr.detectChanges();
-    this.searchSubject.next(this.searchQuery);
+  goToItemPage(page: number): void {
+    if (page < 1 || page > this.itemTotalPages) return;
+    this.itemPage = page;
+    this.router.navigate([], { relativeTo: this.route, queryParams: { page }, queryParamsHandling: 'merge' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.loadItems();
   }
+
+  goToReviewPage(page: number): void {
+    if (page < 1 || page > this.reviewTotalPages) return;
+    this.reviewPage = page;
+    this.cdr.detectChanges();
+  }
+
+  onSearch(): void { this.cdr.detectChanges(); this.searchSubject.next(this.searchQuery); }
 
   onAvailableToggle(): void {
     this.availableOnly = !this.availableOnly;
     this.itemPage = 1;
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { page: 1 },
-      queryParamsHandling: 'merge',
-    });
+    this.router.navigate([], { relativeTo: this.route, queryParams: { page: 1 }, queryParamsHandling: 'merge' });
+    this.loadItems();
+  }
+
+  onFreeToggle(): void {
+    this.freeOnly = !this.freeOnly;
+    this.itemPage = 1;
+    this.router.navigate([], { relativeTo: this.route, queryParams: { page: 1 }, queryParamsHandling: 'merge' });
     this.loadItems();
   }
 
@@ -338,24 +272,102 @@ export class UserProfile implements OnInit, OnDestroy {
       default:           this.sortBy = 'createdAt';     this.sortDescending = true;
     }
     this.itemPage = 1;
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { page: 1 },
-      queryParamsHandling: 'merge',
-    });
+    this.router.navigate([], { relativeTo: this.route, queryParams: { page: 1 }, queryParamsHandling: 'merge' });
     this.loadItems();
   }
 
-  onFreeToggle(): void {
-    this.freeOnly = !this.freeOnly;
-    this.itemPage = 1;
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { page: 1 },
-      queryParamsHandling: 'merge',
-    });
-    this.loadItems();
+  // ── Admin review ──────────────────────────────────────────────────────────
+
+  openAdminReviewModal(): void {
+    this.adminReviewRating = 0;
+    this.adminReviewComment = '';
+    this.adminReviewError = '';
+    this.adminReviewSuccess = '';
+    this.showAdminReviewModal = true;
   }
+
+  setAdminReviewRating(r: number): void { this.adminReviewRating = r; }
+
+  submitAdminReview(): void {
+    if (this.adminReviewRating === 0) { this.adminReviewError = 'Please select a rating.'; return; }
+    if (!this.adminReviewComment.trim()) { this.adminReviewError = 'Please add a comment.'; return; }
+    this.isSubmittingAdminReview = true;
+    this.adminReviewError = '';
+    this.reviewService.adminCreateReview({
+      reviewedUserId: this.userId,
+      rating: this.adminReviewRating,
+      comment: this.adminReviewComment.trim(),
+    }).subscribe({
+      next: () => {
+        this.isSubmittingAdminReview = false;
+        this.adminReviewSuccess = '✓ Review submitted.';
+        this.cdr.detectChanges();
+        setTimeout(() => { this.showAdminReviewModal = false; this.loadReviews(); }, 1000);
+      },
+      error: (err) => {
+        this.adminReviewError = err.error?.message ?? 'Failed to submit review.';
+        this.isSubmittingAdminReview = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // ── Edit own review ───────────────────────────────────────────────────────
+
+  openEditReview(review: UserReviewListDto): void {
+    this.editingReviewId = review.id;
+    this.editReviewRating = review.rating;
+    this.editReviewComment = review.comment ?? '';
+    this.editReviewError = '';
+    this.deletingReviewId = null;
+  }
+
+  cancelEditReview(): void { this.editingReviewId = null; }
+
+  setEditReviewRating(r: number): void { this.editReviewRating = r; }
+
+  submitEditReview(): void {
+    if (!this.editingReviewId || this.editReviewRating === 0) { this.editReviewError = 'Please select a rating.'; return; }
+    this.isSubmittingEditReview = true;
+    this.editReviewError = '';
+    this.reviewService.updateReview(this.editingReviewId, {
+      rating: this.editReviewRating,
+      comment: this.editReviewComment.trim() || undefined,
+    }).subscribe({
+      next: () => { this.isSubmittingEditReview = false; this.editingReviewId = null; this.loadReviews(); },
+      error: (err) => {
+        this.editReviewError = err.error?.message ?? 'Failed to update review.';
+        this.isSubmittingEditReview = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // ── Delete review (admin only) ────────────────────────────────────────────
+
+  confirmDeleteReview(id: number): void {
+    this.deletingReviewId = id;
+    this.deleteReviewError = '';
+    this.editingReviewId = null;
+  }
+
+  cancelDeleteReview(): void { this.deletingReviewId = null; }
+
+  submitDeleteReview(): void {
+    if (!this.deletingReviewId) return;
+    this.isDeletingReview = true;
+    this.deleteReviewError = '';
+    this.reviewService.adminDeleteReview(this.deletingReviewId).subscribe({
+      next: () => { this.isDeletingReview = false; this.deletingReviewId = null; this.loadReviews(); },
+      error: (err) => {
+        this.deleteReviewError = err.error?.message ?? 'Failed to delete review.';
+        this.isDeletingReview = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // ── Report ────────────────────────────────────────────────────────────────
 
   openReportModal(): void {
     this.reportReason = '';
@@ -366,13 +378,9 @@ export class UserProfile implements OnInit, OnDestroy {
   }
 
   submitReport(): void {
-    if (!this.reportReason) {
-      this.reportError = 'Please select a reason.';
-      return;
-    }
+    if (!this.reportReason) { this.reportError = 'Please select a reason.'; return; }
     this.isSubmittingReport = true;
     this.reportError = '';
-
     this.reportService.create({
       type: ReportType.User,
       targetId: this.userId,
@@ -394,16 +402,9 @@ export class UserProfile implements OnInit, OnDestroy {
   }
 
   togglePfpModal(): void {
-    // Only allow expanding if there is an actual image
     if (this.profile?.avatarUrl) {
       this.showPfpModal = !this.showPfpModal;
-      
-      // Prevent scrolling when modal is open
-      if (this.showPfpModal) {
-        document.body.style.overflow = 'hidden';
-      } else {
-        document.body.style.overflow = 'auto';
-      }
+      document.body.style.overflow = this.showPfpModal ? 'hidden' : 'auto';
     }
   }
 

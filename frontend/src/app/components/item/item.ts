@@ -16,6 +16,15 @@ import {
   getAvailabilityClass,
   getAvailabilityLabel,
 } from '../../utils/item.utils';
+import { UploadImageService } from '../../services/uploadImageService';
+
+interface EditablePhoto {
+  photoUrl: string;
+  isPrimary: boolean;
+  displayOrder: number;
+  file?: File;
+  uploading?: boolean;
+}
 
 @Component({
   selector: 'app-item',
@@ -59,6 +68,12 @@ export class Item implements OnInit, OnDestroy {
 
   // ── Pagination — dynamic page size matching window cols × 3 rows ──────────
   currentPage = 1;
+
+
+  // Photo management for create modal
+  createPhotos: EditablePhoto[] = [];
+  isDraggingOver: number | null = null;
+  dragSourceIndex: number | null = null;
 
 
   //Sorting
@@ -112,6 +127,7 @@ export class Item implements OnInit, OnDestroy {
     private authService: AuthService,
     private itemService: ItemService,
     private categoryService: CategoryService,
+    private uploadService: UploadImageService,
     private router: Router,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
@@ -141,6 +157,14 @@ export class Item implements OnInit, OnDestroy {
   }
 
   emptyCreateForm(): CreateItemDto & { photoUrl?: string } {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const localStr = (d: Date) =>
+      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+    const today = new Date();
+    const threeMonths = new Date(today);
+    threeMonths.setMonth(threeMonths.getMonth() + 3);
+
     return {
       categoryId: 0,
       title: '',
@@ -155,8 +179,8 @@ export class Item implements OnInit, OnDestroy {
       pickupAddress: '',
       pickupLatitude: undefined as any,
       pickupLongitude: undefined as any,
-      availableFrom: '',
-      availableUntil: '',
+      availableFrom: localStr(today),
+      availableUntil: localStr(threeMonths),
       photoUrl: '',
     };
   }
@@ -338,6 +362,7 @@ export class Item implements OnInit, OnDestroy {
 
   openAddModal(): void {
     this.createForm = this.emptyCreateForm();
+    this.createPhotos = [];
     this.createError = '';
     this.showAddModal = true;
     if (this.categories.length === 0) {
@@ -351,27 +376,71 @@ export class Item implements OnInit, OnDestroy {
   }
 
   createItem(): void {
-    if (!this.createForm.title || !this.createForm.categoryId || !this.createForm.availableFrom || !this.createForm.availableUntil) {
+    if (!this.createForm.title?.trim()) {
       this.createError = 'Please fill in all required fields.';
       return;
     }
+    if (!this.createForm.categoryId) {
+      this.createError = 'Please fill in all required fields.';
+      return;
+    }
+    if (!this.createForm.description?.trim()) {
+      this.createError = 'Please fill in all required fields.';
+      return;
+    }
+    if (!this.createForm.availableFrom || !this.createForm.availableUntil) {
+      this.createError = 'Please fill in all required fields.';
+      return;
+    }
+    if (!this.createForm.pickupAddress?.trim()) {
+      this.createError = 'Please fill in all required fields.';
+      return;
+    }
+    if (this.createPhotos.some(p => p.uploading)) {
+      this.createError = 'Please wait for all photos to finish uploading.';
+      return;
+    }
+
     this.isCreating = true;
     this.createError = '';
+
     const { photoUrl, ...itemDto } = this.createForm;
+    if (!itemDto.minLoanDays) itemDto.minLoanDays = undefined;
+    if (!itemDto.maxLoanDays) itemDto.maxLoanDays = undefined;
+
     this.itemService.create(itemDto).subscribe({
       next: (res) => {
         const created = res.data!;
         this.createdItemId = created.id;
-        if (photoUrl?.trim()) {
-          this.itemService.addPhoto(created.id, {
-            photoUrl: photoUrl.trim(), isPrimary: true, displayOrder: 0,
-          }).subscribe({
-            next: () => this.finishCreate(),
-            error: () => this.finishCreate(),
-          });
-        } else {
+        if (this.createPhotos.length === 0) {
           this.finishCreate();
+          return;
         }
+
+        const uploadSequentially = async () => {
+          let firstPhotoId: number | null = null;
+          for (let i = 0; i < this.createPhotos.length; i++) {
+            const photo = this.createPhotos[i];
+            try {
+              const result = await this.itemService.addPhoto(created.id, {
+                photoUrl: photo.photoUrl,
+                isPrimary: i === 0,
+                displayOrder: i,
+              }).toPromise();
+              if (i === 0 && result?.data?.id) {
+                firstPhotoId = result.data.id;
+              }
+            } catch { /* best-effort */ }
+          }
+          if (firstPhotoId) {
+            try {
+              await this.itemService.setPrimaryPhoto(created.id, firstPhotoId).toPromise();
+            } catch { /* best-effort */ }
+          }
+          this.finishCreate();
+        };
+
+        uploadSequentially();
       },
       error: (err) => {
         this.createError = err.error?.message ?? 'Failed to create item.';
@@ -391,9 +460,8 @@ export class Item implements OnInit, OnDestroy {
   onAddressInput(value: string): void {
     clearTimeout(this.addressSearchTimeout);
     this.showAddressSuggestions = false;
-    this.addressSuggestions = [];
+    if (!value || value.length < 3) { this.addressSuggestions = []; return; }
 
-    if (!value || value.length < 3) return;
 
     this.addressSearchTimeout = setTimeout(() => {
       const url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(value)}&limit=5&apiKey=${this.GEOAPIFY_KEY}`;
@@ -428,4 +496,86 @@ export class Item implements OnInit, OnDestroy {
       setTimeout(() => { this.copiedSlug = null; this.cdr.detectChanges(); }, 2000);
     }).catch(err => console.error('Could not copy text:', err));
   }
+
+  async onCreatePhotosSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+
+    for (const file of files) {
+      if (file.size > 8 * 1024 * 1024) {
+        this.createError = `${file.name} exceeds 8 MB limit.`;
+        continue;
+      }
+      const placeholder: EditablePhoto = {
+        photoUrl: URL.createObjectURL(file),
+        isPrimary: this.createPhotos.length === 0,
+        displayOrder: this.createPhotos.length,
+        file,
+        uploading: true,
+      };
+      this.createPhotos = [...this.createPhotos, placeholder];
+      this.cdr.detectChanges();
+
+      try {
+        const url = await this.uploadService.uploadImage(file);
+        const idx = this.createPhotos.indexOf(placeholder);
+        if (idx !== -1) {
+          this.createPhotos[idx] = { ...this.createPhotos[idx], photoUrl: url, uploading: false, file: undefined };
+          this.createPhotos = [...this.createPhotos];
+        }
+      } catch {
+        this.createPhotos = this.createPhotos.filter(p => p !== placeholder);
+        this.createError = `Failed to upload ${file.name}.`;
+      }
+      this.cdr.detectChanges();
+    }
+  }
+
+  removeCreatePhoto(index: number): void {
+    this.createPhotos = this.createPhotos.filter((_, i) => i !== index);
+    this.recalcCreatePhotoOrder();
+  }
+
+  private recalcCreatePhotoOrder(): void {
+    this.createPhotos = this.createPhotos.map((p, i) => ({
+      ...p,
+      displayOrder: i,
+      isPrimary: i === 0,
+    }));
+  }
+
+  onCreateDragStart(index: number): void { this.dragSourceIndex = index; }
+
+  onCreateDragOver(event: DragEvent, index: number): void {
+    event.preventDefault();
+    this.isDraggingOver = index;
+  }
+
+  onCreateDragLeave(): void { this.isDraggingOver = null; }
+
+  onCreateDrop(event: DragEvent, targetIndex: number): void {
+    event.preventDefault();
+    if (this.dragSourceIndex === null || this.dragSourceIndex === targetIndex) {
+      this.isDraggingOver = null;
+      this.dragSourceIndex = null;
+      return;
+    }
+    const photos = [...this.createPhotos];
+    const [moved] = photos.splice(this.dragSourceIndex, 1);
+    photos.splice(targetIndex, 0, moved);
+    this.createPhotos = photos;
+    this.recalcCreatePhotoOrder();
+    this.isDraggingOver = null;
+    this.dragSourceIndex = null;
+  }
+
+  onCreateDragEnd(): void {
+    this.isDraggingOver = null;
+    this.dragSourceIndex = null;
+  }
+
+
+
+
 }

@@ -695,7 +695,9 @@ namespace backend.Data
                 entity.HasKey(r => r.Id);
 
                 //One review per loan per reviewer (unique, nullable FK)
-                entity.HasIndex(r => r.LoanId).IsUnique().HasFilter("[LoanId] IS NOT NULL");
+                entity.HasIndex(r => new { r.LoanId, r.ReviewerId })
+                          .IsUnique()
+                          .HasFilter("[LoanId] IS NOT NULL"); 
                 entity.HasIndex(r => r.ReviewerId);
                 entity.HasIndex(r => r.ReviewedUserId);
                 entity.HasIndex(r => new { r.ReviewedUserId, r.Rating });

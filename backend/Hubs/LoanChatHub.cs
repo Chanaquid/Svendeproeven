@@ -2,43 +2,62 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
-namespace backend.Hubs
+[Authorize]
+public class LoanChatHub : Hub
 {
-    [Authorize]
-    public class LoanChatHub : Hub
+    private readonly ILoanMessageService _messageService;
+    private readonly IOnlineTracker _onlineTracker;
+    private readonly ILoanMessageRepository _loanMessageRepository;
+
+
+    public LoanChatHub(ILoanMessageService messageService, IOnlineTracker onlineTracker, ILoanMessageRepository loanMessageRepository)
     {
-        private readonly ILoanMessageService _messageService;
+        _messageService = messageService;
+        _onlineTracker = onlineTracker;
+        _loanMessageRepository = loanMessageRepository;
+    }
 
-        public LoanChatHub(ILoanMessageService messageService)
+    public async Task JoinLoan(int loanId)
+    {
+        var userId = Context.UserIdentifier;
+        if (userId == null) return;
+
+        var isAllowed = await _messageService.IsPartyToLoanAsync(loanId, userId);
+        if (!isAllowed)
         {
-            _messageService = messageService;
+            await Clients.Caller.SendAsync("Error", "Not allowed");
+            return;
         }
 
-        public async Task JoinLoan(int loanId)
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"loan_{loanId}");
+        _onlineTracker.AddToLoan(Context.ConnectionId, userId, loanId);
+
+        var unread = await _loanMessageRepository.GetUnreadMessagesForUserAsync(loanId, userId);
+        if (unread.Any())
         {
-            var userId = Context.UserIdentifier;
+            foreach (var msg in unread)
+                msg.IsRead = true;
 
-            if (userId == null)
-                return;
+            await _loanMessageRepository.SaveChangesAsync();
 
-            var isAllowed = await _messageService.IsPartyToLoanAsync(loanId, userId);
-
-            if (!isAllowed)
+            foreach (var msg in unread)
             {
-                await Clients.Caller.SendAsync("Error", "Not allowed");
-                return;
+                await Clients
+                    .Group($"loan_{loanId}")
+                    .SendAsync("MessageRead", msg.Id);
             }
-
-            await Groups.AddToGroupAsync(
-                Context.ConnectionId,
-                $"loan_{loanId}");
         }
+    }
 
-        public async Task LeaveLoan(int loanId)
-        {
-            await Groups.RemoveFromGroupAsync(
-                Context.ConnectionId,
-                $"loan_{loanId}");
-        }
+    public async Task LeaveLoan(int loanId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"loan_{loanId}");
+        _onlineTracker.Remove(Context.ConnectionId);
+    }
+
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        _onlineTracker.Remove(Context.ConnectionId);
+        await base.OnDisconnectedAsync(exception);
     }
 }
