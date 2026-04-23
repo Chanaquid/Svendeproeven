@@ -1648,13 +1648,13 @@ namespace backend.Migrations
 
                     b.HasIndex("IsDeleted");
 
-                    b.HasIndex("LoanId")
-                        .IsUnique()
-                        .HasFilter("[LoanId] IS NOT NULL");
-
                     b.HasIndex("ReviewedUserId");
 
                     b.HasIndex("ReviewerId");
+
+                    b.HasIndex("LoanId", "ReviewerId")
+                        .IsUnique()
+                        .HasFilter("[LoanId] IS NOT NULL");
 
                     b.HasIndex("ReviewedUserId", "Rating");
 

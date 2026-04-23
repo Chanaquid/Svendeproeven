@@ -8,6 +8,7 @@ import { ItemReviewService } from '../../services/itemReviewService';
 import { UserService } from '../../services/userService';
 import { ItemDto, UpdateItemDto } from '../../dtos/itemDto';
 import { ItemReviewDto } from '../../dtos/itemReviewDto';
+import { ItemPhotoDto } from '../../dtos/itemPhotoDto';
 import { Navbar } from '../navbar/navbar';
 import { LoanService } from '../../services/loanService';
 import { LoanDto, LoanListDto } from '../../dtos/loanDto';
@@ -15,8 +16,19 @@ import { DisputeService } from '../../services/disputeService';
 import { DisputeListDto } from '../../dtos/disputeDto';
 import { PagedRequest } from '../../dtos/paginationDto';
 import { getConditionClass, getCategoryEmoji } from '../../utils/item.utils';
-import { ItemCondition, ReportReason, ReportType } from '../../dtos/enums';
+import { ItemCondition, ItemAvailability, ReportReason, ReportType } from '../../dtos/enums';
 import { ReportService } from '../../services/reportService';
+import { UserFavoriteService } from '../../services/userFavoriteService';
+import { UploadImageService } from '../../services/uploadImageService';
+
+interface EditablePhoto {
+  id?: number;          // undefined = newly uploaded, not yet saved
+  photoUrl: string;
+  isPrimary: boolean;
+  displayOrder: number;
+  file?: File;          // present only for new uploads before save
+  uploading?: boolean;
+}
 
 @Component({
   selector: 'app-item-detail',
@@ -34,7 +46,6 @@ export class ItemDetail implements OnInit {
   currentUserId = '';
   isAdmin = false;
   isVerified = false;
-
 
   // Loan request
   showLoanModal = false;
@@ -68,23 +79,27 @@ export class ItemDetail implements OnInit {
     availableFrom: '',
     availableUntil: '',
     minLoanDays: undefined as number | undefined,
+    maxLoanDays: undefined as number | undefined,
     pickupAddress: '',
     pickupLatitude: 0 as number,
     pickupLongitude: 0 as number,
     requiresVerification: false,
     isActive: true,
-    photoUrl: '',
   };
   isSavingEdit = false;
   editError = '';
   editSuccess = '';
   descriptionExpanded = false;
 
-  // Address autocomplete
+  // Photo management in edit modal
+  editPhotos: EditablePhoto[] = [];
+  isDraggingOver: number | null = null;
+  dragSourceIndex: number | null = null;
+
+  // Address autocomplete (Geoapify — same as register)
   addressSuggestions: any[] = [];
   showAddressSuggestions = false;
   private addressSearchTimeout: any;
-
 
   // Report item
   showReportModal = false;
@@ -94,6 +109,12 @@ export class ItemDetail implements OnInit {
   reportSuccess = '';
   reportError = '';
 
+  // Favourite
+  isFavorited = false;
+  isTogglingFavorite = false;
+
+  //photos
+  activePhotoIndex = 0;
 
   // Reviews
   visibleReviews = 5;
@@ -139,6 +160,8 @@ export class ItemDetail implements OnInit {
     private loanService: LoanService,
     private reportService: ReportService,
     private disputeService: DisputeService,
+    private favoriteService: UserFavoriteService,
+    private uploadService: UploadImageService,
     private cdr: ChangeDetectorRef,
   ) { }
 
@@ -167,7 +190,6 @@ export class ItemDetail implements OnInit {
     this.itemService.getBySlug(slug).subscribe({
       next: (res) => {
         this.item = res.data ?? null;
-        console.log('item', this.item); // check ownerId, ownerName etc.
         this.isLoading = false;
         this.cdr.detectChanges();
 
@@ -177,11 +199,13 @@ export class ItemDetail implements OnInit {
 
         if (this.authService.isLoggedIn() && !this.isOwner) {
           this.checkExistingLoan();
+          this.loadFavoriteStatus(this.item.id);
         }
 
         if (this.isOwner || this.isAdmin) {
           this.loadLoanHistory(this.item.id);
           this.loadDisputeHistory(this.item.id);
+          this.resetPhotoIndex();
         }
       },
       error: () => {
@@ -191,16 +215,56 @@ export class ItemDetail implements OnInit {
     });
   }
 
+
+
+  private resetPhotoIndex(): void {
+    this.activePhotoIndex = 0;
+  }
+
+  prevPhoto(total: number): void {
+    this.activePhotoIndex = (this.activePhotoIndex - 1 + total) % total;
+  }
+  
+  nextPhoto(total: number): void {
+    this.activePhotoIndex = (this.activePhotoIndex + 1) % total;
+  }
+
+
+
   private checkExistingLoan(): void {
     if (!this.item) return;
     this.loanService.getMyLoanForItem(this.item.id).subscribe({
       next: (res) => {
-        if (res.data) {
-          this.existingLoan = res.data;
-        }
+        if (res.data) this.existingLoan = res.data;
         this.cdr.detectChanges();
       },
       error: () => { }
+    });
+  }
+
+  private loadFavoriteStatus(itemId: number): void {
+    this.favoriteService.getStatus(itemId).subscribe({
+      next: (res) => {
+        this.isFavorited = res.data?.isFavorited ?? false;
+        this.cdr.detectChanges();
+      },
+      error: () => { }
+    });
+  }
+
+  toggleFavorite(): void {
+    if (!this.item || this.isTogglingFavorite) return;
+    this.isTogglingFavorite = true;
+    this.favoriteService.toggle(this.item.id).subscribe({
+      next: (res) => {
+        this.isFavorited = res.data?.isFavorited ?? !this.isFavorited;
+        this.isTogglingFavorite = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isTogglingFavorite = false;
+        this.cdr.detectChanges();
+      }
     });
   }
 
@@ -248,7 +312,6 @@ export class ItemDetail implements OnInit {
         this.cdr.detectChanges();
       },
       error: () => {
-        // fallback for non-admin — use getMyAll filtered
         this.disputeService.getMyAll(filter, request).subscribe({
           next: (res2) => {
             this.disputeHistory = (res2.data?.items ?? []).filter((d: any) => d.itemId === itemId);
@@ -279,7 +342,7 @@ export class ItemDetail implements OnInit {
       startDate: this.loanForm.startDate,
       endDate: this.loanForm.endDate,
     }).subscribe({
-      next: (res) => {
+      next: () => {
         this.isRequesting = false;
         this.loanSuccess = '✓ Loan request sent!';
         this.cdr.detectChanges();
@@ -292,8 +355,6 @@ export class ItemDetail implements OnInit {
       },
       error: (err) => {
         this.loanError = err.error?.message ?? 'Failed to send request.';
-        console.log('Loan error response:', err);
-
         this.isRequesting = false;
         this.cdr.detectChanges();
       }
@@ -331,7 +392,6 @@ export class ItemDetail implements OnInit {
     const today = new Date();
     today.setHours(12, 0, 0, 0);
 
-    // Use the later of today or availableFrom as the start date
     const effectiveStart = availableFrom > today ? availableFrom : today;
     const startDate = this.toDateInputValue(effectiveStart);
 
@@ -360,13 +420,25 @@ export class ItemDetail implements OnInit {
       availableFrom: this.toDateInputValue(this.item.availableFrom),
       availableUntil: this.toDateInputValue(this.item.availableUntil),
       minLoanDays: this.item.minLoanDays ?? undefined,
+      maxLoanDays: this.editForm.maxLoanDays,
       pickupAddress: this.item.pickupAddress ?? '',
       pickupLatitude: this.item.pickupLatitude ?? 0,
       pickupLongitude: this.item.pickupLongitude ?? 0,
       requiresVerification: this.item.requiresVerification ?? false,
       isActive: this.item.isActive ?? true,
-      photoUrl: this.item.photos?.[0]?.photoUrl ?? '',
     };
+
+    // Populate editable photos from existing item photos, sorted by displayOrder
+    this.editPhotos = (this.item.photos ?? [])
+      .slice()
+      .sort((a, b) => a.displayOrder - b.displayOrder)
+      .map((p, i) => ({
+        id: p.id,
+        photoUrl: p.photoUrl,
+        isPrimary: i === 0,
+        displayOrder: i,
+      }));
+
     this.editError = '';
     this.editSuccess = '';
     this.descriptionExpanded = false;
@@ -381,16 +453,115 @@ export class ItemDetail implements OnInit {
     this.showAddressSuggestions = false;
   }
 
+  // ── Photo management ──────────────────────────────────────────
+
+  async onPhotosSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+
+    for (const file of files) {
+      if (file.size > 8 * 1024 * 1024) {
+        this.editError = `${file.name} exceeds 8 MB limit.`;
+        continue;
+      }
+      const placeholder: EditablePhoto = {
+        photoUrl: URL.createObjectURL(file),
+        isPrimary: this.editPhotos.length === 0,
+        displayOrder: this.editPhotos.length,
+        file,
+        uploading: true,
+      };
+      this.editPhotos = [...this.editPhotos, placeholder];
+      this.cdr.detectChanges();
+
+      try {
+        const url = await this.uploadService.uploadImage(file);
+        const idx = this.editPhotos.indexOf(placeholder);
+        if (idx !== -1) {
+          this.editPhotos[idx] = { ...this.editPhotos[idx], photoUrl: url, uploading: false, file: undefined };
+          this.editPhotos = [...this.editPhotos];
+        }
+      } catch {
+        this.editPhotos = this.editPhotos.filter(p => p !== placeholder);
+        this.editError = `Failed to upload ${file.name}.`;
+      }
+      this.cdr.detectChanges();
+    }
+  }
+
+  removeEditPhoto(index: number): void {
+    this.editPhotos = this.editPhotos.filter((_, i) => i !== index);
+    this.recalcPhotoOrder();
+  }
+
+  private recalcPhotoOrder(): void {
+    this.editPhotos = this.editPhotos.map((p, i) => ({
+      ...p,
+      displayOrder: i,
+      isPrimary: i === 0,
+    }));
+  }
+
+  // ── Drag-and-drop reorder ────────────────────────────────────
+
+  onDragStart(index: number): void {
+    this.dragSourceIndex = index;
+  }
+
+  onDragOver(event: DragEvent, index: number): void {
+    event.preventDefault();
+    this.isDraggingOver = index;
+  }
+
+  onDragLeave(): void {
+    this.isDraggingOver = null;
+  }
+
+  onDrop(event: DragEvent, targetIndex: number): void {
+    event.preventDefault();
+    if (this.dragSourceIndex === null || this.dragSourceIndex === targetIndex) {
+      this.isDraggingOver = null;
+      this.dragSourceIndex = null;
+      return;
+    }
+
+    const photos = [...this.editPhotos];
+    const [moved] = photos.splice(this.dragSourceIndex, 1);
+    photos.splice(targetIndex, 0, moved);
+    this.editPhotos = photos;
+    this.recalcPhotoOrder();
+
+    this.isDraggingOver = null;
+    this.dragSourceIndex = null;
+  }
+
+  onDragEnd(): void {
+    this.isDraggingOver = null;
+    this.dragSourceIndex = null;
+  }
+
+  // ── Save edit ─────────────────────────────────────────────────
+
   saveEdit(): void {
     if (!this.item) return;
     if (!this.editForm.title?.trim()) {
       this.editError = 'Title is required.';
       return;
     }
+    if (this.editPhotos.some(p => p.uploading)) {
+      this.editError = 'Please wait for all photos to finish uploading.';
+      return;
+    }
 
     this.isSavingEdit = true;
     this.editError = '';
     this.editSuccess = '';
+
+    // Derive availability from isActive toggle
+    const availability: ItemAvailability = this.editForm.isActive
+      ? ItemAvailability.Available
+      : ItemAvailability.Unavailable;
 
     this.itemService.update(this.item.id, {
       title: this.editForm.title.trim(),
@@ -405,13 +576,16 @@ export class ItemDetail implements OnInit {
       pickupLongitude: this.editForm.pickupLongitude,
       requiresVerification: this.editForm.requiresVerification,
       isActive: this.editForm.isActive,
+      availability,
     }).subscribe({
       next: (res) => {
         if (res.data) {
-          this.item = res.data;
-          this.updatePhoto(res.data);
+          this.syncPhotos(res.data);
+        } else {
+          this.isSavingEdit = false;
+          this.editError = 'Unexpected response from server.';
+          this.cdr.detectChanges();
         }
-
       },
       error: (err) => {
         this.editError = err.error?.message ?? 'Failed to save changes.';
@@ -421,80 +595,111 @@ export class ItemDetail implements OnInit {
     });
   }
 
-  private updatePhoto(updated: ItemDto): void {
-    const newUrl = this.editForm.photoUrl?.trim();
-    const existingPhoto = updated.photos?.[0];
 
-    const finish = (finalItem?: ItemDto) => {
-      this.item = finalItem ?? updated;
-      this.isSavingEdit = false;
-      this.editSuccess = '✓ Changes saved!';
-      this.cdr.detectChanges();
+  private async syncPhotos(updatedItem: ItemDto): Promise<void> {
+    const itemId = updatedItem.id;
 
-      setTimeout(() => {
-        this.showEditModal = false;
-        this.editSuccess = '';
-        if (finalItem?.slug) {
-          this.router.navigate(['/items', finalItem.slug], {
-            replaceUrl: true
-          });
+    // Delete ALL existing photos first
+    for (const photo of updatedItem.photos ?? []) {
+      try { await this.itemService.deletePhoto(itemId, photo.id).toPromise(); } catch { /* best-effort */ }
+    }
+
+    // Re-add all photos in the user's chosen order (index 0 = primary)
+    for (let i = 0; i < this.editPhotos.length; i++) {
+      const photo = this.editPhotos[i];
+      try {
+        await this.itemService.addPhoto(itemId, {
+          photoUrl: photo.photoUrl,
+          isPrimary: i === 0,
+          displayOrder: i,
+        }).toPromise();
+      } catch { /* best-effort */ }
+    }
+
+    // Refresh item to get new photo ids, then explicitly set primary
+    this.itemService.getById(itemId).subscribe({
+      next: async (res) => {
+        const freshItem = res.data ?? updatedItem;
+        
+        // Set primary to the first photo
+        const firstPhoto = freshItem.photos
+          ?.slice()
+          .sort((a, b) => a.displayOrder - b.displayOrder)[0];
+        
+        if (firstPhoto?.id) {
+          try {
+            await this.itemService.setPrimaryPhoto(itemId, firstPhoto.id).toPromise();
+          } catch { /* best-effort */ }
         }
 
+        // Final refresh
+        this.itemService.getById(itemId).subscribe({
+          next: (final) => {
+            this.item = final.data ?? freshItem;
+            this.isSavingEdit = false;
+            this.editSuccess = '✓ Changes saved!';
+            this.cdr.detectChanges();
+            setTimeout(() => {
+              this.showEditModal = false;
+              this.editSuccess = '';
+              if (this.item?.slug) {
+                this.router.navigate(['/items', this.item.slug], { replaceUrl: true });
+              }
+              this.cdr.detectChanges();
+            }, 1200);
+          },
+          error: () => {
+            this.item = freshItem;
+            this.isSavingEdit = false;
+            this.editSuccess = '✓ Changes saved!';
+            this.cdr.detectChanges();
+            setTimeout(() => { this.showEditModal = false; }, 1200);
+          }
+        });
+      },
+      error: () => {
+        this.isSavingEdit = false;
+        this.editSuccess = '✓ Changes saved!';
         this.cdr.detectChanges();
-      }, 1200);
-    };
-
-    const addNew = () => {
-      if (!newUrl) { finish(updated); return; }
-      this.itemService.addPhoto(updated.id, { photoUrl: newUrl, isPrimary: true, displayOrder: 0 }).subscribe({
-        next: () => this.itemService.getById(updated.id).subscribe({
-          next: (res) => finish(res.data ?? updated),
-          error: () => finish(updated)
-        }),
-        error: () => finish(updated),
-      });
-    };
-
-    if (existingPhoto && newUrl !== existingPhoto.photoUrl) {
-      this.itemService.deletePhoto(updated.id, existingPhoto.id).subscribe({
-        next: addNew,
-        error: addNew,
-      });
-    } else if (!existingPhoto && newUrl) {
-      addNew();
-    } else {
-      finish(updated);
-    }
+        setTimeout(() => { this.showEditModal = false; }, 1200);
+      }
+    });
   }
 
-  // ── Address autocomplete ──────────────────────────────────────
+
+  // ── Address autocomplete (Geoapify — same as register) ────────
 
   onAddressInput(value: string): void {
     clearTimeout(this.addressSearchTimeout);
     this.showAddressSuggestions = false;
     if (!value || value.length < 3) { this.addressSuggestions = []; return; }
+
     this.addressSearchTimeout = setTimeout(() => {
-      fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(value)}&limit=5`)
+      const apiKey = '6efe16ed3bb047b8975d6f4738a471a9';
+      const url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(value)}&limit=5&apiKey=${apiKey}`;
+
+      fetch(url)
         .then(res => res.json())
         .then(data => {
-          this.addressSuggestions = data;
+          this.addressSuggestions = data.features ?? [];
           this.showAddressSuggestions = true;
           this.cdr.detectChanges();
-        });
+        })
+        .catch(() => { });
     }, 400);
   }
 
   selectAddress(suggestion: any): void {
-    this.editForm.pickupAddress = suggestion.display_name;
-    this.editForm.pickupLatitude = parseFloat(suggestion.lat);
-    this.editForm.pickupLongitude = parseFloat(suggestion.lon);
+    const props = suggestion.properties;
+    this.editForm.pickupAddress = props.formatted;
+    this.editForm.pickupLatitude = suggestion.geometry.coordinates[1];
+    this.editForm.pickupLongitude = suggestion.geometry.coordinates[0];
     this.showAddressSuggestions = false;
     this.addressSuggestions = [];
     this.cdr.detectChanges();
   }
 
-
-  //Repoirt 
+  // ── Report ────────────────────────────────────────────────────
 
   openReportModal(): void {
     this.reportReason = '';
@@ -529,6 +734,7 @@ export class ItemDetail implements OnInit {
     });
   }
 
+  // ── Loan price helpers ────────────────────────────────────────
 
   get totalLoanPrice(): number | null {
     if (!this.item || this.item.isFree) return null;
@@ -547,44 +753,35 @@ export class ItemDetail implements OnInit {
     return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
   }
 
-  // ── Helpers ───────────────────────────────────────────────────
+  // ── Generic helpers ───────────────────────────────────────────
 
   private toDateInputValue(value: string | Date | null | undefined): string {
     if (!value) return '';
     if (typeof value === 'string') return value.slice(0, 10);
-
     const y = value.getFullYear();
     const m = String(value.getMonth() + 1).padStart(2, '0');
     const d = String(value.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
   }
-  getCategoryEmoji(cat: string): string {
-    return getCategoryEmoji(cat);
-  }
 
-  getConditionClass(condition: string): string {
-    return getConditionClass(condition as ItemCondition);
-  }
-
+  getCategoryEmoji(cat: string): string { return getCategoryEmoji(cat); }
+  getConditionClass(condition: string): string { return getConditionClass(condition as ItemCondition); }
   getInitials(name: string): string {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) ?? '';
   }
-
-  goBack(): void {
-    window.history.back();
-  }
+  goBack(): void { window.history.back(); }
 
   getLoanStatusClass(status: string): string {
     switch (status?.toLowerCase()) {
-      case 'active': return 'history-status-tag--active';
-      case 'approved': return 'history-status-tag--approved';
-      case 'late': return 'history-status-tag--late';
-      case 'pending': return 'history-status-tag--pending';
+      case 'active':       return 'history-status-tag--active';
+      case 'approved':     return 'history-status-tag--approved';
+      case 'late':         return 'history-status-tag--late';
+      case 'pending':      return 'history-status-tag--pending';
       case 'adminpending': return 'history-status-tag--adminpending';
-      case 'cancelled': return 'history-status-tag--cancelled';
-      case 'rejected': return 'history-status-tag--rejected';
-      case 'completed': return 'history-status-tag--completed';
-      default: return '';
+      case 'cancelled':    return 'history-status-tag--cancelled';
+      case 'rejected':     return 'history-status-tag--rejected';
+      case 'completed':    return 'history-status-tag--completed';
+      default:             return '';
     }
   }
 }

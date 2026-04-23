@@ -1,5 +1,6 @@
 ﻿using backend.Models;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.Eventing.Reader;
 
 namespace backend.Dtos
 {
@@ -37,7 +38,7 @@ namespace backend.Dtos
 
         public string Slug { get; set; } = string.Empty;
         public string? MainPhotoUrl { get; set; }
-        public string PickUpAddress { get; set; } = string.Empty;
+        public string PickupAddress { get; set; } = string.Empty;
 
         //Category
         public int CategoryId { get; set; }
@@ -62,6 +63,8 @@ namespace backend.Dtos
         public ItemAvailability Availability { get; set; }
         public bool IsActive { get; set; }
         //public bool IsCurrentlyOnLoan { get; set; }
+
+        public bool RequiresVerification { get; set; }
 
         public double? AverageRating { get; set; }
         public int TotalReviews { get; set; }

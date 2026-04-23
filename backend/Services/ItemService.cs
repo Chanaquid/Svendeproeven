@@ -152,10 +152,10 @@ namespace backend.Services
                 throw new ArgumentException("Current value cant be negative");
 
             //Normalize dates early
-            var availableFrom = dto.AvailableFrom.ToUniversalTime();
-            var availableUntil = dto.AvailableUntil.ToUniversalTime();
+            var availableFrom = dto.AvailableFrom.Date;
+            var availableUntil = dto.AvailableUntil.Date;
 
-            if (availableFrom.Date < DateTime.UtcNow.Date)
+            if (availableFrom < DateTime.Today)
                 throw new ArgumentException("The availability start date cannot be in the past.");
 
             if (availableFrom >= availableUntil)

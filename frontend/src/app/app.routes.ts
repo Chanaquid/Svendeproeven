@@ -13,6 +13,9 @@ import { UserDashboard } from './components/user-dashboard/user-dashboard';
 import { TestUpload } from './components/test-upload/test-upload';
 import { Item } from './components/item/item';
 import { Loan } from './components/loan/loan';
+import { Favorite } from './components/favorite/favorite';
+import { LoanDetail } from './components/loan-detail/loan-detail';
+import { ResolutionCenter } from './components/resolution-center/resolution-center';
 
 
 export const authGuard : CanActivateFn = () => {
@@ -32,6 +35,11 @@ export const routes: Routes = [
     {path: 'my-dashboard', component: UserDashboard, canActivate: [authGuard]},
     {path: 'my-items', component: Item, canActivate: [authGuard]},
     {path: 'my-loans', component: Loan, canActivate: [authGuard]},
+    {path: 'loans/:id', component: LoanDetail, canActivate: [authGuard]},
+    {path: 'resolution-center', component: ResolutionCenter, canActivate: [authGuard]},
+
+
+    {path: 'my-favorites', component: Favorite, canActivate: [authGuard]},
 
 
 

@@ -112,19 +112,18 @@ namespace backend.Services
             await _notificationRepository.AddAsync(notification);
             await _notificationRepository.SaveChangesAsync();
 
-            //await _hubContext.Clients
-            //   .Group($"user_{userId}")
-            //   .SendAsync("NewNotification", new
-            //   {
-            //       id = notification.Id,
-            //       message = notification.Message,
-            //       type = notification.Type.ToString(),
-            //       referenceId = notification.ReferenceId,
-            //       referenceType = notification.ReferenceType?.ToString(),
-            //       isRead = false,
-            //       createdAt = notification.CreatedAt
-            //   });
-
+            await _hubContext.Clients
+                .Group($"user_{userId}")
+                .SendAsync("ReceiveNotification", new NotificationDto
+                {
+                    Id = notification.Id,
+                    Type = notification.Type,
+                    Message = notification.Message,
+                    ReferenceId = notification.ReferenceId,
+                    ReferenceType = notification.ReferenceType,
+                    IsRead = false,
+                    CreatedAt = notification.CreatedAt
+                });
 
         }
 

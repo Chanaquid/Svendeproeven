@@ -687,9 +687,19 @@ namespace backend.Services
         {
             var isFiler = currentUserId != null && dispute.FiledById == currentUserId;
 
-            var otherParty = isFiler
-                ? (dispute.Loan.BorrowerId == currentUserId ? dispute.Loan.Lender : dispute.Loan.Borrower)
-                : dispute.FiledBy;
+            ApplicationUser? otherParty;
+            if (currentUserId == null)
+            {
+                otherParty = dispute.RespondedBy ?? dispute.FiledBy;
+            }
+            else if (dispute.Loan.LenderId == currentUserId)
+            {
+                otherParty = dispute.Loan.Borrower; // current user is lender, other party is borrower
+            }
+            else
+            {
+                otherParty = dispute.Loan.Lender; // current user is borrower, other party is lender
+            }
 
             return new DisputeListDto
             {

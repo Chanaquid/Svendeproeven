@@ -739,6 +739,7 @@ namespace backend.Services
                 Status = loan.Status,
                 TotalPrice = loan.TotalPrice,
                 IsBorrower = isBorrower,
+                HasDispute = loan.Disputes?.Any() ?? false,
                 CreatedAt = loan.CreatedAt
             };
         }

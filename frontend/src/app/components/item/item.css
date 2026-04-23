@@ -101,9 +101,8 @@
   flex-wrap: wrap;
 }
 
-/* Ensure the select dropdown matches search-input height */
 .sort-wrapper select {
-  height: 34px; /* Match search input height */
+  height: 34px;
   border-radius: 0.75rem;
   border: 1px solid #27272a;
   color: #fff;
@@ -249,7 +248,7 @@
 /* ── CARD IMAGE ── */
 .card-image {
   position: relative;
-  height: 200px;   /* was 160px */
+  height: 200px;
   flex-shrink: 0;
   background: #27272a;
   overflow: hidden;
@@ -272,12 +271,8 @@
 }
 
 /* ── CARD BADGES ── */
-
-
-/* Availability variants — returned by getAvailabilityClass() */
 .card-badge.rent        { background: #ef4444; color: #fff; }
 .card-badge.unavailable { background: #52525b; color: #fff; }
-
 
 /* ── CARD BODY ── */
 .card-body {
@@ -332,8 +327,6 @@
   margin-top: 2px;
 }
 
-/* Condition variants — returned by getConditionClass() util
-   These match the Tailwind-style class strings the util returns */
 .bg-emerald-500\/10 { background: rgba(16,185,129,0.1);  color: #34d399; border-color: rgba(16,185,129,0.2); }
 .bg-blue-500\/10    { background: rgba(59,130,246,0.1);   color: #60a5fa; border-color: rgba(59,130,246,0.2); }
 .bg-amber-500\/10   { background: rgba(245,158,11,0.1);   color: #fbbf24; border-color: rgba(245,158,11,0.2); }
@@ -428,11 +421,11 @@
   white-space: nowrap;
 }
 
-.action-btn:hover   { background: #3f3f46; }
+.action-btn:hover    { background: #3f3f46; }
 .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.action-btn--copied   { background: rgba(16,185,129,0.1);  color: #34d399; }
-.action-btn--activate { background: rgba(251,191,36,0.1);  color: #fbbf24; }
+.action-btn--copied   { background: rgba(16,185,129,0.1); color: #34d399; }
+.action-btn--activate { background: rgba(251,191,36,0.1); color: #fbbf24; }
 
 .action-btn--delete {
   flex: 0 0 32px;
@@ -485,9 +478,9 @@
 }
 
 .page-btn:hover:not(:disabled) { background: #27272a; color: #fff; }
-.page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-.page-btn--active  { background: #fbbf24 !important; color: #09090b !important; border-color: #fbbf24 !important; }
-.page-ellipsis     { color: #52525b; padding: 0 4px; }
+.page-btn:disabled  { opacity: 0.3; cursor: not-allowed; }
+.page-btn--active   { background: #fbbf24 !important; color: #09090b !important; border-color: #fbbf24 !important; }
+.page-ellipsis      { color: #52525b; padding: 0 4px; }
 
 /* ── BUTTONS ── */
 .btn-primary {
@@ -621,21 +614,23 @@
 
 .modal-body {
   padding: 1.5rem;
-  overflow: visible;    /* ← add this */
+  overflow: visible;
 }
 
 .modal-body--form {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  overflow: visible;    /* ← add this */
+  overflow: visible;
 }
 
 .modal-footer {
-  display: flex;
-  gap: 0.75rem;
-  padding: 1rem 1.5rem;
-  border-top: 1px solid #27272a;
+    display: flex;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #27272a;
+    width: 100%; /* Ensure footer takes full width */
+    box-sizing: border-box;
 }
 
 .modal-footer--sticky {
@@ -646,11 +641,11 @@
 
 /* ── FORM ── */
 .form-group { display: flex; flex-direction: column; gap: 6px; }
+
 .form-group--relative {
   position: relative;
-  overflow: visible;    /* ← add this */
+  overflow: visible;
 }
-
 
 .form-grid-2 {
   display: grid;
@@ -735,8 +730,8 @@
 /* ── ADDRESS DROPDOWN ── */
 .address-dropdown {
   position: absolute;
-  z-index: 200;          /* higher than modal z-index */
-  top: 100%;             /* always below the input */
+  z-index: 200;
+  top: 100%;
   left: 0;
   width: 100%;
   margin-top: 4px;
@@ -809,8 +804,7 @@
 
 .modal-delete-text__name { color: #d4d4d8; }
 
-
-/* ── AVAILABILITY BADGE — top left ── */
+/* ── AVAILABILITY BADGE ── */
 .avail-badge {
   position: absolute;
   top: 10px;
@@ -822,24 +816,20 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   white-space: nowrap;
-  /* default = available */
   background: #22c55e;
   color: #052e16;
 }
 
-/* These match whatever getAvailabilityClass() returns */
 .avail-badge.available   { background: #22c55e; color: #052e16; }
 .avail-badge.rent        { background: #ef4444; color: #fff; }
 .avail-badge.unavailable { background: #52525b; color: #fff; }
-
-/* Also handle if util returns Tailwind-style strings */
 .avail-badge.card-badge  { background: #22c55e; color: #052e16; }
 
-/* ── STATUS BADGE — top right ── */
+/* ── STATUS BADGE ── */
 .status-badge {
   position: absolute;
   top: 10px;
-  left: 10px;        /* ← was right:10px */
+  left: 10px;
   font-size: 10px;
   font-weight: 700;
   padding: 2px 8px;
@@ -849,8 +839,202 @@
   white-space: nowrap;
 }
 
+.status-badge.status-active   { background: rgba(52,211,153,0.15); color: #34d399; border: 1px solid rgba(52,211,153,0.25); }
+.status-badge.status-pending  { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.25); }
+.status-badge.status-rejected { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.25); }
+.status-badge.status-inactive { background: rgba(113,113,122,0.15); color: #a1a1aa; border: 1px solid rgba(113,113,122,0.25); }
 
-.status-badge.status-active   { background: #00ff00; color: #052e16; }
-.status-badge.status-pending  { background: #ffff00; color: #18181b; }
-.status-badge.status-rejected { background: #ff0000; color: #fff; }
-.status-badge.status-inactive { background: #4f4f52; color: #d4d4d8; }
+/* ── PHOTO EDITOR ── */
+.photo-editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.photo-editor-thumb {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #27272a;
+  border: 2px solid #3f3f46;
+  cursor: grab;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  user-select: none;
+}
+
+.photo-editor-thumb:active { cursor: grabbing; }
+
+.photo-editor-thumb--primary {
+  border-color: #fbbf24;
+  box-shadow: 0 0 0 1px rgba(251,191,36,0.3);
+}
+
+.photo-editor-thumb--drag-over {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 2px rgba(96,165,250,0.3);
+  transform: scale(1.03);
+}
+
+.photo-editor-thumb--uploading {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.photo-editor-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Spinner overlay while uploading */
+.photo-thumb-spinner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.5);
+}
+
+.mini-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Primary star badge */
+.primary-badge {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(251,191,36,0.9);
+  color: #09090b;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 5px;
+  pointer-events: none;
+}
+
+.primary-badge-icon {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+}
+
+/* Remove button */
+.photo-remove-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.7);
+  border: none;
+  border-radius: 50%;
+  color: #ffffff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+  padding: 0;
+}
+
+.photo-remove-btn svg { width: 10px; height: 10px; }
+
+.photo-editor-thumb:hover .photo-remove-btn { opacity: 1; }
+.photo-remove-btn:hover { background: #dc2626; }
+
+/* Drag handle */
+.drag-handle {
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.5);
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+
+.drag-handle svg { width: 14px; height: 14px; }
+
+.photo-editor-thumb:hover .drag-handle { opacity: 1; }
+
+/* Add-more tile */
+.photo-add-tile {
+  width: 100px;
+  height: 100px;
+  border-radius: 12px;
+  background: #27272a;
+  border: 2px dashed #3f3f46;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.photo-add-tile:hover {
+  border-color: #fbbf24;
+  background: rgba(251,191,36,0.04);
+}
+
+.photo-add-icon {
+  width: 22px;
+  height: 22px;
+  color: #71717a;
+  transition: color 0.2s;
+}
+
+.photo-add-tile:hover .photo-add-icon { color: #fbbf24; }
+
+.photo-add-tile span {
+  font-size: 10px;
+  color: #71717a;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.photo-add-tile:hover span { color: #fbbf24; }
+
+.btn-secondary--standalone {
+  flex: 0 0 auto;
+}
+
+/* Specific override for modal footer buttons only */
+.modal-footer button {
+    flex: 1;               /* Forces buttons to grow and fill equal space */
+    justify-content: center; /* Ensures text stays centered in the wider buttons */
+}
+
+/* Ensure the footer container allows the buttons to stretch */
+.modal-footer {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #27272a;
+    width: 100%;           /* Ensure the footer spans the modal width */
+    box-sizing: border-box;
+}

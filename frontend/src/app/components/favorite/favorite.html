@@ -1,0 +1,158 @@
+<!-- Background -->
+<div class="fixed inset-0 bg-zinc-950 -z-10"></div>
+<div class="fixed inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:52px_52px] -z-10"></div>
+
+<app-navbar></app-navbar>
+
+<main class="pt-16 min-h-screen">
+
+    <div class="px-6 md:px-10 pt-10 pb-8 border-b border-zinc-800/60">
+        <h1 class="font-black text-3xl md:text-4xl text-white tracking-tight" style="font-family:'Syne',sans-serif">
+            Favorites
+        </h1>
+        <p class="text-zinc-400 text-sm mt-1">
+            {{ allFavorites.length }} saved item{{ allFavorites.length !== 1 ? 's' : '' }}
+        </p>
+    </div>
+
+    <div class="page-body">
+
+        <!-- Loading -->
+        <div *ngIf="isLoading" class="grid-grid">
+            <div *ngFor="let _ of [1,2,3,4,5,6,7,8]" class="skeleton-card"></div>
+        </div>
+
+        <ng-container *ngIf="!isLoading">
+
+            <!-- Search + Toolbar -->
+            <div class="search-bar">
+                <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearch()"
+                    placeholder="Search your favorites..."
+                    class="search-input search-input--full" />
+            </div>
+
+            <div class="toolbar">
+                <p class="toolbar-count">
+                    <span class="toolbar-count-num">{{ favorites.length }}</span> items found
+                </p>
+                <div class="toolbar-controls">
+                    <select [ngModel]="sortLabel" (ngModelChange)="onSortChange($event)" class="select">
+                        <option value="newest">Newest saved</option>
+                        <option value="oldest">Oldest saved</option>
+                        <option value="rating">Top rated</option>
+                        <option value="az">A → Z</option>
+                        <option value="za">Z → A</option>
+                        <option value="price_asc">Price: Low to high</option>
+                        <option value="price_desc">Price: High to low</option>
+                    </select>
+                    <button (click)="onAvailableToggle()" [class.active]="availableOnly" class="filter-btn">
+                        Available only
+                    </button>
+                    <button (click)="onFreeToggle()" [class.active]="freeOnly" class="filter-btn">
+                        Free only
+                    </button>
+                </div>
+            </div>
+
+            <!-- Empty state — no favorites at all -->
+            <div *ngIf="allFavorites.length === 0"
+                class="flex flex-col items-center justify-center py-32 text-center">
+                <div class="w-16 h-16 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-center text-3xl mb-4">
+                    ❤️
+                </div>
+                <h3 class="font-bold text-white text-lg mb-2" style="font-family:'Syne',sans-serif">No favorites yet</h3>
+                <p class="text-zinc-500 text-sm mb-6">Browse items and save the ones you like.</p>
+                <a routerLink="/home"
+                    class="px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-zinc-900 font-semibold text-sm rounded-xl transition-all duration-200 no-underline">
+                    Browse items
+                </a>
+            </div>
+
+            <!-- Empty state — filters returned nothing -->
+            <div *ngIf="allFavorites.length > 0 && favorites.length === 0" class="empty-state">
+                <div class="empty-icon">🔍</div>
+                <h3 class="empty-title">No results</h3>
+                <p class="empty-sub">Try a different search term or clear the filters.</p>
+            </div>
+
+            <!-- Grid -->
+            <div *ngIf="favorites.length > 0" class="grid-grid">
+                <div *ngFor="let fav of pagedFavorites" (click)="goToItem(fav.slug)" class="card">
+
+                    <div class="card-image">
+                        <img *ngIf="fav.mainPhotoUrl" [src]="fav.mainPhotoUrl" [alt]="fav.title" />
+                        <div *ngIf="!fav.mainPhotoUrl" class="card-fallback">
+                            {{ getCategoryEmoji(fav.categoryName) }}
+                        </div>
+                        <span class="card-badge" [ngClass]="getAvailabilityClass(fav.availability)">
+                            {{ getAvailabilityLabel(fav.availability) }}
+                        </span>
+                        <button (click)="removeFavorite(fav.id, $event)" [disabled]="removingIds.has(fav.id)"
+                            class="card-fav card-fav--active">
+                            <svg *ngIf="!removingIds.has(fav.id)" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                            </svg>
+                            <svg *ngIf="removingIds.has(fav.id)" class="w-3.5 h-3.5 animate-spin" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="card-header">
+                            <h3 class="card-title">{{ fav.title }}</h3>
+                            <span class="card-condition" [class]="getConditionClass(fav.condition)">
+                                {{ fav.condition }}
+                            </span>
+                        </div>
+                        <p class="card-location">📍 {{ fav.pickupAddress }}</p>
+                        <p *ngIf="fav.description" class="text-zinc-400 text-xs mb-3 line-clamp-2 leading-relaxed">
+                            {{ fav.description }}
+                        </p>
+                        <div class="card-meta">
+                            <div class="card-owner">
+                                <div class="owner-avatar">
+                                    <img *ngIf="fav.ownerAvatarUrl" [src]="fav.ownerAvatarUrl" class="avatar-img" />
+                                    <span *ngIf="!fav.ownerAvatarUrl">{{ getInitials(fav.ownerName) }}</span>
+                                </div>
+                                <span class="owner-name">{{ fav.ownerName }}</span>
+                            </div>
+                            <span class="card-rating">
+                                <span class="star">★</span>
+                                {{ fav.averageRating ? fav.averageRating.toFixed(1) : 'New' }}
+                                <span *ngIf="fav.totalReviews">({{ fav.totalReviews }})</span>
+                            </span>
+                        </div>
+                        <div class="card-price">
+                            <span class="price-text">
+                                {{ fav.isFree ? 'Free' : fav.pricePerDay + ' kr/day' }}
+                            </span>
+                            <span *ngIf="fav?.requiresVerification" class="verification-badge">
+                                <span>⚠️</span>
+                                <span>Verification required</span>
+                            </span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div *ngIf="totalPages > 1" class="pagination">
+                <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1" class="page-btn">← Prev</button>
+                <ng-container *ngFor="let page of pageNumbers">
+                    <span *ngIf="page === -1" class="page-ellipsis">…</span>
+                    <button *ngIf="page !== -1" (click)="goToPage(page)" class="page-btn"
+                        [class.page-btn--active]="page === currentPage">
+                        {{ page }}
+                    </button>
+                </ng-container>
+                <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages" class="page-btn">Next →</button>
+            </div>
+
+        </ng-container>
+
+    </div>
+</main>

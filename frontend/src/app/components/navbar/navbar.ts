@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -16,9 +16,7 @@ import { NotificationType } from '../../dtos/enums';
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
 })
-
-
-export class Navbar implements OnInit {
+export class Navbar implements OnInit, OnDestroy {
 
   userName = '';
   userEmail = '';
@@ -34,19 +32,16 @@ export class Navbar implements OnInit {
   searchQuery = '';
   isHomePage = false;
   isAdmin = false;
-
   currentUserId = '';
-
-    private hub: NotificationHubService | null = null;
-
 
   constructor(
     private authService: AuthService,
     public router: Router,
     private userService: UserService,
     private notificationService: NotificationService,
+    private notificationHubService: NotificationHubService,
     private cdr: ChangeDetectorRef
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.isAdmin = this.authService.isAdmin();
@@ -59,20 +54,51 @@ export class Navbar implements OnInit {
       this.cdr.detectChanges();
     });
 
-    if(this.authService.isLoggedIn()) {
+    if (this.authService.isLoggedIn()) {
       this.loadUserInfo();
       this.loadSummary();
-      this.connectNotificationHubService();
+      this.connectHub();
     }
   }
 
   ngOnDestroy(): void {
-    if (this.hub) {
-      this.hub.off();
-      this.hub.stop();
-    }
+    this.notificationHubService.off();
+    this.notificationHubService.stop();
   }
 
+  private connectHub(): void {
+    this.notificationHubService.onReceiveNotification((notification: NotificationDto) => {
+      const exists = this.notifications.some(n => n.id === notification.id);
+      if (!exists) {
+        this.notifications.unshift({
+          id: notification.id,
+          message: notification.message,
+          type: notification.type,
+          referenceId: notification.referenceId,
+          referenceType: notification.referenceType,
+          isRead: false,
+          createdAt: notification.createdAt
+        });
+        this.unreadCount++;
+        this.cdr.detectChanges();
+      }
+    });
+
+    this.notificationHubService.onUnreadCountUpdated((count: number) => {
+      this.unreadCount = count;
+      this.cdr.detectChanges();
+    });
+
+    this.notificationHubService.onNewMessageNotification((data) => {
+      // Real-time red dot bump when a message arrives on another page
+      this.unreadCount++;
+      this.cdr.detectChanges();
+    });
+
+    this.notificationHubService.start().catch(err =>
+      console.warn('Notification hub failed to start:', err)
+    );
+  }
 
   private loadUserInfo(): void {
     this.userService.getMyProfile().subscribe({
@@ -89,56 +115,21 @@ export class Navbar implements OnInit {
     });
   }
 
-
-  private connectNotificationHubService(): void {
-    const token = this.authService.getToken();
-    if (!token) return;
- 
-    this.hub = new NotificationHubService(token);
- 
-    this.hub.onReceiveNotification((notification: NotificationDto) => {
-      const exists = this.notifications.some(n => n.id === notification.id);
-      if (!exists) {
-        this.notifications.unshift({
-          id: notification.id,
-          message: notification.message,
-          type: notification.type,
-          referenceId: notification.referenceId,
-          referenceType: notification.referenceType,
-          isRead: false,
-          createdAt: notification.createdAt
-        });
-        this.unreadCount++;
-        this.cdr.detectChanges();
-      }
-    });
- 
-    this.hub.onUnreadCountUpdated((count: number) => {
-      this.unreadCount = count;
-      this.cdr.detectChanges();
-    });
- 
-    this.hub.start().catch(err =>
-      console.warn('Notification hub failed to start:', err)
-    );
-  }
-
   loadSummary(): void {
     this.notificationService.getSummary().subscribe({
       next: (res) => {
-          const data = res.data;
-
+        const data = res.data;
         if (!data) return;
-
         this.unreadCount = data.unreadCount;
         this.notifications = data.recent;
+        console.log(this.notifications);
         this.cdr.detectChanges();
       },
       error: () => {}
     });
   }
 
- onNotificationClick(n: NotificationDto): void {
+  onNotificationClick(n: NotificationDto): void {
     if (!n.isRead) {
       n.isRead = true;
       this.unreadCount = Math.max(0, this.unreadCount - 1);
@@ -168,10 +159,8 @@ export class Navbar implements OnInit {
   }
 
   logout(): void {
-    if (this.hub) {
-      this.hub.off();
-      this.hub.stop();
-    }
+    this.notificationHubService.off();
+    this.notificationHubService.stop();
     this.authService.logout().subscribe({
       next: () => this.router.navigate(['/']),
       error: () => {
@@ -187,46 +176,37 @@ export class Navbar implements OnInit {
 
   getNotificationIcon(type: NotificationType): string {
     switch (type) {
-      //Loan lifecycle
       case NotificationType.LoanRequested: return '📋';
       case NotificationType.LoanApproved: return '✅';
       case NotificationType.LoanRejected: return '❌';
       case NotificationType.LoanCancelled: return '🚫';
       case NotificationType.LoanActive: return '🤝';
       case NotificationType.LoanReturned: return '📦';
-      //Due dates
       case NotificationType.DueSoon: return '⏰';
       case NotificationType.LoanOverdue: return '🔴';
-      //Item lifecycle
       case NotificationType.ItemApproved: return '✅';
       case NotificationType.ItemRejected: return '❌';
       case NotificationType.ItemAvailable: return '🟢';
-      //Fines and score
       case NotificationType.FineIssued: return '⚠️';
       case NotificationType.FinePaid: return '💰';
       case NotificationType.ScoreChanged: return '📊';
-      //Disputes
       case NotificationType.DisputeFiled: return '⚖️';
       case NotificationType.DisputeResponseSubmitted: return '📝';
       case NotificationType.DisputeResolved: return '🏛️';
-      //Appeals
       case NotificationType.AppealSubmitted: return '📤';
       case NotificationType.AppealApproved: return '✅';
       case NotificationType.AppealRejected: return '❌';
-      //Verification
       case NotificationType.VerificationApproved: return '🏅';
       case NotificationType.VerificationRejected: return '❌';
-      //Messages
       case NotificationType.LoanMessageReceived: return '💬';
       case NotificationType.DirectMessageReceived: return '✉️';
       case NotificationType.SupportMessageReceived: return '🎧';
       default: return '🔔';
     }
   }
- 
+
   getNotificationIconBg(type: NotificationType): string {
     switch (type) {
-      //Green — positive outcomes
       case NotificationType.LoanApproved:
       case NotificationType.LoanActive:
       case NotificationType.ItemApproved:
@@ -235,7 +215,6 @@ export class Navbar implements OnInit {
       case NotificationType.AppealApproved:
       case NotificationType.VerificationApproved:
         return 'bg-emerald-400/10';
-      //Red — negative outcomes
       case NotificationType.LoanRejected:
       case NotificationType.LoanCancelled:
       case NotificationType.ItemRejected:
@@ -244,14 +223,12 @@ export class Navbar implements OnInit {
       case NotificationType.AppealRejected:
       case NotificationType.VerificationRejected:
         return 'bg-red-400/10';
-      //Amber — pending / action needed
       case NotificationType.LoanRequested:
       case NotificationType.DueSoon:
       case NotificationType.DisputeFiled:
       case NotificationType.DisputeResponseSubmitted:
       case NotificationType.AppealSubmitted:
         return 'bg-amber-400/10';
-      //Blue — informational
       case NotificationType.LoanReturned:
       case NotificationType.ScoreChanged:
       case NotificationType.DisputeResolved:
@@ -263,7 +240,4 @@ export class Navbar implements OnInit {
         return 'bg-zinc-800';
     }
   }
- 
-
-
 }

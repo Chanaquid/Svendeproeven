@@ -9,7 +9,8 @@ import {
   FavoriteToggleResultDto,
   FavoriteStatusDto,
   NotifyPreferenceResultDto,
-  UpdateNotifyPreferenceDto
+  UpdateNotifyPreferenceDto,
+  UserFavoriteItemListDto
 } from '../dtos/userFavoriteItemDto';
 import { ItemListDto } from '../dtos/itemDto';
 
@@ -24,8 +25,8 @@ export class UserFavoriteService {
   // GET /api/favorites
   getMyFavorites(
     request: PagedRequest
-  ): Observable<ApiResponse<PagedResult<ItemListDto>>> {
-    return this.http.get<ApiResponse<PagedResult<ItemListDto>>>(
+  ): Observable<ApiResponse<PagedResult<UserFavoriteItemListDto >>> {
+    return this.http.get<ApiResponse<PagedResult<UserFavoriteItemListDto>>>(
       this.baseUrl,
       { params: { ...request } as any }
     );

@@ -113,6 +113,7 @@ export interface LoanListDto {
   totalPrice: number;
   isBorrower: boolean;
   isOverdue: boolean;
+  hasDispute: boolean;
   createdAt: string;
 }
 

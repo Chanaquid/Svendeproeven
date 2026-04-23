@@ -37,6 +37,7 @@ namespace backend.Repositories
         {
             var query = _context.UserReviews
                 .AsNoTracking()
+                .Include(r => r.Loan).ThenInclude(l => l!.Item)
                 .Include(r => r.Reviewer)
                 .Include(r => r.ReviewedUser)
                 .Where(r => r.ReviewedUserId == reviewedUserId)
@@ -57,6 +58,9 @@ namespace backend.Repositories
                 .AsNoTracking()
                 .Include(r => r.Reviewer)
                 .Include(r => r.ReviewedUser)
+                .Include(r => r.Loan)
+                    .ThenInclude(l => l!.Item)
+
                 .Where(r => r.ReviewerId == reviewerId)
                 .AsQueryable();
 

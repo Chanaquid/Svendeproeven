@@ -45,6 +45,7 @@ export interface UserReviewListDto {
   isAdminReview: boolean;
   isMine: boolean;
   isEdited: boolean;
+  editedAt: string | null;
   rating: number;
   comment: string | null;
   createdAt: string;

@@ -193,7 +193,10 @@ namespace backend.Repositories
                 .Include(d => d.FiledBy)
                 .Include(d => d.RespondedBy)
                 .Include(d => d.Photos)
-                .Where(d => d.FiledById == userId || d.RespondedById == userId)
+                .Where(d => d.FiledById == userId
+                 || d.RespondedById == userId
+                 || d.Loan.LenderId == userId   
+                 || d.Loan.BorrowerId == userId)
                 .AsQueryable();
 
             query = ApplyFilter(query, filter);

@@ -136,6 +136,9 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.Configure<ScoreThresholdOptions>(
     builder.Configuration.GetSection(ScoreThresholdOptions.SectionName) );
 
+
+builder.Services.AddSingleton<IOnlineTracker, OnlineTracker>();
+
 //Background services
 builder.Services.AddHostedService<AutomaticUnbanService>();
 builder.Services.AddHostedService<AutoCloseInactiveSupportThreadsService>();
@@ -201,8 +204,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.Converters.Add(
-            new JsonStringEnumConverter());
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.Converters.Add(new DateTimeUtcConverter());
     });
 builder.Services.AddSignalR();
 

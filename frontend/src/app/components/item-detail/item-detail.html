@@ -54,6 +54,18 @@
                         Request Loan
                     </button>
 
+                    <button *ngIf="!isOwner && !isAdmin" (click)="toggleFavorite()" [disabled]="isTogglingFavorite"
+                        class="btn-report" [class.btn-favorited]="isFavorited"
+                        [title]="isFavorited ? 'Remove from favorites' : 'Add to favorites'">
+                        <svg class="btn-icon" fill="currentColor" viewBox="0 0 24 24">
+                            <path *ngIf="isFavorited"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                            <path *ngIf="!isFavorited" fill="none" stroke="currentColor" stroke-width="2"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                        {{ isTogglingFavorite ? '...' : isFavorited ? 'Saved' : 'Save' }}
+                    </button>
+
                     <button *ngIf="!isOwner && !isAdmin" (click)="openReportModal()" class="btn-report">
                         <svg class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -91,12 +103,38 @@
 
                     <!-- Photos -->
                     <div *ngIf="item.photos && item.photos.length > 0" class="photos-wrap">
-                        <div class="photo-primary" (click)="selectedPhoto = (item.photos[0]?.photoUrl ?? null)">
-                            <img [src]="item.photos[0]?.photoUrl" [alt]="item.title" class="photo-primary-img" />
+                        <div class="photo-primary">
+                            <img [src]="item.photos[activePhotoIndex]?.photoUrl" [alt]="item.title"
+                                class="photo-primary-img"
+                                (click)="selectedPhoto = (item.photos[activePhotoIndex]?.photoUrl ?? null)" />
+
+                            <!-- Left arrow -->
+                            <button *ngIf="item.photos.length > 1" (click)="prevPhoto(item.photos.length)"
+                                class="photo-nav photo-nav--prev">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </button>
+
+                            <!-- Right arrow -->
+                            <button *ngIf="item.photos.length > 1" (click)="nextPhoto(item.photos.length)"
+                                class="photo-nav photo-nav--next">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+
+                            <!-- Dot indicators -->
+                            <div *ngIf="item.photos.length > 1" class="photo-dots">
+                                <span *ngFor="let photo of item.photos; let i = index" class="photo-dot"
+                                    [class.photo-dot--active]="i === activePhotoIndex" (click)="activePhotoIndex = i">
+                                </span>
+                            </div>
                         </div>
+
                         <div *ngIf="item.photos.length > 1" class="photo-thumbs">
-                            <div *ngFor="let photo of item.photos" (click)="selectedPhoto = photo.photoUrl"
-                                class="photo-thumb" [class.photo-thumb--active]="photo.isPrimary">
+                            <div *ngFor="let photo of item.photos; let i = index" (click)="activePhotoIndex = i"
+                                class="photo-thumb" [class.photo-thumb--active]="i === activePhotoIndex">
                                 <img [src]="photo.photoUrl" class="photo-thumb-img" />
                             </div>
                         </div>
@@ -385,12 +423,12 @@
                         </div>
                         <p *ngIf="cancelError" class="error-msg">{{ cancelError }}</p>
                         <div class="loan-actions">
-                            <button (click)="router.navigate(['/loans', existingLoan.id])" class="btn-secondary">View
-                                Loan</button>
+                            <button (click)="router.navigate(['/loans', existingLoan.id])"
+                                class="btn-action btn-secondary">View Loan</button>
                             <button
                                 *ngIf="existingLoan.status === 'Pending' || existingLoan.status === 'AdminPending' || existingLoan.status === 'Approved'"
-                                (click)="cancelLoan()" [disabled]="isCancellingLoan" class="btn-danger">
-                                {{ isCancellingLoan ? 'Cancelling...' : 'Cancel Request' }}
+                                (click)="cancelLoan()" [disabled]="isCancellingLoan" class="btn-action btn-danger">
+                                {{ isCancellingLoan ? 'Cancelling...' : 'Cancel' }}
                             </button>
                         </div>
                     </div>
@@ -456,17 +494,58 @@
 
         <div class="modal-body">
 
-            <!-- Photo URL -->
+            <!-- ── Photos ── -->
             <div class="form-group">
-                <label class="form-label">Photo URL</label>
-                <div class="photo-input-row">
-                    <div class="photo-preview">
-                        <img *ngIf="editForm.photoUrl" [src]="editForm.photoUrl" class="photo-preview-img"
-                            (error)="editForm.photoUrl = ''" />
-                        <span *ngIf="!editForm.photoUrl">{{ getCategoryEmoji(item?.categoryName || '') }}</span>
+                <label class="form-label">Photos</label>
+                <p class="form-hint">Drag to reorder · First image is the primary thumbnail</p>
+
+                <div class="photo-editor">
+
+                    <div *ngFor="let photo of editPhotos; let i = index" class="photo-editor-thumb"
+                        [class.photo-editor-thumb--primary]="i === 0"
+                        [class.photo-editor-thumb--uploading]="photo.uploading"
+                        [class.photo-editor-thumb--drag-over]="isDraggingOver === i" draggable="true"
+                        (dragstart)="onDragStart(i)" (dragover)="onDragOver($event, i)" (dragleave)="onDragLeave()"
+                        (drop)="onDrop($event, i)" (dragend)="onDragEnd()">
+
+                        <div *ngIf="photo.uploading" class="photo-thumb-spinner">
+                            <div class="mini-spinner"></div>
+                        </div>
+
+                        <img *ngIf="!photo.uploading" [src]="photo.photoUrl" class="photo-editor-img" />
+
+                        <span *ngIf="i === 0 && !photo.uploading" class="primary-badge">
+                            <svg fill="currentColor" viewBox="0 0 20 20" class="primary-badge-icon">
+                                <path
+                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            Primary
+                        </span>
+
+                        <button *ngIf="!photo.uploading" type="button" (click)="removeEditPhoto(i)"
+                            class="photo-remove-btn" title="Remove photo">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+
+                        <div *ngIf="!photo.uploading" class="drag-handle" title="Drag to reorder">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 8h16M4 16h16" />
+                            </svg>
+                        </div>
                     </div>
-                    <input type="url" [(ngModel)]="editForm.photoUrl" placeholder="https://example.com/photo.jpg"
-                        class="form-input" />
+
+                    <!-- Add-more tile -->
+                    <label class="photo-add-tile">
+                        <input type="file" accept="image/*" multiple style="display:none"
+                            (change)="onPhotosSelected($event)" />
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
+                            class="photo-add-icon">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span>Add photos</span>
+                    </label>
                 </div>
             </div>
 
@@ -521,24 +600,30 @@
                 </div>
             </div>
 
-            <!-- Min Loan Days -->
-            <div class="form-group">
-                <label class="form-label">Min Loan Days</label>
-                <input type="number" [(ngModel)]="editForm.minLoanDays" placeholder="—" class="form-input" />
-            </div>
+            <!-- Min and max Loan Days -->
+            <div class="form-row">
+    <div class="form-group">
+        <label class="form-label">Min Loan Days</label>
+        <input type="number" [(ngModel)]="editForm.minLoanDays" placeholder="—" class="form-input" />
+    </div>
+    <div class="form-group">
+        <label class="form-label">Max Loan Days</label>
+        <input type="number" [(ngModel)]="editForm.maxLoanDays" placeholder="—" class="form-input" />
+    </div>
+</div>
 
-            <!-- Pickup Address -->
+            <!-- Pickup Address (Geoapify) -->
             <div class="form-group">
                 <label class="form-label">Pickup Address</label>
                 <div class="address-wrap">
                     <input type="text" [ngModel]="editForm.pickupAddress"
                         (ngModelChange)="editForm.pickupAddress = $event; onAddressInput($event)"
                         (blur)="showAddressSuggestions = false" placeholder="Start typing an address..."
-                        class="form-input" />
+                        class="form-input" autocomplete="off" />
                     <div *ngIf="showAddressSuggestions && addressSuggestions.length > 0" class="address-dropdown">
                         <button *ngFor="let s of addressSuggestions" type="button" (mousedown)="selectAddress(s)"
                             class="address-option">
-                            📍 {{ s.display_name }}
+                            📍 {{ s.properties.formatted }}
                         </button>
                     </div>
                 </div>
@@ -549,22 +634,27 @@
 
             <!-- Toggles -->
             <div class="toggles-row">
-                <label class="toggle-label">
-                    <div class="toggle-wrap">
-                        <input type="checkbox" [(ngModel)]="editForm.requiresVerification" class="toggle-input" />
-                        <div class="toggle-track toggle-track--amber"></div>
-                        <div class="toggle-thumb"></div>
+
+                <!-- Requires Verification -->
+                <div class="toggle-item" (click)="editForm.requiresVerification = !editForm.requiresVerification">
+                    <div class="toggle-pill" [class.toggle-pill--amber]="editForm.requiresVerification">
+                        <div class="toggle-knob" [class.toggle-knob--on]="editForm.requiresVerification"></div>
                     </div>
                     <span class="toggle-text">Requires Verification</span>
-                </label>
-                <label class="toggle-label">
-                    <div class="toggle-wrap">
-                        <input type="checkbox" [(ngModel)]="editForm.isActive" class="toggle-input" />
-                        <div class="toggle-track toggle-track--green"></div>
-                        <div class="toggle-thumb"></div>
+                </div>
+
+                <!-- Set Active -->
+                <div class="toggle-item" (click)="editForm.isActive = !editForm.isActive">
+                    <div class="toggle-pill" [class.toggle-pill--green]="editForm.isActive">
+                        <div class="toggle-knob" [class.toggle-knob--on]="editForm.isActive"></div>
                     </div>
-                    <span class="toggle-text">Active / Listed</span>
-                </label>
+                    <span class="toggle-text">
+                        Set Active
+                        <span class="toggle-sub">{{ editForm.isActive ? 'Listed &amp; available' : 'Unlisted /
+                            unavailable' }}</span>
+                    </span>
+                </div>
+
             </div>
 
             <p *ngIf="editError" class="error-msg">{{ editError }}</p>
@@ -617,11 +707,12 @@
                 <span class="hint-value">{{ item?.minLoanDays }} days</span>
             </div>
 
-            <!-- Price summary — only shown for paid items once dates are picked -->
+            <!-- Price summary -->
             <div *ngIf="!item?.isFree && loanDays > 0" class="price-summary">
                 <div class="price-summary-row">
                     <span class="price-summary-label">Rate</span>
-                    <span class="price-summary-value">kr {{ item?.pricePerDay }}<span class="price-per-day">/day</span></span>
+                    <span class="price-summary-value">kr {{ item?.pricePerDay }}<span
+                            class="price-per-day">/day</span></span>
                 </div>
                 <div class="price-summary-row">
                     <span class="price-summary-label">Duration</span>
@@ -654,46 +745,46 @@
 
 <!-- ─── Report Modal ───────────────────────────────────────────── -->
 <div *ngIf="showReportModal" class="modal-overlay">
-  <div class="modal-backdrop" (click)="showReportModal = false"></div>
-  <div class="modal">
-    <div class="modal-header">
-      <div>
-        <h2 class="modal-title">Report Item</h2>
-        <p class="modal-sub">{{ item?.title }}</p>
-      </div>
-      <button (click)="showReportModal = false" class="modal-close">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+    <div class="modal-backdrop" (click)="showReportModal = false"></div>
+    <div class="modal">
+        <div class="modal-header">
+            <div>
+                <h2 class="modal-title">Report Item</h2>
+                <p class="modal-sub">{{ item?.title }}</p>
+            </div>
+            <button (click)="showReportModal = false" class="modal-close">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Reason <span class="required">*</span></label>
+                <select [(ngModel)]="reportReason" class="form-input form-select">
+                    <option value="">Select a reason...</option>
+                    <option value="FakeListing">Fake Listing</option>
+                    <option value="ProhibitedItem">Prohibited Item</option>
+                    <option value="MisleadingDescription">Misleading Description</option>
+                    <option value="Spam">Spam</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Additional details</label>
+                <textarea [(ngModel)]="reportDetails" rows="3" placeholder="Describe the issue..."
+                    class="form-input form-textarea"></textarea>
+            </div>
+            <p *ngIf="reportError" class="error-msg">{{ reportError }}</p>
+            <p *ngIf="reportSuccess" class="success-msg">{{ reportSuccess }}</p>
+        </div>
+        <div class="modal-footer">
+            <button (click)="showReportModal = false" class="btn-secondary">Cancel</button>
+            <button (click)="submitReport()" [disabled]="isSubmittingReport" class="btn-report-submit">
+                {{ isSubmittingReport ? 'Submitting...' : 'Submit Report' }}
+            </button>
+        </div>
     </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">Reason <span class="required">*</span></label>
-        <select [(ngModel)]="reportReason" class="form-input form-select">
-          <option value="">Select a reason...</option>
-          <option value="FakeListing">Fake Listing</option>
-          <option value="ProhibitedItem">Prohibited Item</option>
-          <option value="MisleadingDescription">Misleading Description</option>
-          <option value="Spam">Spam</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Additional details</label>
-        <textarea [(ngModel)]="reportDetails" rows="3" placeholder="Describe the issue..."
-          class="form-input form-textarea"></textarea>
-      </div>
-      <p *ngIf="reportError" class="error-msg">{{ reportError }}</p>
-      <p *ngIf="reportSuccess" class="success-msg">{{ reportSuccess }}</p>
-    </div>
-    <div class="modal-footer">
-      <button (click)="showReportModal = false" class="btn-secondary">Cancel</button>
-      <button (click)="submitReport()" [disabled]="isSubmittingReport" class="btn-report-submit">
-        {{ isSubmittingReport ? 'Submitting...' : 'Submit Report' }}
-      </button>
-    </div>
-  </div>
 </div>
 
 <!-- Lightbox -->

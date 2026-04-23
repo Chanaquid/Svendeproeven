@@ -89,7 +89,7 @@ namespace backend.Services
                 Description = item.Description,
                 Slug = item.Slug,
                 MainPhotoUrl = primary?.PhotoUrl,
-                PickUpAddress = item.PickupAddress,
+                PickupAddress = item.PickupAddress,
                 CategoryId = item.CategoryId,
                 CategoryName = item.Category?.Name ?? "",
                 CategorySlug = item.Category?.Slug ?? "",
@@ -105,6 +105,7 @@ namespace backend.Services
                 Condition = item.Condition,
                 Availability = item.Availability,
                 IsActive = item.IsActive,
+                RequiresVerification = item.RequiresVerification,
                 AverageRating = item.Reviews?.Any() == true
                     ? Math.Round(item.Reviews.Average(r => r.Rating), 1)
                     : null,
