@@ -39,7 +39,6 @@ namespace backend.Services
             if (loan == null)
                 throw new KeyNotFoundException("Loan not found.");
 
-            //Disputes are only allowed once the loan is marked as completed
             if (loan.Status != LoanStatus.Completed)
                 throw new InvalidOperationException("Disputes can only be filed for completed loans.");
 
@@ -50,7 +49,6 @@ namespace backend.Services
             if (!canFile)
                 throw new InvalidOperationException("You cannot file a dispute for this loan.");
 
-            //Initialize dispute with a 72-hour window for the otherparty to respond
             var dispute = new Dispute
             {
                 LoanId = dto.LoanId,
@@ -66,7 +64,6 @@ namespace backend.Services
             await _disputeRepository.AddAsync(dispute);
             await _disputeRepository.SaveChangesAsync();
 
-            //Notify the other participant immediately
             var otherUserId = loan.BorrowerId == userId ? loan.LenderId : loan.BorrowerId;
             await _notificationService.SendAsync(
                 otherUserId,
@@ -87,7 +84,7 @@ namespace backend.Services
             if (dispute.FiledById != userId)
                 throw new UnauthorizedAccessException("Only the filer can edit this dispute.");
 
-            //prevent edits once the other party has viewed it
+            // Rule 2: cannot edit once other party has viewed it
             if (!await IsEditableAsync(disputeId))
                 throw new InvalidOperationException("This dispute can no longer be edited because the other party has viewed it.");
 
@@ -107,7 +104,6 @@ namespace backend.Services
             if (dispute.FiledById != userId)
                 throw new UnauthorizedAccessException("Only the filer can cancel this dispute.");
 
-            //Cannot cancel if the case has already progressed to Admin Review or a response exists
             if (dispute.Status != DisputeStatus.AwaitingResponse)
                 throw new InvalidOperationException("This dispute cannot be cancelled.");
 
@@ -119,7 +115,7 @@ namespace backend.Services
             await _disputeRepository.SaveChangesAsync();
         }
 
-        public async Task<DisputePhotoDto> AddFiledByPhotoUrlAsync(string userId, int disputeId, string photoUrl)
+        public async Task<DisputePhotoDto> AddFiledByPhotoUrlAsync(string userId, int disputeId, string photoUrl, string? caption)
         {
             var dispute = await _disputeRepository.GetByIdAsync(disputeId);
             if (dispute == null)
@@ -128,6 +124,7 @@ namespace backend.Services
             if (dispute.FiledById != userId)
                 throw new UnauthorizedAccessException("Only the filer can add photos.");
 
+            // Rule 2: cannot add evidence once other party has viewed it
             if (!await IsEditableAsync(disputeId))
                 throw new InvalidOperationException("Photos can no longer be added — the other party has viewed this dispute.");
 
@@ -136,6 +133,7 @@ namespace backend.Services
                 DisputeId = disputeId,
                 SubmittedById = userId,
                 PhotoUrl = photoUrl,
+                Caption = caption,
                 UploadedAt = DateTime.UtcNow
             };
 
@@ -149,6 +147,7 @@ namespace backend.Services
                 Id = photo.Id,
                 DisputeId = photo.DisputeId,
                 PhotoUrl = photo.PhotoUrl,
+                Caption = photo.Caption,
                 SubmittedById = photo.SubmittedById,
                 SubmittedByName = user?.FullName ?? "Unknown",
                 SubmittedByUserName = user?.UserName ?? "Unknown",
@@ -166,6 +165,7 @@ namespace backend.Services
             if (dispute.FiledById != userId)
                 throw new UnauthorizedAccessException("Only the filer can delete photos.");
 
+            // Rule 2: cannot delete evidence once other party has viewed it
             if (!await IsEditableAsync(disputeId))
                 throw new InvalidOperationException("Photos can no longer be deleted — the other party has viewed this dispute.");
 
@@ -183,7 +183,7 @@ namespace backend.Services
             if (dispute == null)
                 throw new KeyNotFoundException("Dispute not found.");
 
-            //Only mark as viewed if the person viewing is the Respondent, not the Filer
+            // Only mark as viewed if the person viewing is the respondent, not the filer
             if (dispute.FiledById == userId)
                 return;
 
@@ -210,6 +210,7 @@ namespace backend.Services
             if (dispute == null)
                 throw new KeyNotFoundException("Dispute not found.");
 
+            // Rule 3: filer cannot respond to their own dispute
             if (dispute.FiledById == userId)
                 throw new InvalidOperationException("You cannot respond to your own dispute.");
 
@@ -226,10 +227,10 @@ namespace backend.Services
             if (DateTime.UtcNow > dispute.ResponseDeadline)
                 throw new InvalidOperationException("The response deadline has passed.");
 
-
             dispute.RespondedById = userId;
             dispute.ResponseDescription = dto.ResponseDescription;
             dispute.RespondedAt = DateTime.UtcNow;
+            // Rule 4: after response, move to admin review
             dispute.Status = DisputeStatus.PendingAdminReview;
 
             _disputeRepository.Update(dispute);
@@ -244,17 +245,21 @@ namespace backend.Services
             return await GetDisputeByIdAsync(disputeId, userId);
         }
 
-        public async Task<DisputePhotoDto> AddResponsePhotoUrlAsync(string userId, int disputeId, string photoUrl)
+        public async Task<DisputePhotoDto> AddResponsePhotoUrlAsync(string userId, int disputeId, string photoUrl, string? caption)
         {
             var dispute = await _disputeRepository.GetByIdAsync(disputeId);
             if (dispute == null)
                 throw new KeyNotFoundException("Dispute not found.");
 
+            //only the other party (not the filer) can add response photos
             if (dispute.FiledById == userId)
                 throw new UnauthorizedAccessException("Only the respondent can add response photos.");
 
-            if (dispute.Status != DisputeStatus.AwaitingResponse)
-                throw new InvalidOperationException("Response photos can only be added while the dispute is awaiting response.");
+            if (dispute.Status != DisputeStatus.AwaitingResponse &&
+                    dispute.Status != DisputeStatus.PendingAdminReview)
+                throw new InvalidOperationException("Response photos can only be added while the dispute is open.");
+
+
 
             if (DateTime.UtcNow > dispute.ResponseDeadline)
                 throw new InvalidOperationException("The response deadline has passed.");
@@ -264,6 +269,7 @@ namespace backend.Services
                 DisputeId = disputeId,
                 SubmittedById = userId,
                 PhotoUrl = photoUrl,
+                Caption = caption,
                 UploadedAt = DateTime.UtcNow
             };
 
@@ -277,6 +283,7 @@ namespace backend.Services
                 Id = photo.Id,
                 DisputeId = photo.DisputeId,
                 PhotoUrl = photo.PhotoUrl,
+                Caption = photo.Caption,
                 SubmittedById = photo.SubmittedById,
                 SubmittedByName = user?.FullName ?? "Unknown",
                 SubmittedByUserName = user?.UserName ?? "Unknown",
@@ -386,22 +393,22 @@ namespace backend.Services
             };
         }
 
-        public async Task<DisputeDto> AdminGetDisputeByIdAsync(int disputeId)
+        public async Task<DisputeDto> AdminGetDisputeByIdAsync(int disputeId, string requestingUserId)
         {
             var dispute = await _disputeRepository.GetByIdWithDetailsAsync(disputeId);
             if (dispute == null)
                 throw new KeyNotFoundException("Dispute not found.");
 
-            return MapToDisputeDto(dispute, null);
+            return MapToDisputeDto(dispute, requestingUserId);
         }
 
         public async Task<PagedResult<DisputeListDto>> GetAllDisputesAsync(
-            DisputeFilter? filter, PagedRequest request)
+            string requestingUserId, DisputeFilter? filter, PagedRequest request)
         {
             var result = await _disputeRepository.GetAllAsync(filter, request);
             return new PagedResult<DisputeListDto>
             {
-                Items = result.Items.Select(d => MapToDisputeListDto(d, null)).ToList(),
+                Items = result.Items.Select(d => MapToDisputeListDto(d, requestingUserId)).ToList(),
                 TotalCount = result.TotalCount,
                 Page = result.Page,
                 PageSize = result.PageSize
@@ -409,12 +416,12 @@ namespace backend.Services
         }
 
         public async Task<PagedResult<DisputeListDto>> GetAllOpenDisputesAsync(
-            DisputeFilter? filter, PagedRequest request)
+            string requestingUserId, DisputeFilter? filter, PagedRequest request)
         {
             var result = await _disputeRepository.GetAllOpenAsync(filter, request);
             return new PagedResult<DisputeListDto>
             {
-                Items = result.Items.Select(d => MapToDisputeListDto(d, null)).ToList(),
+                Items = result.Items.Select(d => MapToDisputeListDto(d, requestingUserId)).ToList(),
                 TotalCount = result.TotalCount,
                 Page = result.Page,
                 PageSize = result.PageSize
@@ -422,12 +429,12 @@ namespace backend.Services
         }
 
         public async Task<PagedResult<DisputeListDto>> GetDisputesByStatusAsync(
-            DisputeStatus status, DisputeFilter? filter, PagedRequest request)
+            string requestingUserId, DisputeStatus status, DisputeFilter? filter, PagedRequest request)
         {
             var result = await _disputeRepository.GetByStatusAsync(status, filter, request);
             return new PagedResult<DisputeListDto>
             {
-                Items = result.Items.Select(d => MapToDisputeListDto(d, null)).ToList(),
+                Items = result.Items.Select(d => MapToDisputeListDto(d, requestingUserId)).ToList(),
                 TotalCount = result.TotalCount,
                 Page = result.Page,
                 PageSize = result.PageSize
@@ -441,12 +448,12 @@ namespace backend.Services
         }
 
         public async Task<PagedResult<DisputeListDto>> GetDisputeHistoryByItemAsync(
-            int itemId, DisputeFilter? filter, PagedRequest request)
+            string requestingUserId, int itemId, DisputeFilter? filter, PagedRequest request)
         {
             var result = await _disputeRepository.GetDisputeHistoryByItemIdAsync(itemId, filter, request);
             return new PagedResult<DisputeListDto>
             {
-                Items = result.Items.Select(d => MapToDisputeListDto(d, null)).ToList(),
+                Items = result.Items.Select(d => MapToDisputeListDto(d, requestingUserId)).ToList(),
                 TotalCount = result.TotalCount,
                 Page = result.Page,
                 PageSize = result.PageSize
@@ -477,15 +484,12 @@ namespace backend.Services
             if (loan.BorrowerId != userId && loan.LenderId != userId) return false;
             if (loan.Status != LoanStatus.Completed) return false;
 
-            //Check 14-day dispute window
             if (loan.DisputeDeadline.HasValue && DateTime.UtcNow > loan.DisputeDeadline.Value)
                 return false;
 
-            //Prevent duplicate or overlapping disputes for the same loan
             if (await _disputeRepository.HasUserFiledDisputeForLoanAsync(loanId, userId)) return false;
             if (await _disputeRepository.HasActiveDisputeAsync(loanId)) return false;
 
-            //Max 2 disputes total per loan (one from each party)
             var disputeCount = await _disputeRepository.GetDisputeCountForLoanAsync(loanId);
             if (disputeCount >= 2) return false;
 
@@ -511,10 +515,10 @@ namespace backend.Services
             var dispute = await _disputeRepository.GetByIdAsync(disputeId);
             if (dispute == null) return false;
 
+            // Rule 1 & 2: editable only if not yet viewed by other party AND still awaiting response
             return !dispute.IsViewedByOtherParty &&
                    dispute.Status == DisputeStatus.AwaitingResponse;
         }
-
 
         public async Task<int> ProcessExpiredDisputesAsync()
         {
@@ -534,19 +538,39 @@ namespace backend.Services
             return count;
         }
 
+        // ─── Helpers ─────────────────────────────────────────────────────────────
 
-        //Helpers
         private async Task ApplyPenaltiesAsync(Dispute dispute, AdminResolveDisputeDto dto, string adminId)
         {
             var loan = dispute.Loan;
             var owner = await _userManager.FindByIdAsync(loan.LenderId);
             var borrower = await _userManager.FindByIdAsync(loan.BorrowerId);
 
-            if (dto.OwnerPenalty != null && owner != null)
-                await ApplyPenaltyToUserAsync(owner, dto.OwnerPenalty, dispute, adminId);
+            switch (dto.Verdict)
+            {
+                case DisputeVerdict.NoPenalty:
+                    // Ignore all penalties regardless of what was sent
+                    break;
 
-            if (dto.BorrowerPenalty != null && borrower != null)
-                await ApplyPenaltyToUserAsync(borrower, dto.BorrowerPenalty, dispute, adminId);
+                case DisputeVerdict.OwnerPenalized:
+                    if (dto.OwnerPenalty != null && owner != null)
+                        await ApplyPenaltyToUserAsync(owner, dto.OwnerPenalty, dispute, adminId);
+                    // Ignore borrower penalty
+                    break;
+
+                case DisputeVerdict.BorrowerPenalized:
+                    if (dto.BorrowerPenalty != null && borrower != null)
+                        await ApplyPenaltyToUserAsync(borrower, dto.BorrowerPenalty, dispute, adminId);
+                    // Ignore owner penalty
+                    break;
+
+                case DisputeVerdict.BothPenalized:
+                    if (dto.OwnerPenalty != null && owner != null)
+                        await ApplyPenaltyToUserAsync(owner, dto.OwnerPenalty, dispute, adminId);
+                    if (dto.BorrowerPenalty != null && borrower != null)
+                        await ApplyPenaltyToUserAsync(borrower, dto.BorrowerPenalty, dispute, adminId);
+                    break;
+            }
         }
 
         private async Task ApplyPenaltyToUserAsync(
@@ -571,7 +595,6 @@ namespace backend.Services
                 await _fineRepository.AddAsync(fine);
             }
 
-            //Adjust trust score (0-100) and log the change for transparency
             if (penalty.ScoreAdjustment.HasValue && penalty.ScoreAdjustment.Value != 0)
             {
                 var newScore = Math.Clamp(user.Score + penalty.ScoreAdjustment.Value, 0, 100);
@@ -595,22 +618,35 @@ namespace backend.Services
 
         private DisputeDto MapToDisputeDto(Dispute dispute, string? currentUserId)
         {
-            //Complex mapping that includes condition snapshots and filtered photo sets
-            var isMine = currentUserId != null && dispute.FiledById == currentUserId;
+            // Whether the current user filed this dispute
+            var isFiler = currentUserId != null && dispute.FiledById == currentUserId;
 
-            return new DisputeDto
+            var isRespondent = currentUserId != null &&
+                               dispute.FiledById != currentUserId &&
+                               (dispute.Loan.LenderId == currentUserId ||
+                                dispute.Loan.BorrowerId == currentUserId);
+
+            var isAwaiting = dispute.Status == DisputeStatus.AwaitingResponse;
+            var hasResponse = !string.IsNullOrEmpty(dispute.ResponseDescription);
+
+            var isMine = isFiler || isRespondent;
+
+            var dto = new DisputeDto
             {
                 Id = dispute.Id,
                 LoanId = dispute.LoanId,
-                ItemId = dispute.Loan.ItemId,
-                ItemTitle = dispute.Loan.Item.Title,
+                ItemId = dispute.Loan?.ItemId ?? 0,
+                ItemTitle = dispute.Loan?.Item?.Title ?? "Unknown item",
+
                 IsMine = isMine,
+
                 FiledById = dispute.FiledById,
                 FiledByName = dispute.FiledBy?.FullName ?? "Unknown",
                 FiledByUserName = dispute.FiledBy?.UserName ?? "Unknown",
                 FiledByAvatarUrl = dispute.FiledBy?.AvatarUrl,
                 FiledAs = dispute.FiledAs,
                 Description = dispute.Description,
+
                 FiledByPhotos = dispute.Photos
                     .Where(p => p.SubmittedById == dispute.FiledById)
                     .Select(p => new DisputePhotoDto
@@ -618,6 +654,7 @@ namespace backend.Services
                         Id = p.Id,
                         DisputeId = p.DisputeId,
                         PhotoUrl = p.PhotoUrl,
+                        Caption = p.Caption,
                         SubmittedById = p.SubmittedById,
                         SubmittedByName = dispute.FiledBy?.FullName ?? "Unknown",
                         SubmittedByUserName = dispute.FiledBy?.UserName ?? "Unknown",
@@ -625,6 +662,7 @@ namespace backend.Services
                         IsMine = p.SubmittedById == currentUserId,
                         UploadedAt = p.UploadedAt
                     }).ToList(),
+
                 RespondedById = dispute.RespondedById,
                 RespondedByName = dispute.RespondedBy?.FullName,
                 RespondedByUserName = dispute.RespondedBy?.UserName,
@@ -632,13 +670,15 @@ namespace backend.Services
                 ResponseDescription = dispute.ResponseDescription,
                 RespondedAt = dispute.RespondedAt,
                 ResponseDeadline = dispute.ResponseDeadline,
+
                 ResponsePhotos = dispute.Photos
-                    .Where(p => p.SubmittedById == dispute.RespondedById)
+                    .Where(p => dispute.RespondedById != null && p.SubmittedById == dispute.RespondedById)
                     .Select(p => new DisputePhotoDto
                     {
                         Id = p.Id,
                         DisputeId = p.DisputeId,
                         PhotoUrl = p.PhotoUrl,
+                        Caption = p.Caption,
                         SubmittedById = p.SubmittedById,
                         SubmittedByName = dispute.RespondedBy?.FullName ?? "Unknown",
                         SubmittedByUserName = dispute.RespondedBy?.UserName ?? "Unknown",
@@ -646,17 +686,20 @@ namespace backend.Services
                         IsMine = p.SubmittedById == currentUserId,
                         UploadedAt = p.UploadedAt
                     }).ToList(),
+
                 Status = dispute.Status,
                 CreatedAt = dispute.CreatedAt,
                 ResolvedAt = dispute.ResolvedAt,
+
                 AdminVerdict = dispute.AdminVerdict,
                 AdminNote = dispute.AdminNote,
                 ResolvedByAdminId = dispute.ResolvedByAdminId,
                 ResolvedByAdminName = dispute.ResolvedByAdmin?.FullName,
                 ResolvedByAdminUserName = dispute.ResolvedByAdmin?.UserName,
                 ResolvedByAdminAvatarUrl = dispute.ResolvedByAdmin?.AvatarUrl,
-                SnapshotCondition = dispute.Loan.SnapshotCondition,
-                SnapshotPhotos = dispute.Loan.SnapshotPhotos?.Select(sp => new LoanSnapshotPhotoDto
+
+                SnapshotCondition = dispute.Loan?.SnapshotCondition,
+                SnapshotPhotos = dispute.Loan?.SnapshotPhotos?.Select(sp => new LoanSnapshotPhotoDto
                 {
                     Id = sp.Id,
                     LoanId = sp.LoanId,
@@ -664,42 +707,53 @@ namespace backend.Services
                     DisplayOrder = sp.DisplayOrder,
                     SnapshotTakenAt = sp.SnapshotTakenAt
                 }).ToList() ?? new(),
-                Penalties = dispute.Fines.Select(f => new DisputePenaltySummaryDto
-                {
-                    UserId = f.UserId,
-                    FullName = f.UserId == dispute.Loan.LenderId
-                        ? (dispute.Loan.Lender?.FullName ?? "Unknown")
-                        : (dispute.Loan.Borrower?.FullName ?? "Unknown"),
-                    UserName = f.UserId == dispute.Loan.LenderId
-                        ? (dispute.Loan.Lender?.UserName ?? "Unknown")
-                        : (dispute.Loan.Borrower?.UserName ?? "Unknown"),
-                    AvatarUrl = f.UserId == dispute.Loan.LenderId
-                        ? dispute.Loan.Lender?.AvatarUrl
-                        : dispute.Loan.Borrower?.AvatarUrl,
-                    FineAmount = f.Amount,
-                    FineStatus = f.Status.ToString(),
-                    ScoreAdjustment = null
-                }).ToList()
+
+                Penalties = (dispute.Fines ?? Enumerable.Empty<Fine>())
+                    .Select(f => new DisputePenaltySummaryDto
+                    {
+                        UserId = f.UserId,
+                        FullName = f.UserId == dispute.Loan.LenderId
+                            ? (dispute.Loan.Lender?.FullName ?? "Unknown")
+                            : (dispute.Loan.Borrower?.FullName ?? "Unknown"),
+                        UserName = f.UserId == dispute.Loan.LenderId
+                            ? (dispute.Loan.Lender?.UserName ?? "Unknown")
+                            : (dispute.Loan.Borrower?.UserName ?? "Unknown"),
+                        AvatarUrl = f.UserId == dispute.Loan.LenderId
+                            ? dispute.Loan.Lender?.AvatarUrl
+                            : dispute.Loan.Borrower?.AvatarUrl,
+                        FineAmount = f.Amount,
+                        FineStatus = f.Status.ToString(),
+                        ScoreAdjustment = null
+                    }).ToList()
             };
+
+
+            //filer can edit text only while awaiting AND other party hasn't viewed yet
+            dto.CanEdit = isFiler && isAwaiting && !dispute.IsViewedByOtherParty;
+
+            //Filer can cancel only while awaiting AND no response yet
+            dto.CanCancel = isFiler && isAwaiting && !dispute.IsViewedByOtherParty;
+
+            //filer can add evidence only while awaiting AND not yet viewed,
+            dto.CanAddEvidence = isFiler && isAwaiting && !dispute.IsViewedByOtherParty;
+
+            //only the other loan party (not the filer) can respond,
+            dto.CanRespond = isRespondent && isAwaiting && !hasResponse;
+
+            //other party
+            dto.CanAddEvidence = isFiler && isAwaiting && !dispute.IsViewedByOtherParty;
+            dto.CanAddResponseEvidence = isRespondent &&
+                (dispute.Status == DisputeStatus.AwaitingResponse ||
+                 dispute.Status == DisputeStatus.PendingAdminReview);
+
+            return dto;
         }
 
         private DisputeListDto MapToDisputeListDto(Dispute dispute, string? currentUserId)
         {
-            var isFiler = currentUserId != null && dispute.FiledById == currentUserId;
-
-            ApplicationUser? otherParty;
-            if (currentUserId == null)
-            {
-                otherParty = dispute.RespondedBy ?? dispute.FiledBy;
-            }
-            else if (dispute.Loan.LenderId == currentUserId)
-            {
-                otherParty = dispute.Loan.Borrower; // current user is lender, other party is borrower
-            }
-            else
-            {
-                otherParty = dispute.Loan.Lender; // current user is borrower, other party is lender
-            }
+            ApplicationUser? otherParty = dispute.FiledById == dispute.Loan.LenderId
+                ? dispute.Loan.Borrower
+                : dispute.Loan.Lender;
 
             return new DisputeListDto
             {

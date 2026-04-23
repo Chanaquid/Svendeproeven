@@ -1,1 +1,475 @@
-<p>appeal works!</p>
+<!-- Loading -->
+<div *ngIf="isLoading" class="flex items-center justify-center py-32">
+    <div class="flex flex-col items-center gap-3">
+        <div class="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-zinc-500 text-sm">Loading appeals...</p>
+    </div>
+</div>
+
+<div *ngIf="!isLoading">
+
+    <!-- Success banner -->
+    <div *ngIf="createSuccess" class="mb-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3">
+        <p class="text-emerald-400 text-xs">✓ {{ createSuccess }}</p>
+    </div>
+
+    <!-- Tabs + New Appeal button -->
+    <div class="flex items-center justify-between gap-4 mb-6 flex-wrap">
+        <div class="flex gap-1 overflow-x-auto scrollbar-none">
+            <button *ngFor="let tab of tabs" (click)="switchTab(tab.id)"
+                class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer"
+                [class.bg-amber-400]="activeTab === tab.id" [class.text-zinc-900]="activeTab === tab.id"
+                [class.bg-zinc-800]="activeTab !== tab.id" [class.text-zinc-400]="activeTab !== tab.id">
+                <span>{{ tab.icon }}</span>
+                <span>{{ tab.label }}</span>
+                <span *ngIf="tab.count !== undefined && tab.count !== null"
+                    class="px-1.5 py-0.5 rounded-md text-[10px] font-bold" [class.bg-zinc-800]="activeTab === tab.id"
+                    [class.text-zinc-600]="activeTab === tab.id" [class.bg-zinc-700]="activeTab !== tab.id"
+                    [class.text-zinc-400]="activeTab !== tab.id">
+                    {{ tab.count }}
+                </span>
+            </button>
+        </div>
+        <button (click)="showCreateForm = !showCreateForm"
+            class="flex items-center gap-1.5 px-4 py-2 bg-amber-400 hover:bg-amber-300 text-zinc-900 text-xs font-semibold rounded-xl cursor-pointer transition-all duration-200 shrink-0">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            New Appeal
+        </button>
+    </div>
+
+    <!-- Create Appeal Form -->
+    <div *ngIf="showCreateForm" class="mb-6 bg-zinc-900 border border-amber-400/20 rounded-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-zinc-800 bg-amber-400/5 flex items-center justify-between">
+            <div>
+                <h3 class="font-bold text-amber-400 text-sm" style="font-family:'Syne',sans-serif">File an Appeal</h3>
+                <p class="text-zinc-500 text-xs mt-0.5">Contest a fine or request a score review</p>
+            </div>
+            <button (click)="showCreateForm = false"
+                class="text-zinc-400 hover:text-white transition-colors cursor-pointer">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="p-5 space-y-4">
+
+            <!-- Type selector -->
+            <div class="space-y-1.5">
+                <label class="text-zinc-400 text-[10px] uppercase tracking-widest font-medium">Appeal Type</label>
+                <div class="flex gap-2">
+                    <button (click)="createType = AppealType.Score"
+                        class="flex-1 py-2.5 text-xs font-semibold rounded-xl border cursor-pointer transition-all duration-200"
+                        [class.bg-blue-400/10]="createType === AppealType.Score"
+                        [class.border-blue-400/30]="createType === AppealType.Score"
+                        [class.text-blue-400]="createType === AppealType.Score"
+                        [class.bg-zinc-800]="createType !== AppealType.Score"
+                        [class.border-zinc-700]="createType !== AppealType.Score"
+                        [class.text-zinc-400]="createType !== AppealType.Score">
+                        📊 Score Appeal
+                    </button>
+                    <button (click)="createType = AppealType.Fine"
+                        class="flex-1 py-2.5 text-xs font-semibold rounded-xl border cursor-pointer transition-all duration-200"
+                        [class.bg-purple-400/10]="createType === AppealType.Fine"
+                        [class.border-purple-400/30]="createType === AppealType.Fine"
+                        [class.text-purple-400]="createType === AppealType.Fine"
+                        [class.bg-zinc-800]="createType !== AppealType.Fine"
+                        [class.border-zinc-700]="createType !== AppealType.Fine"
+                        [class.text-zinc-400]="createType !== AppealType.Fine">
+                        💸 Fine Appeal
+                    </button>
+                </div>
+            </div>
+
+            <!-- Fine selector (only for fine appeals) -->
+            <div *ngIf="createType === AppealType.Fine" class="space-y-1.5">
+                <label class="text-zinc-400 text-[10px] uppercase tracking-widest font-medium">
+                    Select Fine <span class="text-red-400">*</span>
+                </label>
+
+                <!-- Loading -->
+                <div *ngIf="loadingFines" class="flex items-center gap-2 py-2">
+                    <div class="w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin">
+                    </div>
+                    <span class="text-zinc-500 text-xs">Loading your fines...</span>
+                </div>
+
+                <!-- No appealable fines -->
+                <div *ngIf="!loadingFines && appealableFines.length === 0"
+                    class="bg-zinc-800/50 border border-zinc-700 rounded-xl px-3 py-3">
+                    <p class="text-zinc-400 text-xs">No fines available to appeal.</p>
+                    <p class="text-zinc-600 text-[10px] mt-0.5">Only unpaid or rejected fines without an existing appeal
+                        can be appealed.</p>
+                </div>
+
+                <!-- Fine list -->
+                <div *ngIf="!loadingFines && appealableFines.length > 0" class="space-y-2">
+                    <div *ngFor="let f of appealableFines" (click)="createFineId = f.id"
+                        class="flex items-center justify-between gap-3 px-3 py-3 rounded-xl border cursor-pointer transition-all duration-200"
+                        [class.bg-purple-400/10]="createFineId === f.id"
+                        [class.border-purple-400/30]="createFineId === f.id" [class.bg-zinc-800]="createFineId !== f.id"
+                        [class.border-zinc-700]="createFineId !== f.id">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-all"
+                                [class.border-purple-400]="createFineId === f.id"
+                                [class.border-zinc-600]="createFineId !== f.id">
+                                <div *ngIf="createFineId === f.id" class="w-2 h-2 rounded-full bg-purple-400"></div>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-amber-400 font-mono text-[10px] font-bold">#{{ f.id }}</span>
+                                    <span class="text-zinc-300 text-xs font-semibold truncate">{{ f.itemTitle ?? 'Fine'
+                                        }}</span>
+                                </div>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-zinc-500 text-[10px]">{{ f.type }}</span>
+                                    <span *ngIf="f.loanId" class="text-zinc-600 text-[10px]">· Loan #{{ f.loanId
+                                        }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <p class="text-white font-black text-sm" style="font-family:'Syne',sans-serif">kr {{
+                                f.amount }}</p>
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md"
+                                [class.text-red-400]="f.status === 'Unpaid'"
+                                [class.text-rose-400]="f.status === 'Rejected'">
+                                {{ f.status }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message -->
+            <div class="space-y-1.5">
+                <label class="text-zinc-400 text-[10px] uppercase tracking-widest font-medium">
+                    Your Message <span class="text-red-400">*</span>
+                </label>
+                <textarea [(ngModel)]="createMessage" rows="4"
+                    placeholder="Explain why you are appealing. Be clear and specific (min. 20 characters)..."
+                    class="w-full bg-zinc-800 border focus:border-amber-400/50 text-white text-sm rounded-xl px-3 py-2.5 outline-none placeholder-zinc-600 resize-none transition-all duration-200"
+                    [class.border-red-500]="createMessageTooShort"
+                    [class.border-zinc-700]="!createMessageTooShort"></textarea>
+                <div class="flex items-center justify-between">
+                    <p *ngIf="createMessageTooShort" class="text-red-400 text-[10px]">
+                        Minimum 20 characters ({{ createMessage.trim().length }}/20)
+                    </p>
+                    <p *ngIf="!createMessageTooShort && createMessage.trim().length > 0"
+                        class="text-zinc-600 text-[10px]">
+                        {{ createMessage.trim().length }} characters
+                    </p>
+                </div>
+            </div>
+
+            <p *ngIf="createError"
+                class="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                {{ createError }}
+            </p>
+
+            <div class="flex gap-3">
+                <button (click)="showCreateForm = false"
+                    class="flex-1 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-sm rounded-xl cursor-pointer">
+                    Cancel
+                </button>
+                <button (click)="submitAppeal()"
+                    [disabled]="isCreating || !createMessage.trim() || createMessageTooShort || (createType === AppealType.Fine && !createFineId)"
+                    class="flex-1 py-2.5 bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-zinc-900 font-semibold text-sm rounded-xl cursor-pointer transition-all duration-200">
+                    {{ isCreating ? 'Submitting...' : 'Submit Appeal' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <!-- LEFT: List -->
+        <div class="lg:col-span-1 space-y-3">
+
+            <!-- Search + sort -->
+            <div class="flex gap-2">
+                <div class="relative flex-1">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0" />
+                    </svg>
+                    <input type="text" [(ngModel)]="searchQuery" (input)="onSearch()" placeholder="Search..."
+                        class="w-full bg-zinc-900 border border-zinc-800 focus:border-amber-400/50 text-white text-xs rounded-xl pl-8 pr-3 py-2.5 outline-none placeholder-zinc-600 transition-all duration-200" />
+                </div>
+                <select [(ngModel)]="sortFilter" (change)="onFilterChange()"
+                    class="bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs rounded-xl px-3 py-2.5 outline-none cursor-pointer">
+                    <option *ngFor="let opt of sortOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+            </div>
+
+            <!-- Error -->
+            <div *ngIf="listError"
+                class="flex items-center justify-between gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+                <p class="text-red-400 text-xs">{{ listError }}</p>
+                <button (click)="loadAppeals()" class="text-red-400 text-xs underline cursor-pointer">Retry</button>
+            </div>
+
+            <!-- List loading -->
+            <div *ngIf="listLoading && !searchQuery" class="flex justify-center py-12">
+                <div class="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+
+            <!-- Empty -->
+            <div *ngIf="!listLoading && appeals.length === 0 && !listError"
+                class="flex flex-col items-center justify-center py-16 text-center bg-zinc-900 border border-zinc-800 rounded-2xl">
+                <p class="text-4xl mb-3">📣</p>
+                <p class="text-white text-sm font-semibold" style="font-family:'Syne',sans-serif">No appeals found</p>
+                <p class="text-zinc-500 text-xs mt-1">Nothing here for this filter</p>
+            </div>
+
+            <!-- Appeal cards -->
+            <div *ngFor="let a of appeals; trackBy: trackById" class="cursor-pointer" (click)="openAppeal(a.id)">
+                <div class="bg-zinc-900 border rounded-2xl p-4 transition-all duration-200 hover:border-zinc-700"
+                    [class.border-amber-400]="selectedId === a.id" [class.bg-amber-400/5]="selectedId === a.id"
+                    [class.border-zinc-800]="selectedId !== a.id">
+
+                    <div class="flex items-start justify-between gap-3 mb-3">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-amber-400 font-mono text-[10px] font-bold">#{{ a.id }}</span>
+                                <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md"
+                                    [ngClass]="getTypeClass(a.appealType)">
+                                    {{ a.appealType === AppealType.Score ? '📊 Score' : '💸 Fine' }}
+                                </span>
+                            </div>
+                            <p class="text-white text-sm font-semibold truncate" style="font-family:'Syne',sans-serif">
+                                {{ a.message | slice:0:50 }}{{ a.message.length > 50 ? '...' : '' }}
+                            </p>
+                        </div>
+                        <span class="shrink-0 text-[10px] font-bold uppercase px-2 py-1 rounded-lg border"
+                            [ngClass]="getStatusClass(a.status)">
+                            {{ a.status }}
+                        </span>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <span *ngIf="a.appealType === AppealType.Fine" class="text-zinc-600 text-[10px]">
+                            Fine #{{ a.fineId ?? '—' }}
+                        </span>
+                        <span *ngIf="a.appealType === AppealType.Score" class="text-zinc-600 text-[10px]">Score
+                            review</span>
+                        <span class="text-zinc-600 text-[10px]">{{ a.createdAt | date:'MMM d, yyyy' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div *ngIf="totalPages > 1" class="flex items-center justify-center gap-3 pt-2">
+                <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1"
+                    class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer disabled:cursor-not-allowed">
+                    ← Prev
+                </button>
+                <span class="text-zinc-500 text-xs font-mono">{{ currentPage }} / {{ totalPages }}</span>
+                <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages"
+                    class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer disabled:cursor-not-allowed">
+                    Next →
+                </button>
+            </div>
+        </div>
+
+        <!-- RIGHT: Detail -->
+        <div class="lg:col-span-2">
+
+            <!-- No selection -->
+            <div *ngIf="!selectedId && !detailLoading"
+                class="flex flex-col items-center justify-center h-96 bg-zinc-900 border border-zinc-800 rounded-2xl text-center">
+                <p class="text-5xl mb-4">📣</p>
+                <p class="text-white font-semibold text-sm" style="font-family:'Syne',sans-serif">Select an appeal</p>
+                <p class="text-zinc-500 text-xs mt-1">Click on an appeal to view details</p>
+            </div>
+
+            <!-- First-time loading -->
+            <div *ngIf="detailLoading && !selectedAppeal" class="flex justify-center py-32">
+                <div class="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+
+            <!-- Subtle refresh indicator -->
+            <div *ngIf="isRefreshingDetail" class="flex justify-center py-2">
+                <div class="w-4 h-4 border-2 border-amber-400/50 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+
+            <ng-container *ngIf="selectedAppeal && !detailLoading">
+                <div class="space-y-5">
+
+                    <!-- Header -->
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+                        <div class="flex items-start justify-between gap-4 flex-wrap">
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-amber-400 font-mono text-xs font-bold">APPEAL #{{
+                                        selectedAppeal.id }}</span>
+                                    <span class="text-[9px] font-bold uppercase px-2 py-0.5 rounded-md"
+                                        [ngClass]="getTypeClass(selectedAppeal.appealType)">
+                                        {{ selectedAppeal.appealType === AppealType.Score ? '📊 Score' : '💸 Fine' }}
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-3 mt-1 flex-wrap">
+                                    <span *ngIf="selectedAppeal.fineId"
+                                        class="text-zinc-500 text-xs cursor-pointer hover:text-amber-400 transition-colors"
+                                        (click)="router.navigate(['/resolution-center'], { queryParams: { tab: 'fines' } })">
+                                        Fine #{{ selectedAppeal.fineId }} →
+                                    </span>
+                                    <span *ngIf="selectedAppeal.fineAmount" class="text-zinc-500 text-xs">
+                                        Amount: <span class="text-white font-semibold">kr {{ selectedAppeal.fineAmount
+                                            }}</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <span class="text-xs font-bold uppercase px-3 py-1.5 rounded-xl border"
+                                [ngClass]="getStatusClass(selectedAppeal.status)">
+                                {{ selectedAppeal.status }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Your message -->
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+                        <h3 class="font-bold text-white text-sm mb-3" style="font-family:'Syne',sans-serif">Your Message
+                        </h3>
+                        <p class="text-zinc-300 text-sm leading-relaxed">{{ selectedAppeal.message }}</p>
+                        <p class="text-zinc-600 text-[10px] mt-3">Submitted {{ selectedAppeal.createdAt | date:'MMM d,
+                            yyyy · HH:mm' }}</p>
+                    </div>
+
+                    <!-- Pending notice -->
+                    <div *ngIf="selectedAppeal.status === AppealStatus.Pending"
+                        class="bg-amber-400/5 border border-amber-400/20 rounded-2xl p-4">
+                        <p class="text-amber-400 text-xs">⏳ Your appeal is under review. An admin will respond shortly.
+                        </p>
+                    </div>
+
+                    <!-- Approved -->
+                    <div *ngIf="selectedAppeal.status === AppealStatus.Approved"
+                        class="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-5 space-y-3">
+                        <h3 class="font-bold text-emerald-400 text-sm" style="font-family:'Syne',sans-serif">✓ Appeal
+                            Approved</h3>
+
+                        <!-- Score outcome -->
+                        <div *ngIf="selectedAppeal.appealType === AppealType.Score && selectedAppeal.restoredScore != null"
+                            class="flex items-center justify-between bg-zinc-800/50 rounded-xl px-4 py-3">
+                            <span class="text-zinc-400 text-xs">Score restored to</span>
+                            <span class="text-emerald-400 font-black text-lg" style="font-family:'Syne',sans-serif">
+                                {{ selectedAppeal.restoredScore }}
+                            </span>
+                        </div>
+
+                        <!-- Fine outcome -->
+                        <div *ngIf="selectedAppeal.appealType === AppealType.Fine" class="space-y-1.5">
+                            <div *ngIf="selectedAppeal.fineResolution" class="flex items-center justify-between">
+                                <span class="text-zinc-400 text-xs">Resolution</span>
+                                <span class="text-white text-xs font-semibold">{{ selectedAppeal.fineResolution
+                                    }}</span>
+                            </div>
+                            <div *ngIf="selectedAppeal.customFineAmount != null"
+                                class="flex items-center justify-between">
+                                <span class="text-zinc-400 text-xs">Adjusted amount</span>
+                                <span class="text-white text-xs font-semibold">kr {{ selectedAppeal.customFineAmount
+                                    }}</span>
+                            </div>
+                        </div>
+
+                        <div *ngIf="selectedAppeal.adminNote"
+                            class="text-zinc-300 text-sm italic bg-zinc-800/50 rounded-xl px-3 py-2">
+                            "{{ selectedAppeal.adminNote }}"
+                        </div>
+
+                        <div *ngIf="selectedAppeal.resolvedByAdminName" class="flex items-center gap-2">
+                            <img [src]="selectedAppeal.resolvedByAdminAvatarUrl || getDefaultAvatar(selectedAppeal.resolvedByAdminName)"
+                                class="w-6 h-6 rounded-lg object-cover bg-zinc-700 shrink-0" />
+                            <p class="text-zinc-500 text-xs">
+                                Resolved by <span class="text-zinc-300">{{ selectedAppeal.resolvedByAdminName }}</span>
+                                · {{ selectedAppeal.resolvedAt | date:'MMM d, yyyy' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Rejected -->
+                    <div *ngIf="selectedAppeal.status === AppealStatus.Rejected"
+                        class="bg-red-500/10 border border-red-500/20 rounded-2xl p-5 space-y-3">
+                        <h3 class="font-bold text-red-400 text-sm" style="font-family:'Syne',sans-serif">✕ Appeal
+                            Rejected</h3>
+
+                        <div *ngIf="selectedAppeal.adminNote" class="text-zinc-300 text-sm leading-relaxed">
+                            {{ selectedAppeal.adminNote }}
+                        </div>
+
+                        <div *ngIf="selectedAppeal.resolvedByAdminName" class="flex items-center gap-2">
+                            <img [src]="selectedAppeal.resolvedByAdminAvatarUrl || getDefaultAvatar(selectedAppeal.resolvedByAdminName)"
+                                class="w-6 h-6 rounded-lg object-cover bg-zinc-700 shrink-0" />
+                            <p class="text-zinc-500 text-xs">
+                                Reviewed by <span class="text-zinc-300">{{ selectedAppeal.resolvedByAdminName }}</span>
+                                · {{ selectedAppeal.resolvedAt | date:'MMM d, yyyy' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Cancel -->
+                    <div *ngIf="canCancel()">
+                        <button (click)="showCancelConfirm = true"
+                            class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 hover:bg-red-500/10 border border-zinc-800 hover:border-red-500/30 text-zinc-400 hover:text-red-400 text-xs font-semibold rounded-2xl transition-all duration-200 cursor-pointer">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Withdraw Appeal
+                        </button>
+                    </div>
+
+                </div>
+            </ng-container>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Confirm Modal -->
+<div *ngIf="showCancelConfirm" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" (click)="showCancelConfirm = false"></div>
+  <div class="relative z-10 w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl p-6 space-y-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+        </svg>
+      </div>
+      <div>
+        <h3 class="font-black text-white text-base" style="font-family:'Syne',sans-serif">Withdraw Appeal?</h3>
+        <p class="text-red-500 text-xs mt-0.5">This action cannot be undone.</p>
+      </div>
+    </div>
+
+    <p class="text-zinc-400 text-sm">Are you sure you want to withdraw appeal
+      <span class="text-white font-semibold">#{{ selectedAppeal?.id }}</span>?
+    </p>
+
+    <!-- Extra warning for fine appeals -->
+    <div *ngIf="selectedAppeal?.appealType === AppealType.Fine"
+      class="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+      <div class="flex items-start gap-2">
+        <span class="text-red-400 text-sm shrink-0">⚠️</span>
+        <p class="text-red-300 text-xs leading-relaxed">
+          You will <span class="font-bold text-red-400">not be able to file another appeal</span> for
+          Fine #{{ selectedAppeal?.fineId }} if you withdraw. This is your only chance to contest it.
+        </p>
+      </div>
+    </div>
+
+    <div class="flex gap-3 pt-1">
+      <button (click)="showCancelConfirm = false"
+        class="flex-1 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-sm rounded-xl cursor-pointer">
+        Keep It
+      </button>
+      <button (click)="cancelAppeal()" [disabled]="isCancelling"
+        class="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 font-semibold text-sm rounded-xl disabled:opacity-50 cursor-pointer">
+        {{ isCancelling ? 'Withdrawing...' : 'Yes, Withdraw' }}
+      </button>
+    </div>
+  </div>
+</div>

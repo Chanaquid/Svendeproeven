@@ -6,6 +6,7 @@ import { ItemService } from '../../services/itemService';
 import { UserService } from '../../services/userService';
 import { ItemAvailability } from '../../dtos/enums';
 import { Navbar } from '../navbar/navbar';
+import { LoanService } from '../../services/loanService';
 
 @Component({
   selector: 'app-landing',
@@ -19,6 +20,7 @@ export class Landing implements OnInit{
   stats = {
     activeItems: '...',
     members: '...',
+    completedLoans: '...',
     cities: '1000+',
   };
 
@@ -27,6 +29,7 @@ export class Landing implements OnInit{
      private router: Router,
       private itemService: ItemService,
        private userService : UserService,
+       private loanService: LoanService,  
       private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
@@ -51,7 +54,21 @@ export class Landing implements OnInit{
         this.stats.activeItems = '250+';
         this.cdr.detectChanges();
       }
-  });
+    });
+
+
+    this.loanService.getCompletedLoansCount().subscribe({
+      next: (count) => {
+        this.stats.completedLoans = count + '+';
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+          console.error('Completed loans error:', err);
+        this.stats.completedLoans = '50';
+        this.cdr.detectChanges();
+      }
+    });
+
 
     this.itemService.getLatest(4).subscribe({
       next: (res) => {

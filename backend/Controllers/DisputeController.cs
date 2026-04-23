@@ -19,8 +19,6 @@ namespace backend.Controllers
             _disputeService = disputeService;
         }
 
-        // ── Filing ────────────────────────────────────────────────────
-
         // POST: api/disputes
         [HttpPost]
         public async Task<ActionResult<ApiResponse<DisputeDto>>> CreateDispute(
@@ -49,7 +47,7 @@ namespace backend.Controllers
             return Ok(ApiResponse<string>.Ok(null, "Dispute cancelled."));
         }
 
-        // ── Evidence — filer ──────────────────────────────────────────
+        //Evidence — filer
 
         // POST: api/disputes/{id}/photos/filed
         [HttpPost("{id:int}/photos/filed")]
@@ -57,7 +55,7 @@ namespace backend.Controllers
             int id,
             [FromBody] AddDisputePhotoDto dto)
         {
-            var result = await _disputeService.AddFiledByPhotoUrlAsync(Caller.UserId, id, dto.PhotoUrl);
+            var result = await _disputeService.AddFiledByPhotoUrlAsync(Caller.UserId, id, dto.PhotoUrl, dto.Caption);
             return Ok(ApiResponse<DisputePhotoDto>.Ok(result, "Photo added successfully."));
         }
 
@@ -69,7 +67,7 @@ namespace backend.Controllers
             return Ok(ApiResponse<string>.Ok(null, "Photo deleted."));
         }
 
-        // ── Other party ───────────────────────────────────────────────
+        //Other party
 
         // POST: api/disputes/{id}/viewed
         [HttpPost("{id:int}/viewed")]
@@ -95,11 +93,11 @@ namespace backend.Controllers
             int id,
             [FromBody] AddDisputePhotoDto dto)
         {
-            var result = await _disputeService.AddResponsePhotoUrlAsync(Caller.UserId, id, dto.PhotoUrl);
+            var result = await _disputeService.AddResponsePhotoUrlAsync(Caller.UserId, id, dto.PhotoUrl, dto.Caption);
             return Ok(ApiResponse<DisputePhotoDto>.Ok(result, "Photo added successfully."));
         }
 
-        // ── User queries ──────────────────────────────────────────────
+        //User queries
 
         // GET: api/disputes/{id}
         [HttpGet("{id:int}")]
@@ -147,14 +145,14 @@ namespace backend.Controllers
             return Ok(ApiResponse<object>.Ok(new { canFile }));
         }
 
-        // ── Admin ─────────────────────────────────────────────────────
+        //Admin
 
         // GET: api/disputes/admin/{id}
         [HttpGet("admin/{id:int}")]
         [Authorize(Roles = Roles.Admin)]
         public async Task<ActionResult<ApiResponse<DisputeDto>>> AdminGetDisputeById(int id)
         {
-            var result = await _disputeService.AdminGetDisputeByIdAsync(id);
+            var result = await _disputeService.AdminGetDisputeByIdAsync(id, Caller.UserId);
             return Ok(ApiResponse<DisputeDto>.Ok(result));
         }
 
@@ -165,7 +163,7 @@ namespace backend.Controllers
             [FromQuery] DisputeFilter? filter,
             [FromQuery] PagedRequest request)
         {
-            var result = await _disputeService.GetAllDisputesAsync(filter, request);
+            var result = await _disputeService.GetAllDisputesAsync(Caller.UserId, filter, request);
             return Ok(ApiResponse<PagedResult<DisputeListDto>>.Ok(result));
         }
 
@@ -176,7 +174,7 @@ namespace backend.Controllers
             [FromQuery] DisputeFilter? filter,
             [FromQuery] PagedRequest request)
         {
-            var result = await _disputeService.GetAllOpenDisputesAsync(filter, request);
+            var result = await _disputeService.GetAllOpenDisputesAsync(Caller.UserId, filter, request);
             return Ok(ApiResponse<PagedResult<DisputeListDto>>.Ok(result));
         }
 
@@ -188,7 +186,7 @@ namespace backend.Controllers
             [FromQuery] DisputeFilter? filter,
             [FromQuery] PagedRequest request)
         {
-            var result = await _disputeService.GetDisputesByStatusAsync(status, filter, request);
+            var result = await _disputeService.GetDisputesByStatusAsync(Caller.UserId, status, filter, request);
             return Ok(ApiResponse<PagedResult<DisputeListDto>>.Ok(result));
         }
 
@@ -209,7 +207,7 @@ namespace backend.Controllers
             [FromQuery] DisputeFilter? filter,
             [FromQuery] PagedRequest request)
         {
-            var result = await _disputeService.GetDisputeHistoryByItemAsync(itemId, filter, request);
+            var result = await _disputeService.GetDisputeHistoryByItemAsync(Caller.UserId, itemId, filter, request);
             return Ok(ApiResponse<PagedResult<DisputeListDto>>.Ok(result));
         }
 

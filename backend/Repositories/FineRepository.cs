@@ -299,7 +299,8 @@ namespace backend.Repositories
                 var term = filter.Search.Trim().ToLower();
                 query = query.Where(f =>
                     (f.AdminNote != null && f.AdminNote.ToLower().Contains(term)) ||
-                    (f.PaymentDescription != null && f.PaymentDescription.ToLower().Contains(term)));
+                    (f.PaymentDescription != null && f.PaymentDescription.ToLower().Contains(term)) ||
+                    (f.Loan != null && f.Loan.Item != null && f.Loan.Item.Title.ToLower().Contains(term)));
             }
 
             return query;

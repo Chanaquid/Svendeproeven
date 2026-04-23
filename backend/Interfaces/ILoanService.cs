@@ -39,6 +39,6 @@ namespace backend.Interfaces
             bool isAdmin = false);
 
         Task<LoanDto?> GetMyActiveLoanForItemAsync(string userId, int itemId);
-
+        Task<int> GetCompletedLoansCountAsync();
     }
 }

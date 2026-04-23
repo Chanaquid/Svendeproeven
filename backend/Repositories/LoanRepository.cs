@@ -302,6 +302,12 @@ namespace backend.Repositories
         }
 
 
+        public async Task<int> GetCompletedLoansCountAsync()
+        {
+            return await _context.Loans
+                .CountAsync(l => l.Status == LoanStatus.Completed);
+        }
+
 
         //Counts — admin dashboard
         public async Task<int> GetPendingAdminApprovalsCountAsync()

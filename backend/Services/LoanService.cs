@@ -613,6 +613,14 @@ namespace backend.Services
         }
 
 
+        public async Task<int> GetCompletedLoansCountAsync()
+        {
+            return await _loanRepository.GetCompletedLoansCountAsync();
+        }
+
+
+
+
         //Mappers
 
         private static LoanDto MapToLoanDto(
@@ -685,6 +693,19 @@ namespace backend.Services
 
                 CanReview = canReview,
                 HasReviewed = hasReviewed,
+
+                Disputes = loan.Disputes?.Select(d => new DisputeDto
+                {
+                    Id = d.Id,
+                    Status = d.Status,
+                    FiledById = d.FiledById,
+                    FiledAs = d.FiledAs,
+                    Description = d.Description,
+                    CreatedAt = d.CreatedAt,
+                    ResolvedAt = d.ResolvedAt,
+                    AdminVerdict = d.AdminVerdict,
+                    AdminNote = d.AdminNote
+                }).ToList() ?? new List<DisputeDto>(),
 
                 Fines = loan.Fines.Select(f => new FineDto
                 {

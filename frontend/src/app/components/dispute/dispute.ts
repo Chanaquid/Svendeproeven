@@ -1,22 +1,24 @@
 import {
   ChangeDetectorRef,
   Component,
+  Input,
   OnDestroy,
   OnInit,
+  SimpleChanges,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subject } from 'rxjs';
+import { firstValueFrom, Subject } from 'rxjs';
 import { takeUntil, finalize, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { AuthService } from '../../services/authService';
 import { DisputeService } from '../../services/disputeService';
 import { UploadImageService } from '../../services/uploadImageService';
 
-import { DisputeDto, DisputeListDto, AdminResolveDisputeDto, SubmitDisputeResponseDto, EditDisputeDto } from '../../dtos/disputeDto';
+import { DisputeDto, DisputeListDto, SubmitDisputeResponseDto, EditDisputeDto } from '../../dtos/disputeDto';
 import { AddDisputePhotoDto } from '../../dtos/disputePhotoDto';
-import { DisputeStatus, DisputeFiledAs, DisputeVerdict } from '../../dtos/enums';
+import { DisputeStatus } from '../../dtos/enums';
 import { DisputeFilter } from '../../dtos/filterDto';
 import { PagedRequest } from '../../dtos/paginationDto';
 
@@ -37,19 +39,21 @@ interface Tab {
   styleUrl: './dispute.css',
 })
 export class Dispute implements OnInit, OnDestroy {
+
+  @Input() openDisputeId: number | null = null;
+  
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
 
-  isAdmin = false;
   isLoading = true;
 
   tabs: Tab[] = [
-    { id: 'all',       label: 'All',              icon: '▤' },
-    { id: 'awaiting',  label: 'Awaiting Response', icon: '⏳', status: DisputeStatus.AwaitingResponse },
-    { id: 'pending',   label: 'Under Review',      icon: '🔍', status: DisputeStatus.PendingAdminReview },
-    { id: 'overdue',   label: 'Overdue',           icon: '⚠️', status: DisputeStatus.PastDeadline },
-    { id: 'resolved',  label: 'Resolved',          icon: '✓',  status: DisputeStatus.Resolved },
-    { id: 'cancelled', label: 'Cancelled',         icon: '✕',  status: DisputeStatus.Cancelled },
+    { id: 'all',       label: 'All',               icon: '▤' },
+    { id: 'awaiting',  label: 'Awaiting Response',  icon: '⏳', status: DisputeStatus.AwaitingResponse },
+    { id: 'pending',   label: 'Under Review',       icon: '🔍', status: DisputeStatus.PendingAdminReview },
+    { id: 'overdue',   label: 'Overdue',            icon: '⚠️', status: DisputeStatus.PastDeadline },
+    { id: 'resolved',  label: 'Resolved',           icon: '✓',  status: DisputeStatus.Resolved },
+    { id: 'cancelled', label: 'Cancelled',          icon: '✕',  status: DisputeStatus.Cancelled },
   ];
   activeTab: TabId = 'all';
 
@@ -77,6 +81,21 @@ export class Dispute implements OnInit, OnDestroy {
   editError = '';
   isSavingEdit = false;
 
+
+  //filer
+  isDeletingPhoto: { [photoId: number]: boolean } = {};
+  photoDeleteError = '';
+
+  // separate file input state for adding more evidence
+  extraEvidenceFile: File | null = null;
+  extraEvidencePreview: string | null = null;
+  extraEvidenceCaption = '';
+  uploadingExtraEvidence = false;
+  extraEvidenceError = '';
+
+
+  selectedPhotoCaption: string | null = null;
+
   // Submit response
   responseText = '';
   responseError = '';
@@ -91,16 +110,9 @@ export class Dispute implements OnInit, OnDestroy {
   evidenceCaption = '';
   uploadingEvidence = false;
   evidenceError = '';
+  responsePhotoCaptions: string[] = [];
 
-  // Admin resolve
-  resolveVerdict = '';
-  resolveNote = '';
-  ownerFine: number | null = null;
-  ownerScore: number | null = null;
-  borrowerFine: number | null = null;
-  borrowerScore: number | null = null;
-  resolveError = '';
-  isResolving = false;
+
 
   // Cancel
   showCancelConfirm = false;
@@ -112,14 +124,12 @@ export class Dispute implements OnInit, OnDestroy {
     private uploadService: UploadImageService,
     private cdr: ChangeDetectorRef,
     public router: Router,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
-    this.isAdmin = this.authService.isAdmin();
     this.loadDisputes();
     this.loadTabCounts();
 
-    // Debounce search to avoid flashing on every keystroke
     this.searchSubject.pipe(
       debounceTime(350),
       distinctUntilChanged(),
@@ -130,15 +140,24 @@ export class Dispute implements OnInit, OnDestroy {
     });
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['openDisputeId'] && this.openDisputeId) {
+      this.openDispute(this.openDisputeId);
+    }
+  }
+
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
 
-  // ─── Load ────────────────────────────────────────────────────────────────────
+  //Load
 
   loadDisputes(): void {
-    this.listLoading = true;
+    if (this.isLoading) {
+      this.listLoading = true;
+    }
     this.listError = null;
 
     const status = this.tabs.find(t => t.id === this.activeTab)?.status ?? null;
@@ -148,36 +167,11 @@ export class Dispute implements OnInit, OnDestroy {
       status: status,
     };
 
-
-    let sortBy: string;
-    let sortDescending: boolean;
-
-    switch (this.sortFilter) {
-      case 'oldest':
-        sortBy = 'createdAt';
-        sortDescending = false;
-        break;
-      case 'az':
-        sortBy = 'itemTitle';
-        sortDescending = false;
-        break;
-      case 'za':
-        sortBy = 'itemTitle';
-        sortDescending = true;
-        break;
-      case 'newest':
-      default:
-        sortBy = 'createdAt';
-        sortDescending = true;
-        break;
-    }
-
-
     const request: PagedRequest = {
       page: this.currentPage,
       pageSize: this.pageSize,
-      sortBy: this.sortFilter === 'az' || this.sortFilter === 'za' ? 'itemTitle' : 'createdAt',
-      sortDescending: this.sortFilter === 'newest' || this.sortFilter === 'za',
+      sortBy: 'createdAt',
+      sortDescending: this.sortFilter !== 'oldest',
     };
 
     this.disputeService.getMyAll(filter, request)
@@ -245,6 +239,7 @@ export class Dispute implements OnInit, OnDestroy {
         next: (res) => {
           if (res.success && res.data) {
             this.selectedDispute = res.data;
+            console.log(this.selectedDispute);
             this.editDescription = res.data.description;
             this.disputeService.markViewed(id).pipe(takeUntil(this.destroy$)).subscribe();
           }
@@ -269,13 +264,6 @@ export class Dispute implements OnInit, OnDestroy {
     this.evidencePreview = null;
     this.evidenceCaption = '';
     this.evidenceError = '';
-    this.resolveVerdict = '';
-    this.resolveNote = '';
-    this.ownerFine = null;
-    this.ownerScore = null;
-    this.borrowerFine = null;
-    this.borrowerScore = null;
-    this.resolveError = '';
   }
 
   // ─── Tabs & filters ──────────────────────────────────────────────────────────
@@ -302,36 +290,82 @@ export class Dispute implements OnInit, OnDestroy {
 
   trackById(_: number, d: DisputeListDto): number { return d.id; }
 
-  // ─── Permission checks ───────────────────────────────────────────────────────
+  // ─── Permission checks — driven by backend flags ──────────────────────────────
 
-  canSubmitResponse(): boolean {
-    const d = this.selectedDispute;
-    if (!d) return false;
-    return d.status === DisputeStatus.AwaitingResponse && !d.isMine && !d.responseDescription;
-  }
+  canSubmitResponse(): boolean { return this.selectedDispute?.canRespond ?? false; }
+  canAddEvidence(): boolean    { return this.selectedDispute?.canAddEvidence ?? false; }
+  canEdit(): boolean           { return this.selectedDispute?.canEdit ?? false; }
+  canCancel(): boolean         { return this.selectedDispute?.canCancel ?? false; }
+  canAddResponseEvidence(): boolean { return this.selectedDispute?.canAddResponseEvidence ?? false; }
 
-  canAddEvidence(): boolean {
-    const d = this.selectedDispute;
-    if (!d) return false;
-    return d.isMine && (d.status === DisputeStatus.AwaitingResponse || d.status === DisputeStatus.PendingAdminReview);
-  }
-
-  canEdit(): boolean {
-    const d = this.selectedDispute;
-    return !!d && d.isMine && d.status === DisputeStatus.AwaitingResponse;
-  }
-
-  canCancel(): boolean {
-    const d = this.selectedDispute;
-    return !!d && d.isMine && d.status === DisputeStatus.AwaitingResponse;
-  }
-
-  canAdminResolve(): boolean {
-    const d = this.selectedDispute;
-    return !!d && (d.status === DisputeStatus.PendingAdminReview || d.status === DisputeStatus.PastDeadline);
-  }
 
   // ─── Actions ─────────────────────────────────────────────────────────────────
+
+
+  deleteFiledByPhoto(photoId: number): void {
+  if (!this.selectedDispute) return;
+  this.isDeletingPhoto[photoId] = true;
+  this.photoDeleteError = '';
+
+  this.disputeService.deleteFiledByPhoto(this.selectedDispute.id, photoId)
+    .pipe(takeUntil(this.destroy$), finalize(() => {
+      this.isDeletingPhoto[photoId] = false;
+      this.cdr.markForCheck();
+    }))
+    .subscribe({
+      next: () => this.reloadDispute(this.selectedDispute!.id),
+      error: (err) => {
+        this.photoDeleteError = err.error?.message ?? 'Failed to delete photo.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  onExtraEvidenceFileSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.extraEvidenceFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.extraEvidencePreview = e.target!.result as string;
+      this.cdr.markForCheck();
+    };
+    reader.readAsDataURL(file);
+    (event.target as HTMLInputElement).value = '';
+  }
+
+  async uploadExtraEvidencePhoto(): Promise<void> {
+    if (!this.extraEvidenceFile || !this.selectedDispute) return;
+    if (!this.canAddEvidence()) return;
+    this.uploadingExtraEvidence = true;
+    this.extraEvidenceError = '';
+
+    try {
+      const url = await this.uploadService.uploadImage(this.extraEvidenceFile);
+      const dto: AddDisputePhotoDto = { photoUrl: url, caption: this.extraEvidenceCaption.trim() || undefined };
+
+      this.disputeService.addFiledByPhoto(this.selectedDispute.id, dto)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.extraEvidenceFile = null;
+            this.extraEvidencePreview = null;
+            this.extraEvidenceCaption = '';
+            this.reloadDispute(this.selectedDispute!.id);
+          },
+          error: (err) => {
+            this.extraEvidenceError = err.error?.message ?? 'Failed to upload photo.';
+            this.cdr.markForCheck();
+          }
+        });
+    } catch {
+      this.extraEvidenceError = 'Failed to upload image.';
+    } finally {
+      this.uploadingExtraEvidence = false;
+      this.cdr.markForCheck();
+    }
+  }
+
 
   toggleEditMode(): void {
     this.editMode = !this.editMode;
@@ -416,34 +450,47 @@ export class Dispute implements OnInit, OnDestroy {
   }
 
   private async uploadResponsePhotos(disputeId: number): Promise<void> {
-    for (const file of this.responsePhotoFiles) {
-      try {
-        const url = await this.uploadService.uploadImage(file);
-        const dto: AddDisputePhotoDto = { photoUrl: url };
-        await this.disputeService.addResponsePhoto(disputeId, dto)
-          .pipe(takeUntil(this.destroy$))
-          .toPromise();
-      } catch (err: any) {
-        this.responsePhotoError = err?.error?.message ?? 'Failed to upload one or more photos.';
-        this.cdr.markForCheck();
-        break;
-      }
-    }
+    const uploadTasks = this.responsePhotoFiles.map(async (file, i) => {
+      const url = await this.uploadService.uploadImage(file);
+      return firstValueFrom(
+        this.disputeService.addResponsePhoto(disputeId, { photoUrl: url, caption: this.responsePhotoCaptions[i]?.trim() || undefined })
+      );
+    });
 
-    this.responsePhotoFiles = [];
-    this.responsePhotoPreviews = [];
-
-    if (!this.responsePhotoError) {
-      this.openDispute(disputeId);
-    } else {
+    try {
+      await Promise.all(uploadTasks);
+      this.responsePhotoFiles = [];
+      this.responsePhotoPreviews = [];
+      this.responsePhotoError = '';
+      this.reloadDispute(disputeId); // use new helper
+    } catch (err: any) {
+      this.responsePhotoError = err?.error?.message ?? 'Failed to upload response photos.';
       this.cdr.markForCheck();
     }
+  }
+
+  private reloadDispute(id: number): void {
+    this.detailLoading = true;
+    this.disputeService.getById(id)
+      .pipe(takeUntil(this.destroy$), finalize(() => {
+        this.detailLoading = false;
+        this.cdr.markForCheck();
+      }))
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            this.selectedDispute = res.data;
+            this.cdr.markForCheck();
+          }
+        }
+      });
   }
 
   onResponsePhotosSelected(event: Event): void {
     const files = Array.from((event.target as HTMLInputElement).files || []);
     files.forEach(file => {
       this.responsePhotoFiles.push(file);
+      this.responsePhotoCaptions.push('');
       const reader = new FileReader();
       reader.onload = (e) => {
         this.responsePhotoPreviews.push(e.target!.result as string);
@@ -453,9 +500,11 @@ export class Dispute implements OnInit, OnDestroy {
     });
   }
 
+
   removeResponsePhoto(i: number): void {
     this.responsePhotoFiles.splice(i, 1);
     this.responsePhotoPreviews.splice(i, 1);
+    this.responsePhotoCaptions.splice(i, 1);
   }
 
   onEvidenceFileSelected(event: Event): void {
@@ -478,21 +527,24 @@ export class Dispute implements OnInit, OnDestroy {
     try {
       const url = await this.uploadService.uploadImage(this.evidenceFile);
       const dto: AddDisputePhotoDto = { photoUrl: url, caption: this.evidenceCaption.trim() || undefined };
-      this.disputeService.addFiledByPhoto(this.selectedDispute.id, dto)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            this.evidenceFile = null;
-            this.evidencePreview = null;
-            this.evidenceCaption = '';
-            this.evidenceError = '';
-            this.openDispute(this.selectedDispute!.id);
-          },
-          error: (err) => {
-            this.evidenceError = err.error?.message ?? 'Failed to upload photo.';
-            this.cdr.markForCheck();
-          },
-        });
+
+      const upload$ = this.canAddEvidence()
+        ? this.disputeService.addFiledByPhoto(this.selectedDispute.id, dto)
+        : this.disputeService.addResponsePhoto(this.selectedDispute.id, dto);
+
+      upload$.pipe(takeUntil(this.destroy$)).subscribe({
+        next: () => {
+          this.evidenceFile = null;
+          this.evidencePreview = null;
+          this.evidenceCaption = '';
+          this.evidenceError = '';
+          this.reloadDispute(this.selectedDispute!.id);
+        },
+        error: (err) => {
+          this.evidenceError = err.error?.message ?? 'Failed to upload photo.';
+          this.cdr.markForCheck();
+        },
+      });
     } catch {
       this.evidenceError = 'Failed to upload image.';
     } finally {
@@ -501,39 +553,7 @@ export class Dispute implements OnInit, OnDestroy {
     }
   }
 
-  adminResolve(): void {
-    if (!this.selectedDispute || !this.resolveVerdict) return;
-    this.isResolving = true;
-    this.resolveError = '';
 
-    const dto: AdminResolveDisputeDto = {
-      verdict: this.resolveVerdict as DisputeVerdict,
-      adminNote: this.resolveNote.trim() || null,
-      ownerPenalty: (this.ownerFine || this.ownerScore) ? { fineAmount: this.ownerFine, scoreAdjustment: this.ownerScore } : null,
-      borrowerPenalty: (this.borrowerFine || this.borrowerScore) ? { fineAmount: this.borrowerFine, scoreAdjustment: this.borrowerScore } : null,
-    };
-
-    this.disputeService.adminResolve(this.selectedDispute.id, dto)
-      .pipe(takeUntil(this.destroy$), finalize(() => {
-        this.isResolving = false;
-        this.cdr.markForCheck();
-      }))
-      .subscribe({
-        next: (res) => {
-          if (res.success && res.data) {
-            this.selectedDispute = res.data;
-            this.resolveVerdict = '';
-            this.resolveNote = '';
-            this.ownerFine = null;
-            this.ownerScore = null;
-            this.borrowerFine = null;
-            this.borrowerScore = null;
-            this.loadDisputes();
-          }
-        },
-        error: (err) => { this.resolveError = err.error?.message ?? 'Failed to resolve dispute.'; },
-      });
-  }
 
   cancelDispute(): void {
     if (!this.selectedDispute) return;
@@ -563,9 +583,12 @@ export class Dispute implements OnInit, OnDestroy {
     }
   }
 
-  // ─── UI helpers ──────────────────────────────────────────────────────────────
+  //UI Helpers
 
-  openPhoto(url: string): void { this.selectedPhoto = url; }
+  openPhoto(url: string, caption?: string | null): void { 
+    this.selectedPhoto = url; 
+    this.selectedPhotoCaption = caption ?? null;
+  }
 
   getDefaultAvatar(name: string): string {
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=27272a&color=a1a1aa&size=80`;
@@ -584,11 +607,11 @@ export class Dispute implements OnInit, OnDestroy {
 
   getVerdictClass(verdict: string): string {
     switch (verdict) {
-      case DisputeVerdict.NoPenalty:         return 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20';
-      case DisputeVerdict.OwnerPenalized:    return 'bg-amber-400/10 text-amber-400 border-amber-400/20';
-      case DisputeVerdict.BorrowerPenalized: return 'bg-red-400/10 text-red-400 border-red-400/20';
-      case DisputeVerdict.BothPenalized:     return 'bg-purple-400/10 text-purple-400 border-purple-400/20';
-      default:                               return 'bg-zinc-800 text-zinc-400 border-zinc-700';
+      case 'NoPenalty':         return 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20';
+      case 'OwnerPenalized':    return 'bg-amber-400/10 text-amber-400 border-amber-400/20';
+      case 'BorrowerPenalized': return 'bg-red-400/10 text-red-400 border-red-400/20';
+      case 'BothPenalized':     return 'bg-purple-400/10 text-purple-400 border-purple-400/20';
+      default:                  return 'bg-zinc-800 text-zinc-400 border-zinc-700';
     }
   }
 }
