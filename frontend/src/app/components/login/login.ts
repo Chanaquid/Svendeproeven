@@ -41,7 +41,11 @@ export class Login {
         this.isLoading = false;
         console.log(err);
         this.errorMessage = err.error?.message || 'Invalid email or password';
+<<<<<<< Updated upstream
         this.cdr.detectChanges();
+=======
+        this.cdr.detectChanges(); //Manually tell Angular to update the UI NOW
+>>>>>>> Stashed changes
       },
     });
   }

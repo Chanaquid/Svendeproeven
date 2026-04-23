@@ -1,10 +1,18 @@
 import { CommonModule } from '@angular/common';
+<<<<<<< Updated upstream
 import { ChangeDetectorRef, Component, NgZone, inject } from '@angular/core';
+=======
+import { ChangeDetectorRef, Component, inject, NgZone } from '@angular/core';
+>>>>>>> Stashed changes
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { RegisterUserRequestDto } from '../../dtos/userDTO';
 import { AuthService } from '../../services/authService';
+<<<<<<< Updated upstream
 import { UploadThingService } from '../../services/UploadThingService';
+=======
+import { UploadImageService } from '../../services/uploadImageService';
+>>>>>>> Stashed changes
 import { ThemeService } from '../../services/themeService';
 
 @Component({
@@ -122,9 +130,18 @@ export class Register {
     if (this.avatarFile) {
       try {
         this.isUploadingAvatar = true;
+<<<<<<< Updated upstream
         this.dto.avatarUrl = await this.uploadService.uploadAvatar(this.avatarFile);
         this.isUploadingAvatar = false;
       } catch {
+=======
+        const url = await this.uploadService.uploadAvatar(this.avatarFile);
+        console.log('Cloudinary URL:', url);
+        this.dto.avatarUrl = url;
+        console.log('Avatar URL to be saved:', this.dto.avatarUrl);
+      } catch (e) {
+        console.error('Upload error:', e);
+>>>>>>> Stashed changes
         this.errorMessage = 'Image upload failed. Please try again.';
         this.isLoading = false;
         this.isUploadingAvatar = false;

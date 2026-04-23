@@ -1,5 +1,9 @@
 import { CommonModule } from '@angular/common';
+<<<<<<< Updated upstream
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+=======
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
+>>>>>>> Stashed changes
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/authService';
 import { ThemeService } from '../../services/themeService';

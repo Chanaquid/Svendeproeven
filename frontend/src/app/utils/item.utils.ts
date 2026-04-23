@@ -3,6 +3,7 @@ import { ItemAvailability, ItemCondition } from '../dtos/enums';
 export function getConditionClass(condition: ItemCondition): string {
   switch (condition) {
     case ItemCondition.Excellent:
+<<<<<<< Updated upstream
       return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
     case ItemCondition.Good:
       return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
@@ -12,6 +13,17 @@ export function getConditionClass(condition: ItemCondition): string {
       return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
     default:
       return 'bg-zinc-800 text-zinc-400 border-zinc-700';
+=======
+      return 'cond-excellent';
+    case ItemCondition.Good:
+      return 'cond-good';
+    case ItemCondition.Fair:
+      return 'cond-fair';
+    case ItemCondition.Poor:
+      return 'cond-poor';
+    default:
+      return 'cond-unknown';
+>>>>>>> Stashed changes
   }
 }
 

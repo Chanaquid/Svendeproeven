@@ -1,0 +1,33 @@
+/* 404 page — centered message with CTA */
+
+.not-found-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  background: var(--color-bg);
+}
+
+.not-found-code {
+  font-size: clamp(6rem, 18vw, 9rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--color-border-soft);
+  margin-bottom: 16px;
+}
+
+.not-found-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.not-found-sub {
+  color: var(--color-text-muted);
+  max-width: 420px;
+  margin-bottom: 32px;
+}

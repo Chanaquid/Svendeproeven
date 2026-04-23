@@ -1,0 +1,233 @@
+<app-navbar></app-navbar>
+
+<main class="page">
+  <!-- Page header -->
+  <header class="page-header">
+    <div class="page-header-top">
+      <div>
+        <p class="page-eyebrow">Track your loans</p>
+        <h1 class="page-title">My Loans</h1>
+      </div>
+    </div>
+
+    <!-- Status summary (all 7 counters) -->
+    <div class="stats-row">
+      <div class="stat-dot">
+        <span class="dot dot-active"></span>
+        <span class="dot-text"
+          ><strong>{{ activeCount }}</strong> Active</span
+        >
+      </div>
+      <div class="stat-dot">
+        <span class="dot dot-approved"></span>
+        <span class="dot-text"
+          ><strong>{{ approvedCount }}</strong> Approved</span
+        >
+      </div>
+      <div class="stat-dot">
+        <span class="dot dot-pending"></span>
+        <span class="dot-text"
+          ><strong>{{ pendingCount }}</strong> Pending</span
+        >
+      </div>
+      <div class="stat-dot">
+        <span class="dot dot-rejected"></span>
+        <span class="dot-text"
+          ><strong>{{ rejectedCount }}</strong> Rejected</span
+        >
+      </div>
+      <div class="stat-dot">
+        <span class="dot dot-late"></span>
+        <span class="dot-text"
+          ><strong>{{ lateCount }}</strong> Late</span
+        >
+      </div>
+      <div class="stat-dot">
+        <span class="dot dot-completed"></span>
+        <span class="dot-text"
+          ><strong>{{ completedCount }}</strong> Completed</span
+        >
+      </div>
+      <div class="stat-dot">
+        <span class="dot dot-cancelled"></span>
+        <span class="dot-text"
+          ><strong>{{ cancelledCount }}</strong> Cancelled</span
+        >
+      </div>
+    </div>
+  </header>
+
+  <div class="page-body">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <!-- View switcher: Borrowed / Lent -->
+        <div class="tab-group">
+          <button
+            type="button"
+            class="tab-btn"
+            [class.tab-btn--active]="loanView === 'borrowed'"
+            (click)="onViewChange('borrowed')"
+          >
+            📦 Borrowed
+            <span class="tab-count">{{ borrowedLoans.length }}</span>
+          </button>
+          <button
+            type="button"
+            class="tab-btn"
+            [class.tab-btn--active]="loanView === 'lent'"
+            (click)="onViewChange('lent')"
+          >
+            🤝 Lent out
+            <span class="tab-count">{{ ownedLoans.length }}</span>
+          </button>
+        </div>
+
+        <!-- Status tabs -->
+        <div class="tab-group">
+          <button
+            *ngFor="let tab of tabs"
+            type="button"
+            class="tab-btn"
+            [class.tab-btn--active]="activeTab === tab.key"
+            (click)="onTabChange(tab.key)"
+          >
+            {{ tab.label }}
+            <span class="tab-count">{{ getTabCount(tab.key) }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="toolbar-right">
+        <div class="search-wrapper">
+          <span class="search-icon" aria-hidden="true">🔍</span>
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="applyFilters()"
+            placeholder="Search loans..."
+            class="search-input"
+          />
+        </div>
+
+        <select class="select" [ngModel]="sortLabel" (ngModelChange)="onSortChange($event)">
+          <option value="newest">Newest</option>
+          <option value="oldest">Oldest</option>
+          <option value="price_high">Price: High</option>
+          <option value="price_low">Price: Low</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Loading skeletons -->
+    <div *ngIf="isLoading" class="loan-list">
+      <div *ngFor="let _ of [1, 2, 3, 4, 5]" class="loan-row loan-row--skeleton">
+        <div class="skeleton skeleton-box"></div>
+        <div class="skeleton-info">
+          <div class="skeleton skeleton--line-md"></div>
+          <div class="skeleton skeleton--line-sm"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="!isLoading && filteredLoans.length === 0" class="empty-state">
+      <span class="empty-icon">📋</span>
+      <h3>No loans found</h3>
+      <p>
+        {{
+          loanView === 'borrowed'
+            ? "You haven't borrowed any items yet."
+            : "You haven't lent out any items yet."
+        }}
+      </p>
+    </div>
+
+    <!-- Loan rows -->
+    <div *ngIf="!isLoading && filteredLoans.length > 0" class="loan-list">
+      <article *ngFor="let loan of pagedItems" class="loan-row" (click)="goToLoan(loan.id)">
+        <!-- Thumbnail -->
+        <div class="loan-thumb">
+          <img *ngIf="loan.itemMainPhotoUrl" [src]="loan.itemMainPhotoUrl" [alt]="loan.itemTitle" />
+          <span *ngIf="!loan.itemMainPhotoUrl" aria-hidden="true">📦</span>
+        </div>
+
+        <!-- Body -->
+        <div class="loan-body">
+          <h3 class="loan-title">{{ loan.itemTitle }}</h3>
+
+          <div class="loan-party">
+            <div class="loan-party-avatar">
+              <img
+                *ngIf="loan.otherPartyAvatarUrl"
+                [src]="loan.otherPartyAvatarUrl"
+                [alt]="loan.otherPartyName"
+              />
+              <span *ngIf="!loan.otherPartyAvatarUrl">
+                {{ getInitials(loan.otherPartyName) }}
+              </span>
+            </div>
+            <p class="loan-party-name">
+              {{ loanView === 'borrowed' ? 'From' : 'To' }}:
+              <strong>{{ loan.otherPartyName }}</strong>
+            </p>
+          </div>
+
+          <div class="loan-meta">
+            <p class="loan-dates">
+              {{ loan.startDate | date: 'MMM d, yyyy' }} →
+              <ng-container *ngIf="loan.status === 'Completed'">
+                {{ loan.actualReturnDate | date: 'MMM d, yyyy' }}
+              </ng-container>
+              <ng-container *ngIf="loan.status !== 'Completed'">
+                {{ loan.endDate | date: 'MMM d, yyyy' }}
+              </ng-container>
+            </p>
+            <span class="loan-price">{{ loan.totalPrice }} kr</span>
+          </div>
+        </div>
+
+        <!-- Status area -->
+        <div class="loan-status">
+          <span
+            *ngIf="loan.isOverdue && (loan.status === 'Active' || loan.status === 'Late')"
+            class="overdue-badge"
+          >
+            ⚠️ Overdue
+          </span>
+          <span class="status-pill" [ngClass]="getLoanStatusClass(loan.status)">
+            {{ loan.status === 'AdminPending' ? 'Admin Review' : loan.status }}
+          </span>
+          <span class="loan-chevron" aria-hidden="true">›</span>
+        </div>
+      </article>
+    </div>
+
+    <!-- Pagination -->
+    <nav *ngIf="totalPages > 1" class="pagination" aria-label="Pagination">
+      <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+        ← Prev
+      </button>
+
+      <ng-container *ngFor="let p of pageNumbers">
+        <span *ngIf="p === -1" class="page-ellipsis">…</span>
+        <button
+          *ngIf="p !== -1"
+          class="page-btn"
+          [class.page-btn--active]="p === currentPage"
+          (click)="goToPage(p)"
+        >
+          {{ p }}
+        </button>
+      </ng-container>
+
+      <button
+        class="page-btn"
+        (click)="goToPage(currentPage + 1)"
+        [disabled]="currentPage === totalPages"
+      >
+        Next →
+      </button>
+    </nav>
+  </div>
+</main>

@@ -1,1 +1,943 @@
+<<<<<<< Updated upstream
 <p>item-detail works!</p>
+=======
+<app-navbar></app-navbar>
+
+<main class="page">
+  <!-- ===== Loading ===== -->
+  <div *ngIf="isLoading" class="detail-loading">
+    <div class="spinner"></div>
+    <p class="detail-loading-text">Loading item...</p>
+  </div>
+
+  <!-- ===== Main content ===== -->
+  <ng-container *ngIf="!isLoading && item">
+    <!-- Header -->
+    <header class="page-header">
+      <div class="page-header__row">
+        <div class="page-header__left">
+          <nav class="breadcrumb" aria-label="Breadcrumb">
+            <button (click)="goBack()" type="button" class="breadcrumb__back">
+              <svg class="breadcrumb__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Back
+            </button>
+            <span class="breadcrumb__sep">/</span>
+            <span class="breadcrumb__title">{{ item.title }}</span>
+          </nav>
+
+          <h1 class="page-header__title">{{ item.title }}</h1>
+
+          <div class="page-header__meta">
+            <span class="meta-category">{{ item.categoryName }}</span>
+            <span class="meta-dot" aria-hidden="true">·</span>
+            <span class="condition-badge" [ngClass]="getConditionClass(item.condition)">
+              {{ item.condition }}
+            </span>
+            <span *ngIf="item.isCurrentlyOnLoan" class="status-badge status-onloan">On Loan</span>
+            <span
+              *ngIf="item.status !== 'Approved'"
+              class="status-badge"
+              [class.status-pending]="item.status === 'Pending'"
+              [class.status-rejected]="item.status === 'Rejected'"
+            >
+              {{ item.status }}
+            </span>
+          </div>
+        </div>
+
+        <div class="page-header__actions">
+          <button *ngIf="canRequestLoan" (click)="openLoanModal()" class="btn btn-primary">
+            <svg class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            Request Loan
+          </button>
+
+          <button
+            *ngIf="!isOwner && !isAdmin"
+            (click)="openReportModal()"
+            class="btn btn-outline btn-outline--danger"
+          >
+            <svg
+              class="btn-icon"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z"
+              />
+            </svg>
+            Report
+          </button>
+
+          <div
+            *ngIf="
+              item.requiresVerification &&
+              !isOwner &&
+              !isAdmin &&
+              !isVerified &&
+              !existingLoan &&
+              !item.isCurrentlyOnLoan &&
+              item.status === 'Approved' &&
+              item.isActive
+            "
+            class="verify-hint"
+          >
+            <svg
+              class="btn-icon"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z"
+              />
+            </svg>
+            Verified account required
+          </div>
+
+          <button *ngIf="isOwner || isAdmin" (click)="openEditModal()" class="btn btn-outline">
+            <svg class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
+            </svg>
+            Edit Item
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Body grid -->
+    <div class="detail-grid">
+      <!-- ===== LEFT: main column ===== -->
+      <div class="detail-main">
+        <!-- Photos -->
+        <section *ngIf="item.photos && item.photos.length > 0" class="photos">
+          <div class="photos__primary" (click)="selectedPhoto = item.photos[0]?.photoUrl ?? null">
+            <img [src]="item.photos[0]?.photoUrl" [alt]="item.title" class="photos__primary-img" />
+          </div>
+          <div *ngIf="item.photos.length > 1" class="photos__thumbs">
+            <button
+              *ngFor="let photo of item.photos"
+              type="button"
+              class="photos__thumb"
+              [class.photos__thumb--active]="photo.isPrimary"
+              (click)="selectedPhoto = photo.photoUrl"
+            >
+              <img [src]="photo.photoUrl" alt="" class="photos__thumb-img" />
+            </button>
+          </div>
+        </section>
+
+        <section *ngIf="!item.photos || item.photos.length === 0" class="photos__placeholder">
+          {{ getCategoryEmoji(item.categoryName || '') }}
+        </section>
+
+        <!-- Description -->
+        <section class="detail-card">
+          <h3 class="detail-card__title">Description</h3>
+          <p class="detail-card__text">{{ item.description }}</p>
+        </section>
+
+        <!-- Item details grid -->
+        <section class="detail-card">
+          <h3 class="detail-card__title">Item Details</h3>
+          <div class="details-grid">
+            <div class="details-grid__item">
+              <p class="details-grid__label">Current Value</p>
+              <p class="details-grid__value">kr {{ item.currentValue }}</p>
+            </div>
+            <div class="details-grid__item">
+              <p class="details-grid__label">Min Loan Days</p>
+              <p class="details-grid__value">{{ item.minLoanDays ?? '—' }}</p>
+            </div>
+            <div class="details-grid__item">
+              <p class="details-grid__label">Available From</p>
+              <p class="details-grid__value">{{ item.availableFrom | date: 'MMM d, yyyy' }}</p>
+            </div>
+            <div class="details-grid__item">
+              <p class="details-grid__label">Available Until</p>
+              <p class="details-grid__value">{{ item.availableUntil | date: 'MMM d, yyyy' }}</p>
+            </div>
+            <div class="details-grid__item details-grid__item--full">
+              <p class="details-grid__label">Pickup Address</p>
+              <p class="details-grid__value">
+                <span class="pin" aria-hidden="true">📍</span>
+                {{ item.pickupAddress }}
+              </p>
+            </div>
+            <div class="details-grid__item">
+              <p class="details-grid__label">Requires Verification</p>
+              <p
+                class="details-grid__value"
+                [class.details-grid__value--warn]="item.requiresVerification"
+              >
+                {{ item.requiresVerification ? 'Yes' : 'No' }}
+              </p>
+            </div>
+            <div class="details-grid__item">
+              <p class="details-grid__label">Listed</p>
+              <p class="details-grid__value">{{ item.createdAt | date: 'MMM d, yyyy' }}</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Reviews -->
+        <section class="detail-card reviews">
+          <div class="reviews__header">
+            <h3 class="detail-card__title">
+              Reviews <span class="reviews__count">({{ reviews.length }})</span>
+            </h3>
+            <div *ngIf="reviews.length > 0" class="reviews__avg">
+              <div class="stars">
+                <span
+                  *ngFor="let s of [1, 2, 3, 4, 5]"
+                  class="star"
+                  [class.star--on]="s <= averageRating"
+                  >★</span
+                >
+              </div>
+              <span class="reviews__score">{{ averageRating.toFixed(1) }}</span>
+            </div>
+          </div>
+
+          <div *ngIf="isLoadingReviews" class="reviews__skeleton">
+            <div *ngFor="let _ of [1, 2]" class="skeleton skeleton--review"></div>
+          </div>
+
+          <div *ngIf="!isLoadingReviews && reviews.length === 0" class="reviews__empty">
+            <span class="reviews__empty-icon" aria-hidden="true">⭐</span>
+            <p class="reviews__empty-text">No reviews for this item yet.</p>
+          </div>
+
+          <div *ngIf="!isLoadingReviews && reviews.length > 0" class="reviews__list">
+            <article
+              *ngFor="let review of displayedReviews"
+              class="review-card"
+              [class.review-card--admin]="review.isAdminReview"
+            >
+              <div class="review-card__top">
+                <div class="review-card__author">
+                  <div class="review-card__avatar">
+                    <img
+                      *ngIf="review.reviewerAvatarUrl"
+                      [src]="review.reviewerAvatarUrl"
+                      alt=""
+                      class="avatar-img"
+                    />
+                    <span *ngIf="!review.reviewerAvatarUrl">
+                      {{ review.reviewerName.charAt(0).toUpperCase() }}
+                    </span>
+                  </div>
+                  <p class="review-card__name">{{ review.reviewerName }}</p>
+                  <span *ngIf="review.isAdminReview" class="admin-badge">Admin</span>
+                  <span *ngIf="review.isEdited" class="edited-tag">(edited)</span>
+                </div>
+                <div class="review-card__rating">
+                  <div class="stars">
+                    <span
+                      *ngFor="let s of [1, 2, 3, 4, 5]"
+                      class="star"
+                      [class.star--on]="s <= review.rating"
+                      >★</span
+                    >
+                  </div>
+                  <span class="review-card__date">{{
+                    review.createdAt | date: 'MMM d, yyyy'
+                  }}</span>
+                </div>
+              </div>
+              <p *ngIf="review.comment" class="review-card__comment">{{ review.comment }}</p>
+              <p *ngIf="!review.comment" class="review-card__no-comment">No comment left.</p>
+            </article>
+
+            <button
+              *ngIf="visibleReviews < reviews.length"
+              (click)="loadMoreReviews()"
+              class="load-more"
+            >
+              Load more ({{ reviews.length - visibleReviews }} remaining)
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <!-- ===== RIGHT: sidebar ===== -->
+      <aside class="detail-sidebar">
+        <!-- Owner -->
+        <section class="detail-card">
+          <p class="sidebar-label">Owner</p>
+          <div class="owner-row">
+            <div class="owner-row__avatar" (click)="router.navigate(['/users', item.ownerId])">
+              <img
+                *ngIf="item.ownerAvatarUrl"
+                [src]="item.ownerAvatarUrl"
+                alt=""
+                class="avatar-img"
+              />
+              <span *ngIf="!item.ownerAvatarUrl">{{ getInitials(item.ownerName || '') }}</span>
+            </div>
+            <div class="owner-row__info">
+              <div class="owner-row__name-row">
+                <p class="owner-row__name" (click)="router.navigate(['/users', item.ownerId])">
+                  {{ item.ownerName }}
+                </p>
+                <span *ngIf="item.isOwnerVerified" class="verified-badge">
+                  <svg
+                    class="verified-badge__icon"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  Verified
+                </span>
+              </div>
+              <p class="owner-row__username" (click)="router.navigate(['/users', item.ownerId])">
+                &#64;{{ item.ownerUserName }}
+              </p>
+            </div>
+            <div class="owner-row__score">
+              <p class="owner-row__score-label">Score</p>
+              <p
+                class="owner-row__score-value"
+                [class.score--green]="item.ownerScore >= 70"
+                [class.score--amber]="item.ownerScore >= 40 && item.ownerScore < 70"
+                [class.score--red]="item.ownerScore < 40"
+              >
+                {{ item.ownerScore }}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Availability -->
+        <section class="detail-card">
+          <p class="sidebar-label">Availability</p>
+          <div class="sidebar-row">
+            <span class="sidebar-row__label">Status</span>
+            <span
+              class="status-badge"
+              [class.status-available]="
+                !item.isCurrentlyOnLoan && item.isActive && item.status === 'Approved'
+              "
+              [class.status-onloan]="item.isCurrentlyOnLoan"
+              [class.status-unavailable]="!item.isActive || item.status !== 'Approved'"
+            >
+              {{
+                item.isCurrentlyOnLoan
+                  ? 'On Loan'
+                  : item.isActive && item.status === 'Approved'
+                    ? 'Available'
+                    : 'Unavailable'
+              }}
+            </span>
+          </div>
+        </section>
+
+        <!-- Dispute History (owner / admin) -->
+        <section *ngIf="isOwner || isAdmin" class="detail-card collapsible">
+          <button
+            type="button"
+            class="collapsible__header"
+            (click)="disputesCollapsed = !disputesCollapsed"
+          >
+            <h3 class="detail-card__title">
+              Dispute History
+              <span class="collapsible__count">({{ disputeHistory.length }})</span>
+            </h3>
+            <svg
+              class="collapsible__chevron"
+              [class.collapsible__chevron--open]="!disputesCollapsed"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <div *ngIf="!disputesCollapsed" class="collapsible__body">
+            <div *ngIf="isLoadingDisputes" class="collapsible__skeleton">
+              <div *ngFor="let _ of [1, 2]" class="skeleton skeleton--row"></div>
+            </div>
+            <div
+              *ngIf="!isLoadingDisputes && disputeHistory.length === 0"
+              class="collapsible__empty"
+            >
+              <span aria-hidden="true">⚖️</span>
+              <p>No disputes for this item.</p>
+            </div>
+            <div *ngIf="!isLoadingDisputes && disputeHistory.length > 0" class="history-list">
+              <div
+                *ngFor="let dispute of displayedDisputes"
+                class="history-item"
+                (click)="
+                  router.navigate(['/my-resolution-center'], {
+                    queryParams: { tab: 'disputes', disputeId: dispute.id },
+                  })
+                "
+              >
+                <div class="history-item__top">
+                  <span
+                    class="status-badge"
+                    [class.status-dispute-pending]="
+                      dispute.status === 'AwaitingResponse' ||
+                      dispute.status === 'PendingAdminReview'
+                    "
+                    [class.status-dispute-resolved]="dispute.status === 'Resolved'"
+                  >
+                    {{ dispute.status }}
+                  </span>
+                  <span class="history-item__date">{{
+                    dispute.createdAt | date: 'MMM d, yyyy'
+                  }}</span>
+                </div>
+                <p class="history-item__sub">
+                  Filed by <span class="history-item__name">{{ dispute.filedByName }}</span>
+                </p>
+                <p class="history-item__meta">Loan #{{ dispute.loanId }}</p>
+              </div>
+              <button
+                *ngIf="visibleDisputes < disputeHistory.length"
+                (click)="loadMoreDisputes()"
+                class="load-more"
+              >
+                Load more ({{ disputeHistory.length - visibleDisputes }} remaining)
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Loan History (owner / admin) -->
+        <section *ngIf="isOwner || isAdmin" class="detail-card collapsible">
+          <button
+            type="button"
+            class="collapsible__header"
+            (click)="historyCollapsed = !historyCollapsed"
+          >
+            <h3 class="detail-card__title">
+              Loan History
+              <span class="collapsible__count">({{ loanHistory.length }})</span>
+            </h3>
+            <svg
+              class="collapsible__chevron"
+              [class.collapsible__chevron--open]="!historyCollapsed"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <div *ngIf="!historyCollapsed" class="collapsible__body">
+            <div *ngIf="isLoadingHistory" class="collapsible__skeleton">
+              <div *ngFor="let _ of [1, 2]" class="skeleton skeleton--row"></div>
+            </div>
+            <div *ngIf="!isLoadingHistory && loanHistory.length === 0" class="collapsible__empty">
+              <span aria-hidden="true">📋</span>
+              <p>No loan history for this item.</p>
+            </div>
+            <div *ngIf="!isLoadingHistory && loanHistory.length > 0" class="history-list">
+              <div
+                *ngFor="let loan of displayedLoanHistory"
+                class="history-item history-item--clickable"
+                (click)="router.navigate(['/loans', loan.id])"
+              >
+                <div class="history-item__top">
+                  <span class="status-badge" [ngClass]="getLoanStatusClass(loan.status)">
+                    {{ loan.status }}
+                  </span>
+                  <span *ngIf="loan.isOverdue" class="overdue-badge">⚠ Overdue</span>
+                </div>
+                <p class="history-item__name">{{ loan.otherPartyName }}</p>
+                <p class="history-item__meta">
+                  #{{ loan.id }} · {{ loan.startDate | date: 'MMM d' }} →
+                  {{
+                    loan.actualReturnDate
+                      ? (loan.actualReturnDate | date: 'MMM d, yyyy')
+                      : (loan.endDate | date: 'MMM d, yyyy')
+                  }}
+                </p>
+              </div>
+              <button
+                *ngIf="visibleLoans < loanHistory.length"
+                (click)="loadMoreLoanHistory()"
+                class="load-more"
+              >
+                Load more ({{ loanHistory.length - visibleLoans }} remaining)
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Rating summary -->
+        <section *ngIf="reviews.length > 0" class="detail-card">
+          <p class="sidebar-label">Rating</p>
+          <div class="rating-summary">
+            <span class="rating-summary__big">{{ averageRating.toFixed(1) }}</span>
+            <div>
+              <div class="stars stars--lg">
+                <span
+                  *ngFor="let s of [1, 2, 3, 4, 5]"
+                  class="star"
+                  [class.star--on]="s <= averageRating"
+                  >★</span
+                >
+              </div>
+              <p class="rating-summary__count">
+                {{ reviews.length }} review{{ reviews.length !== 1 ? 's' : '' }}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Existing loan request -->
+        <section *ngIf="hasActiveLoanRequest && existingLoan" class="detail-card">
+          <p class="sidebar-label">Your Loan Request</p>
+          <div class="sidebar-row">
+            <span class="sidebar-row__label">Status</span>
+            <span class="status-badge" [ngClass]="getLoanStatusClass(existingLoan.status)">
+              {{ existingLoan.status }}
+            </span>
+          </div>
+          <div class="sidebar-row">
+            <span class="sidebar-row__label">Start</span>
+            <span class="sidebar-row__value">{{
+              existingLoan.startDate | date: 'MMM d, yyyy'
+            }}</span>
+          </div>
+          <div class="sidebar-row">
+            <span class="sidebar-row__label">End</span>
+            <span class="sidebar-row__value">{{ existingLoan.endDate | date: 'MMM d, yyyy' }}</span>
+          </div>
+          <p *ngIf="cancelError" class="form-error">{{ cancelError }}</p>
+          <div class="sidebar-actions">
+            <button (click)="router.navigate(['/loans', existingLoan.id])" class="btn btn-outline">
+              View Loan
+            </button>
+            <button
+              *ngIf="
+                existingLoan.status === 'Pending' ||
+                existingLoan.status === 'AdminPending' ||
+                existingLoan.status === 'Approved'
+              "
+              (click)="cancelLoan()"
+              [disabled]="isCancellingLoan"
+              class="btn btn-danger"
+            >
+              {{ isCancellingLoan ? 'Cancelling...' : 'Cancel Request' }}
+            </button>
+          </div>
+        </section>
+
+        <!-- Request CTA -->
+        <section *ngIf="canRequestLoan" class="detail-card cta-card">
+          <p class="cta-card__title">Interested?</p>
+          <p class="cta-card__sub">Send a loan request to the owner.</p>
+          <button (click)="openLoanModal()" class="btn btn-primary btn--full">Request Loan</button>
+        </section>
+
+        <!-- Verification required -->
+        <section
+          *ngIf="
+            item.requiresVerification &&
+            !isOwner &&
+            !isAdmin &&
+            !isVerified &&
+            !existingLoan &&
+            !item.isCurrentlyOnLoan &&
+            item.status === 'Approved' &&
+            item.isActive
+          "
+          class="detail-card verify-card"
+        >
+          <div class="verify-card__icon" aria-hidden="true">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z"
+              />
+            </svg>
+          </div>
+          <p class="verify-card__title">Verified account required</p>
+          <p class="verify-card__sub">
+            This item can only be requested by verified users. Visit your profile to request
+            verification.
+          </p>
+        </section>
+
+        <!-- On loan by someone else -->
+        <section
+          *ngIf="item.isCurrentlyOnLoan && !isOwner && !hasActiveLoanRequest"
+          class="detail-card onloan-card"
+        >
+          <p class="onloan-card__title">Currently On Loan</p>
+          <p class="onloan-card__sub">This item is currently borrowed by someone else.</p>
+        </section>
+      </aside>
+    </div>
+  </ng-container>
+
+  <!-- ===== Not found ===== -->
+  <div *ngIf="!isLoading && !item" class="empty-state">
+    <div class="empty-icon" aria-hidden="true">📦</div>
+    <h3 class="empty-title">Item not found</h3>
+    <p class="empty-sub">This item doesn't exist or you don't have access to it.</p>
+    <a routerLink="/home" class="btn btn-primary">Browse items</a>
+  </div>
+</main>
+
+<!-- ===== Edit modal ===== -->
+<div *ngIf="showEditModal" class="modal-overlay">
+  <div class="modal-backdrop" (click)="closeEditModal()"></div>
+
+  <div class="modal modal--wide" (click)="$event.stopPropagation()">
+    <header class="modal-header">
+      <div>
+        <h2 class="modal-title">Edit Item</h2>
+        <p class="modal-sub">{{ item?.title }} — #{{ item?.id }}</p>
+      </div>
+      <button (click)="closeEditModal()" class="modal-close" aria-label="Close">×</button>
+    </header>
+
+    <div class="modal-body">
+      <!-- Photo URL -->
+      <div class="form-group">
+        <label class="form-label">Photo URL</label>
+        <div class="photo-input-row">
+          <div class="photo-preview">
+            <img
+              *ngIf="editForm.photoUrl"
+              [src]="editForm.photoUrl"
+              alt=""
+              class="photo-preview__img"
+              (error)="editForm.photoUrl = ''"
+            />
+            <span *ngIf="!editForm.photoUrl">{{ getCategoryEmoji(item?.categoryName || '') }}</span>
+          </div>
+          <input
+            type="url"
+            [(ngModel)]="editForm.photoUrl"
+            placeholder="https://example.com/photo.jpg"
+            class="form-input"
+          />
+        </div>
+      </div>
+
+      <!-- Title -->
+      <div class="form-group">
+        <label class="form-label">Title <span class="required">*</span></label>
+        <input
+          type="text"
+          [(ngModel)]="editForm.title"
+          placeholder="Item title"
+          class="form-input"
+        />
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <div class="form-label-row">
+          <label class="form-label">Description</label>
+          <button
+            type="button"
+            (click)="descriptionExpanded = !descriptionExpanded"
+            class="expand-btn"
+          >
+            {{ descriptionExpanded ? 'Collapse' : 'Expand' }}
+            <svg
+              class="expand-btn__icon"
+              [class.expand-btn__icon--open]="descriptionExpanded"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+        </div>
+        <textarea
+          [(ngModel)]="editForm.description"
+          placeholder="Describe the item..."
+          [rows]="descriptionExpanded ? 10 : 3"
+          class="form-input form-textarea"
+        ></textarea>
+      </div>
+
+      <!-- Condition + Value -->
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Condition</label>
+          <select [(ngModel)]="editForm.condition" class="form-input">
+            <option value="Excellent">Excellent</option>
+            <option value="Good">Good</option>
+            <option value="Fair">Fair</option>
+            <option value="Poor">Poor</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Current Value (kr)</label>
+          <input
+            type="number"
+            [(ngModel)]="editForm.currentValue"
+            placeholder="0"
+            class="form-input"
+          />
+        </div>
+      </div>
+
+      <!-- Dates -->
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Available From</label>
+          <input type="date" [(ngModel)]="editForm.availableFrom" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Available Until</label>
+          <input type="date" [(ngModel)]="editForm.availableUntil" class="form-input" />
+        </div>
+      </div>
+
+      <!-- Min Loan Days -->
+      <div class="form-group">
+        <label class="form-label">Min Loan Days</label>
+        <input
+          type="number"
+          [(ngModel)]="editForm.minLoanDays"
+          placeholder="—"
+          class="form-input"
+        />
+      </div>
+
+      <!-- Pickup address -->
+      <div class="form-group form-group--relative">
+        <label class="form-label">Pickup Address</label>
+        <input
+          type="text"
+          [ngModel]="editForm.pickupAddress"
+          (ngModelChange)="editForm.pickupAddress = $event; onAddressInput($event)"
+          (blur)="showAddressSuggestions = false"
+          autocomplete="off"
+          placeholder="Start typing an address..."
+          class="form-input"
+        />
+        <ul
+          *ngIf="showAddressSuggestions && addressSuggestions.length > 0"
+          class="address-dropdown"
+        >
+          <li
+            *ngFor="let s of addressSuggestions"
+            class="address-dropdown__item"
+            (mousedown)="$event.preventDefault(); selectAddress(s)"
+          >
+            <span class="pin" aria-hidden="true">📍</span>
+            {{ s.display_name }}
+          </li>
+        </ul>
+        <p *ngIf="editForm.pickupLatitude && editForm.pickupLongitude" class="coords-hint">
+          <span class="pin" aria-hidden="true">📍</span>
+          {{ editForm.pickupLatitude.toFixed(5) }}, {{ editForm.pickupLongitude.toFixed(5) }}
+        </p>
+      </div>
+
+      <!-- Toggles -->
+      <div class="toggle-row">
+        <div>
+          <p class="toggle-row__title">Requires Verification</p>
+          <p class="toggle-row__sub">Only verified users can borrow this item</p>
+        </div>
+        <button
+          type="button"
+          class="toggle"
+          [class.toggle--on]="editForm.requiresVerification"
+          (click)="editForm.requiresVerification = !editForm.requiresVerification"
+        >
+          <span class="toggle__knob"></span>
+        </button>
+      </div>
+
+      <div class="toggle-row">
+        <div>
+          <p class="toggle-row__title">Active / Listed</p>
+          <p class="toggle-row__sub">Hide this item from browse without deleting it</p>
+        </div>
+        <button
+          type="button"
+          class="toggle"
+          [class.toggle--on]="editForm.isActive"
+          (click)="editForm.isActive = !editForm.isActive"
+        >
+          <span class="toggle__knob"></span>
+        </button>
+      </div>
+
+      <p *ngIf="editError" class="form-error">{{ editError }}</p>
+      <p *ngIf="editSuccess" class="form-success">{{ editSuccess }}</p>
+    </div>
+
+    <footer class="modal-footer">
+      <button (click)="closeEditModal()" class="btn btn-outline">Cancel</button>
+      <button (click)="saveEdit()" [disabled]="isSavingEdit" class="btn btn-primary">
+        <span *ngIf="isSavingEdit" class="btn-spinner" aria-hidden="true"></span>
+        {{ isSavingEdit ? 'Saving...' : 'Save Changes' }}
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- ===== Loan modal ===== -->
+<div *ngIf="showLoanModal" class="modal-overlay">
+  <div class="modal-backdrop" (click)="showLoanModal = false"></div>
+
+  <div class="modal" (click)="$event.stopPropagation()">
+    <header class="modal-header">
+      <div>
+        <h2 class="modal-title">Request Loan</h2>
+        <p class="modal-sub">{{ item?.title }}</p>
+      </div>
+      <button (click)="showLoanModal = false" class="modal-close" aria-label="Close">×</button>
+    </header>
+
+    <div class="modal-body">
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Start Date <span class="required">*</span></label>
+          <input type="date" [(ngModel)]="loanForm.startDate" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">End Date <span class="required">*</span></label>
+          <input type="date" [(ngModel)]="loanForm.endDate" class="form-input" />
+        </div>
+      </div>
+
+      <div *ngIf="item?.minLoanDays" class="info-msg">
+        <span class="info-msg__label">Minimum loan period:</span>
+        <span class="info-msg__value">{{ item?.minLoanDays }} days</span>
+      </div>
+
+      <div *ngIf="!item?.isFree && loanDays > 0" class="price-summary">
+        <div class="price-summary__row">
+          <span class="price-summary__label">Rate</span>
+          <span class="price-summary__value">
+            kr {{ item?.pricePerDay }}<span class="price-summary__unit">/day</span>
+          </span>
+        </div>
+        <div class="price-summary__row">
+          <span class="price-summary__label">Duration</span>
+          <span class="price-summary__value"
+            >{{ loanDays }} day{{ loanDays !== 1 ? 's' : '' }}</span
+          >
+        </div>
+        <div class="price-summary__divider"></div>
+        <div class="price-summary__row price-summary__row--total">
+          <span class="price-summary__total-label">Total</span>
+          <span class="price-summary__total-value">kr {{ totalLoanPrice }}</span>
+        </div>
+      </div>
+
+      <div *ngIf="item?.isFree" class="free-badge">🎉 This item is free to borrow</div>
+
+      <p *ngIf="loanError" class="form-error">{{ loanError }}</p>
+      <p *ngIf="loanSuccess" class="form-success">{{ loanSuccess }}</p>
+    </div>
+
+    <footer class="modal-footer">
+      <button (click)="showLoanModal = false" class="btn btn-outline">Cancel</button>
+      <button (click)="requestLoan()" [disabled]="isRequesting" class="btn btn-primary">
+        {{ isRequesting ? 'Requesting...' : 'Send Request' }}
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- ===== Report modal ===== -->
+<div *ngIf="showReportModal" class="modal-overlay">
+  <div class="modal-backdrop" (click)="showReportModal = false"></div>
+
+  <div class="modal" (click)="$event.stopPropagation()">
+    <header class="modal-header">
+      <div>
+        <h2 class="modal-title">Report Item</h2>
+        <p class="modal-sub">{{ item?.title }}</p>
+      </div>
+      <button (click)="showReportModal = false" class="modal-close" aria-label="Close">×</button>
+    </header>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Reason <span class="required">*</span></label>
+        <select [(ngModel)]="reportReason" class="form-input">
+          <option value="">Select a reason...</option>
+          <option value="FakeListing">Fake Listing</option>
+          <option value="ProhibitedItem">Prohibited Item</option>
+          <option value="MisleadingDescription">Misleading Description</option>
+          <option value="Spam">Spam</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Additional details</label>
+        <textarea
+          [(ngModel)]="reportDetails"
+          rows="3"
+          placeholder="Describe the issue..."
+          class="form-input form-textarea"
+        ></textarea>
+      </div>
+      <p *ngIf="reportError" class="form-error">{{ reportError }}</p>
+      <p *ngIf="reportSuccess" class="form-success">{{ reportSuccess }}</p>
+    </div>
+
+    <footer class="modal-footer">
+      <button (click)="showReportModal = false" class="btn btn-outline">Cancel</button>
+      <button (click)="submitReport()" [disabled]="isSubmittingReport" class="btn btn-danger">
+        {{ isSubmittingReport ? 'Submitting...' : 'Submit Report' }}
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- ===== Lightbox ===== -->
+<div *ngIf="selectedPhoto" class="lightbox" (click)="selectedPhoto = null">
+  <div class="lightbox__backdrop"></div>
+  <img [src]="selectedPhoto" alt="" class="lightbox__img" />
+</div>
+>>>>>>> Stashed changes

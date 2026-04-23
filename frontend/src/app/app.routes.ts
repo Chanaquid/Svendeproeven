@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router, Routes } from '@angular/router';
 import { AuthService } from './services/authService';
-import { UserProfile } from './components/user/user';
+import { User } from './components/user/user';
 import { Landing } from './components/landing/landing';
 import { Home } from './components/home/home';
 import { Login } from './components/login/login';
@@ -22,5 +22,17 @@ export const routes: Routes = [
   { path: 'auth/confirm', component: ConfirmEmail },
   { path: 'home', component: Home, canActivate: [authGuard] },
   { path: 'items/:slug', component: ItemDetail, canActivate: [authGuard] },
+<<<<<<< Updated upstream
   { path: 'users/:id', component: UserProfile, canActivate: [authGuard] },
+=======
+  { path: 'users/:id', component: User, canActivate: [authGuard] },
+  { path: 'my-dashboard', component: UserDashboard, canActivate: [authGuard] },
+  { path: 'my-items', component: Item, canActivate: [authGuard] },
+  { path: 'my-loans', component: Loan, canActivate: [authGuard] },
+
+  { path: 'test', component: TestUpload },
+
+  { path: '404', component: PageNotFound },
+  { path: '**', redirectTo: '/404' },
+>>>>>>> Stashed changes
 ];

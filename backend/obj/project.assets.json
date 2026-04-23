@@ -5289,11 +5289,19 @@
   "project": {
     "version": "1.0.0",
     "restore": {
+<<<<<<< Updated upstream
       "projectUniqueName": "C:\\Users\\Chanakya Joshi\\Desktop\\RentIt\\Svendeproeven\\backend\\backend.csproj",
       "projectName": "backend",
       "projectPath": "C:\\Users\\Chanakya Joshi\\Desktop\\RentIt\\Svendeproeven\\backend\\backend.csproj",
       "packagesPath": "C:\\Users\\Chanakya Joshi\\.nuget\\packages\\",
       "outputPath": "C:\\Users\\Chanakya Joshi\\Desktop\\RentIt\\Svendeproeven\\backend\\obj\\",
+=======
+      "projectUniqueName": "C:\\Users\\Chanakya Joshi\\Desktop\\Sub_RentIt\\Svendeproeven\\backend\\backend.csproj",
+      "projectName": "backend",
+      "projectPath": "C:\\Users\\Chanakya Joshi\\Desktop\\Sub_RentIt\\Svendeproeven\\backend\\backend.csproj",
+      "packagesPath": "C:\\Users\\Chanakya Joshi\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Chanakya Joshi\\Desktop\\Sub_RentIt\\Svendeproeven\\backend\\obj\\",
+>>>>>>> Stashed changes
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

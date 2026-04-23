@@ -1,7 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+<<<<<<< Updated upstream
 import { NotificationDto } from '../../dtos/notificationDTO';
+=======
+import { NotificationDto } from '../../dtos/notificationDto';
+>>>>>>> Stashed changes
 import { AuthService } from '../../services/authService';
 import { UserService } from '../../services/userService';
 import { NotificationHubService } from '../../services/notificationHubService';

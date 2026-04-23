@@ -16,13 +16,27 @@
     <!-- Profile info -->
     <div *ngIf="!isLoadingProfile && profile" class="profile-info">
       <!-- Avatar -->
+<<<<<<< Updated upstream
       <div class="profile-avatar">
         <img *ngIf="profile.avatarUrl" [src]="profile.avatarUrl" class="profile-avatar__img" />
         <span *ngIf="!profile.avatarUrl">{{ getInitials(profile.fullName) }}</span>
+=======
+      <div
+        class="profile-avatar"
+        [class.profile-avatar--clickable]="profile.avatarUrl"
+        (click)="togglePfpModal()"
+      >
+        <img *ngIf="profile.avatarUrl" [src]="profile.avatarUrl" class="profile-avatar__img" />
+        <span *ngIf="!profile.avatarUrl">{{ getInitials(profile.fullName) || '' }}</span>
+>>>>>>> Stashed changes
       </div>
 
       <!-- Info -->
       <div class="profile-details">
+<<<<<<< Updated upstream
+=======
+        <!-- Name + verified badge + report — all inline -->
+>>>>>>> Stashed changes
         <div class="profile-name-row">
           <h1 class="profile-name">{{ profile.fullName }}</h1>
           <span *ngIf="profile.isVerified" class="badge badge--verified">
@@ -36,6 +50,25 @@
             Verified
           </span>
           <span *ngIf="!profile.isVerified" class="badge badge--unverified">Not Verified</span>
+<<<<<<< Updated upstream
+=======
+          <button *ngIf="currentUserId !== userId" (click)="openReportModal()" class="report-btn">
+            <svg
+              class="report-btn__icon"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z"
+              />
+            </svg>
+            Report
+          </button>
+>>>>>>> Stashed changes
         </div>
 
         <p class="profile-username">&#64;{{ profile.username }}</p>
@@ -106,6 +139,7 @@
           </svg>
         </button>
 
+<<<<<<< Updated upstream
         <!-- Filters -->
         <div *ngIf="!itemsCollapsed" class="filters">
           <div class="filter-tabs">
@@ -129,9 +163,60 @@
               [class.filter-tab--active]="activeFilter === 'onloan'"
             >
               On Loan
+=======
+      <div *ngIf="!itemsCollapsed">
+        <!-- Search bar -->
+        <div class="search-bar">
+          <svg class="search-bar__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"
+            />
+          </svg>
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="onSearch()"
+            placeholder="Search items..."
+            class="search-input search-input--full"
+          />
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+          <p class="toolbar-count">
+            <span class="toolbar-count__num">{{ itemTotalCount }}</span> items found
+          </p>
+          <div class="toolbar-controls">
+            <select [ngModel]="sortLabel" (ngModelChange)="onSortChange($event)" class="select">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="rating">Top rated</option>
+              <option value="az">A → Z</option>
+              <option value="za">Z → A</option>
+              <option value="price_asc">Price: Low to high</option>
+              <option value="price_desc">Price: High to low</option>
+            </select>
+            <button
+              (click)="onAvailableToggle()"
+              [class.filter-btn--active]="availableOnly"
+              class="filter-btn"
+            >
+              Available only
+            </button>
+            <button
+              (click)="onFreeToggle()"
+              [class.filter-btn--active]="freeOnly"
+              class="filter-btn"
+            >
+              Free only
+>>>>>>> Stashed changes
             </button>
           </div>
 
+<<<<<<< Updated upstream
           <div class="search-wrapper">
             <svg class="search-wrapper__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
@@ -157,6 +242,11 @@
         <!-- Loading items -->
         <div *ngIf="isLoadingItems" class="items-grid">
           <div *ngFor="let _ of [1, 2, 3, 4]" class="item-skeleton">
+=======
+        <!-- Loading skeleton — only shown on initial page load -->
+        <div *ngIf="isLoadingItems" class="items-grid">
+          <div *ngFor="let _ of [1, 2, 3, 4, 5, 6, 7, 8]" class="item-skeleton">
+>>>>>>> Stashed changes
             <div class="item-skeleton__photo"></div>
             <div class="item-skeleton__body">
               <div class="skeleton skeleton--line-sm"></div>
@@ -171,9 +261,15 @@
           <p class="empty-state__title">No items found</p>
           <p class="empty-state__sub">
             {{
+<<<<<<< Updated upstream
               activeFilter === 'all'
                 ? 'This user has no listed items.'
                 : 'No items match this filter.'
+=======
+              !searchQuery && !availableOnly && !freeOnly
+                ? 'This user has no listed items.'
+                : 'No items match your filters.'
+>>>>>>> Stashed changes
             }}
           </p>
         </div>
@@ -181,15 +277,24 @@
         <!-- Items grid -->
         <div *ngIf="!isLoadingItems && filteredItems.length > 0" class="items-grid">
           <div
+<<<<<<< Updated upstream
             *ngFor="let item of filteredItems"
             [routerLink]="['/items', item.id]"
             class="item-card"
           >
             <div class="item-card__photo">
+=======
+            *ngFor="let item of filteredItems; trackBy: trackByItemId"
+            (click)="goToItem(item.slug)"
+            class="card"
+          >
+            <div class="card__image">
+>>>>>>> Stashed changes
               <img
                 *ngIf="item.mainPhotoUrl"
                 [src]="item.mainPhotoUrl"
                 [alt]="item.title"
+<<<<<<< Updated upstream
                 class="item-card__img"
               />
               <div *ngIf="!item.mainPhotoUrl" class="item-card__placeholder">
@@ -228,11 +333,77 @@
                 <span *ngIf="item.totalReviews > 0" class="item-card__rating">
                   <span class="item-card__rating-star">★</span>
                   {{ item.averageRating?.toFixed(1) }} ({{ item.totalReviews }})
+=======
+                class="card__img"
+              />
+              <div *ngIf="!item.mainPhotoUrl" class="card__fallback">
+                {{ getCategoryEmoji(item.categoryName) }}
+              </div>
+              <span class="card__badge" [ngClass]="getAvailabilityClass(item.availability)">
+                {{ getAvailabilityLabel(item.availability) }}
+              </span>
+            </div>
+            <div class="card__body">
+              <div class="card__header">
+                <h3 class="card__title">{{ item.title }}</h3>
+                <span class="condition-badge" [ngClass]="getConditionClass(item.condition)">
+                  {{ item.condition }}
+                </span>
+              </div>
+              <p class="card__location">
+                <span class="pin" aria-hidden="true">📍</span>{{ item.pickupAddress }}
+              </p>
+              <p *ngIf="item.description" class="card__desc">{{ item.description }}</p>
+              <div class="card__meta">
+                <span class="card__rating">
+                  <span class="card__rating-star">★</span>
+                  {{ item.averageRating ? item.averageRating.toFixed(1) : 'New' }}
+                  <span *ngIf="item.totalReviews" class="card__rating-count"
+                    >({{ item.totalReviews }})</span
+                  >
+                </span>
+              </div>
+              <div class="card__price">
+                <span class="card__price-value">{{
+                  item.isFree ? 'Free' : item.pricePerDay + ' kr/day'
+                }}</span>
+                <span *ngIf="item.requiresVerification" class="verification-badge">
+                  <span aria-hidden="true">⚠️</span>
+                  <span>Needs verification</span>
+>>>>>>> Stashed changes
                 </span>
               </div>
             </div>
           </div>
         </div>
+<<<<<<< Updated upstream
+=======
+
+        <!-- Items pagination -->
+        <div *ngIf="itemTotalPages > 1" class="pagination">
+          <button (click)="goToItemPage(itemPage - 1)" [disabled]="itemPage === 1" class="page-btn">
+            ← Prev
+          </button>
+          <ng-container *ngFor="let page of itemPageNumbers; trackBy: trackByIndex">
+            <span *ngIf="page === -1" class="page-ellipsis">…</span>
+            <button
+              *ngIf="page !== -1"
+              (click)="goToItemPage(page)"
+              class="page-btn"
+              [class.page-btn--active]="page === itemPage"
+            >
+              {{ page }}
+            </button>
+          </ng-container>
+          <button
+            (click)="goToItemPage(itemPage + 1)"
+            [disabled]="itemPage === itemTotalPages"
+            class="page-btn"
+          >
+            Next →
+          </button>
+        </div>
+>>>>>>> Stashed changes
       </div>
     </div>
 
@@ -279,7 +450,11 @@
       <!-- Reviews list -->
       <div *ngIf="!isLoadingReviews && reviews.length > 0" class="reviews-list">
         <div
+<<<<<<< Updated upstream
           *ngFor="let review of displayedReviews"
+=======
+          *ngFor="let review of displayedReviews; trackBy: trackByReviewId"
+>>>>>>> Stashed changes
           class="review-card"
           [class.review-card--admin]="review.isAdminReview"
         >
@@ -326,6 +501,7 @@
           <p *ngIf="!review.comment" class="review-no-comment">No comment left.</p>
         </div>
 
+<<<<<<< Updated upstream
         <!-- Load more -->
         <button
           *ngIf="visibleReviews < reviews.length"
@@ -334,7 +510,119 @@
         >
           Load more ({{ reviews.length - visibleReviews }} remaining)
         </button>
+=======
+        <!-- Reviews pagination -->
+        <div *ngIf="reviewTotalPages > 1" class="pagination">
+          <button
+            (click)="goToReviewPage(reviewPage - 1)"
+            [disabled]="reviewPage === 1"
+            class="page-btn"
+          >
+            ← Prev
+          </button>
+          <ng-container *ngFor="let page of reviewPageNumbers; trackBy: trackByIndex">
+            <span *ngIf="page === -1" class="page-ellipsis">…</span>
+            <button
+              *ngIf="page !== -1"
+              (click)="goToReviewPage(page)"
+              class="page-btn"
+              [class.page-btn--active]="page === reviewPage"
+            >
+              {{ page }}
+            </button>
+          </ng-container>
+          <button
+            (click)="goToReviewPage(reviewPage + 1)"
+            [disabled]="reviewPage === reviewTotalPages"
+            class="page-btn"
+          >
+            Next →
+          </button>
+        </div>
+>>>>>>> Stashed changes
       </div>
     </div>
   </div>
 </main>
+<<<<<<< Updated upstream
+=======
+
+<!-- ── Profile Picture Lightbox ───────────────────────────────────────────── -->
+<div *ngIf="showPfpModal" class="modal-overlay modal-overlay--lightbox" (click)="togglePfpModal()">
+  <div class="modal-backdrop modal-backdrop--lightbox"></div>
+
+  <div class="pfp-lightbox" (click)="$event.stopPropagation()">
+    <button class="pfp-lightbox__close" (click)="togglePfpModal()" aria-label="Close">
+      <svg class="pfp-lightbox__close-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M6 18L18 6M6 6l12 12"
+        />
+      </svg>
+    </button>
+
+    <img [src]="profile?.avatarUrl" class="pfp-lightbox__img" alt="Profile Picture" />
+
+    <div class="pfp-lightbox__info">
+      <h2 class="pfp-lightbox__name">{{ profile?.fullName }}</h2>
+      <p class="pfp-lightbox__username">@{{ profile?.username }}</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── Report Modal ───────────────────────────────────────────────────────── -->
+<div *ngIf="showReportModal" class="modal-overlay">
+  <div class="modal-backdrop" (click)="showReportModal = false"></div>
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title">Report User</h2>
+        <p class="modal-sub">@{{ profile?.username }}</p>
+      </div>
+      <button (click)="showReportModal = false" class="modal-close" aria-label="Close">
+        <svg class="modal-close__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Reason <span class="form-required">*</span></label>
+        <select [(ngModel)]="reportReason" class="form-input form-select">
+          <option value="">Select a reason...</option>
+          <option value="FakeIdentity">Fake Identity</option>
+          <option value="Scammer">Scammer</option>
+          <option value="Harassment">Harassment</option>
+          <option value="InappropriateContent">Inappropriate Content</option>
+          <option value="Spam">Spam</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Additional details</label>
+        <textarea
+          [(ngModel)]="reportDetails"
+          rows="3"
+          placeholder="Describe the issue..."
+          class="form-input form-textarea"
+        ></textarea>
+      </div>
+      <p *ngIf="reportError" class="form-error">{{ reportError }}</p>
+      <p *ngIf="reportSuccess" class="form-success">{{ reportSuccess }}</p>
+    </div>
+    <div class="modal-footer">
+      <button (click)="showReportModal = false" class="btn btn-outline">Cancel</button>
+      <button (click)="submitReport()" [disabled]="isSubmittingReport" class="btn btn-danger">
+        {{ isSubmittingReport ? 'Submitting...' : 'Submit Report' }}
+      </button>
+    </div>
+  </div>
+</div>
+>>>>>>> Stashed changes

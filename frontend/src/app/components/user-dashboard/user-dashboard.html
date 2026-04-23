@@ -1,0 +1,923 @@
+<<<<<<< Updated upstream
+=======
+<app-navbar></app-navbar>
+
+<main class="dashboard">
+  <!-- ── Profile Header ───────────────────────────────────────────────── -->
+  <header class="profile">
+    <div class="profile__row">
+      <!-- Avatar + verification pin -->
+      <div class="profile__avatar-wrap">
+        <div
+          class="profile__avatar"
+          [class.profile__avatar--clickable]="profile?.avatarUrl"
+          (click)="profile?.avatarUrl && openAvatarModal()"
+        >
+          <img
+            *ngIf="profile?.avatarUrl"
+            [src]="profile!.avatarUrl!"
+            [alt]="profile?.fullName"
+            class="profile__avatar-img"
+          />
+          <div *ngIf="!profile?.avatarUrl" class="profile__avatar-initials">
+            {{ getInitials(profile?.fullName || '') }}
+          </div>
+        </div>
+
+        <span
+          *ngIf="profile?.isVerified"
+          class="profile__avatar-pin profile__avatar-pin--verified"
+          title="Verified"
+        >
+          <svg viewBox="0 0 20 20" fill="currentColor">
+            <path
+              fill-rule="evenodd"
+              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </span>
+        <span
+          *ngIf="!profile?.isVerified"
+          class="profile__avatar-pin profile__avatar-pin--unverified"
+          title="Not verified"
+        >
+          <svg viewBox="0 0 20 20" fill="currentColor">
+            <path
+              fill-rule="evenodd"
+              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </span>
+      </div>
+
+      <!-- Info -->
+      <div class="profile__info">
+        <div class="profile__name-row">
+          <h1 class="profile__name">{{ profile?.fullName }}</h1>
+
+          <span *ngIf="profile?.isVerified" class="badge badge--verified">Verified</span>
+
+          <ng-container *ngIf="!profile?.isVerified">
+            <span class="badge badge--unverified">Not Verified</span>
+
+            <button
+              *ngIf="!verificationStatus"
+              (click)="showVerifyModal = true"
+              class="badge badge--action"
+            >
+              <svg
+                class="badge__icon"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                />
+              </svg>
+              Verify Now
+            </button>
+
+            <span *ngIf="verificationStatus === 'Pending'" class="badge badge--pending">
+              ⏳ Verification Pending
+            </span>
+
+            <button
+              *ngIf="verificationStatus === 'Rejected'"
+              (click)="showVerifyModal = true"
+              class="badge badge--rejected"
+            >
+              ✕ Rejected — Resubmit
+            </button>
+          </ng-container>
+        </div>
+
+        <p class="profile__username">@{{ profile?.username }}</p>
+
+        <p *ngIf="profile?.bio" class="profile__bio">{{ profile?.bio }}</p>
+        <p *ngIf="!profile?.bio" class="profile__bio profile__bio--empty">No bio yet.</p>
+
+        <p class="profile__address">
+          <span class="pin" aria-hidden="true">📍</span>{{ profile?.address || 'No address set' }}
+        </p>
+        <p class="profile__joined">
+          Member since {{ profile?.membershipDate | date: 'MMMM yyyy' }}
+        </p>
+      </div>
+
+      <!-- Trust score + fines cards -->
+      <div class="profile__cards">
+        <!-- Trust Score -->
+        <div class="score-card">
+          <span class="score-card__icon" aria-hidden="true">🏅</span>
+          <span class="score-card__label">User Score</span>
+          <span
+            class="score-card__value"
+            [class.score-text--good]="(profile?.score ?? 0) >= 70"
+            [class.score-text--medium]="(profile?.score ?? 0) >= 40 && (profile?.score ?? 0) < 70"
+            [class.score-text--low]="(profile?.score ?? 0) < 40"
+          >
+            {{ profile?.score ?? 0 }}
+          </span>
+          <div class="score-card__bar">
+            <div
+              class="score-card__bar-fill"
+              [class.score-card__bar-fill--good]="(profile?.score ?? 0) >= 70"
+              [class.score-card__bar-fill--medium]="
+                (profile?.score ?? 0) >= 40 && (profile?.score ?? 0) < 70
+              "
+              [class.score-card__bar-fill--low]="(profile?.score ?? 0) < 40"
+              [style.width.%]="profile?.score ?? 0"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Unpaid Fines -->
+        <div
+          class="fines-card"
+          [class.fines-card--unpaid]="(profile?.unpaidFinesTotal ?? 0) > 0"
+          [class.fines-card--clear]="(profile?.unpaidFinesTotal ?? 0) === 0"
+        >
+          <span class="fines-card__icon" aria-hidden="true">
+            {{ (profile?.unpaidFinesTotal ?? 0) > 0 ? '⚠️' : '✅' }}
+          </span>
+          <span class="fines-card__label">Unpaid Fines</span>
+          <span class="fines-card__value">
+            {{ (profile?.unpaidFinesTotal ?? 0) > 0 ? 'kr ' + profile?.unpaidFinesTotal : 'None' }}
+          </span>
+          <p class="fines-card__note">
+            {{ (profile?.unpaidFinesTotal ?? 0) > 0 ? 'Payment required' : 'All clear' }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Main grid ────────────────────────────────────────────────────── -->
+  <div class="dashboard__grid">
+    <!-- LEFT COLUMN -->
+    <section class="dashboard__main">
+      <!-- Stats grid -->
+      <div class="stats-grid">
+        <div *ngFor="let stat of stats" class="stat">
+          <span class="stat__icon" aria-hidden="true">{{ stat.icon }}</span>
+          <span class="stat__amount">
+            <span *ngIf="stat.currency" class="stat__currency">{{ stat.currency }}</span>
+            <span class="stat__value">{{ stat.value }}</span>
+          </span>
+          <span class="stat__label">{{ stat.label }}</span>
+        </div>
+      </div>
+
+      <!-- Tabs panel -->
+      <div class="panel panel--tabs">
+        <div class="tab-group">
+          <button
+            *ngFor="let tab of tabs"
+            (click)="activeTab = tab.key; syncQueryParams()"
+            class="tab-btn"
+            [class.tab-btn--active]="activeTab === tab.key"
+          >
+            {{ tab.label }}
+          </button>
+        </div>
+
+        <!-- Tab: My Items -->
+        <div *ngIf="activeTab === 'items'" class="panel__body">
+          <div *ngIf="itemsLoading" class="loading">
+            <div class="spinner"></div>
+          </div>
+
+          <ng-container *ngIf="!itemsLoading">
+            <div *ngIf="(itemsResult?.items?.length ?? 0) === 0" class="empty-state">
+              <span class="empty-state__icon" aria-hidden="true">📦</span>
+              <p class="empty-state__sub">You haven't listed any items yet.</p>
+              <a routerLink="/items/new" class="btn btn-primary empty-state__action">
+                List your first item
+              </a>
+            </div>
+
+            <div *ngIf="(itemsResult?.items?.length ?? 0) > 0" class="items-list">
+              <div
+                *ngFor="let item of itemsResult?.items"
+                (click)="goToItem(item.slug)"
+                class="list-row"
+              >
+                <div class="list-row__thumb">
+                  <img
+                    *ngIf="item.mainPhotoUrl"
+                    [src]="item.mainPhotoUrl"
+                    [alt]="item.title"
+                    class="list-row__img"
+                  />
+                  <span *ngIf="!item.mainPhotoUrl" class="list-row__fallback">
+                    {{ getCategoryEmoji(item.categoryName) }}
+                  </span>
+                </div>
+                <div class="list-row__body">
+                  <p class="list-row__title">{{ item.title }}</p>
+                  <p class="list-row__sub">{{ item.categoryName }}</p>
+                </div>
+                <span
+                  class="status-pill"
+                  [class.status-item-approved]="item.status === 'Approved'"
+                  [class.status-item-pending]="item.status === 'Pending'"
+                  [class.status-item-rejected]="item.status === 'Rejected'"
+                >
+                  {{ item.status }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Items pagination -->
+            <div *ngIf="(itemsResult?.totalPages ?? 1) > 1" class="pagination">
+              <button
+                (click)="loadItems(itemsPage - 1)"
+                [disabled]="!itemsResult?.hasPreviousPage"
+                class="page-btn page-btn--arrow"
+                aria-label="Previous page"
+              >
+                ‹
+              </button>
+              <button
+                *ngFor="let p of itemPages"
+                (click)="loadItems(p)"
+                class="page-btn"
+                [class.page-btn--active]="p === itemsPage"
+              >
+                {{ p }}
+              </button>
+              <button
+                (click)="loadItems(itemsPage + 1)"
+                [disabled]="!itemsResult?.hasNextPage"
+                class="page-btn page-btn--arrow"
+                aria-label="Next page"
+              >
+                ›
+              </button>
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- Tab: Loans -->
+        <div *ngIf="activeTab === 'loans'" class="panel__body">
+          <!-- Borrowed / Lent toggle -->
+          <div class="segment">
+            <button
+              (click)="loanView = 'borrowed'; syncQueryParams()"
+              class="segment__btn"
+              [class.segment__btn--active]="loanView === 'borrowed'"
+            >
+              <span aria-hidden="true">📦</span> Borrowed
+              <span class="segment__count">{{ borrowedResult?.totalCount ?? 0 }}</span>
+            </button>
+            <button
+              (click)="loanView = 'lent'; syncQueryParams()"
+              class="segment__btn"
+              [class.segment__btn--active]="loanView === 'lent'"
+            >
+              <span aria-hidden="true">🤝</span> Lent out
+              <span class="segment__count">{{ lentResult?.totalCount ?? 0 }}</span>
+            </button>
+          </div>
+
+          <!-- Borrowed loans -->
+          <div *ngIf="loanView === 'borrowed'">
+            <div *ngIf="borrowedLoading" class="loading">
+              <div class="spinner"></div>
+            </div>
+
+            <ng-container *ngIf="!borrowedLoading">
+              <div *ngIf="(borrowedResult?.items?.length ?? 0) === 0" class="empty-state">
+                <span class="empty-state__icon" aria-hidden="true">📋</span>
+                <p class="empty-state__sub">No loan history yet.</p>
+              </div>
+
+              <div *ngIf="(borrowedResult?.items?.length ?? 0) > 0" class="loans-list">
+                <div
+                  *ngFor="let loan of borrowedResult?.items"
+                  (click)="goToLoan(loan.id)"
+                  class="list-row list-row--loan"
+                >
+                  <div class="list-row__thumb list-row__thumb--sm">
+                    <img
+                      *ngIf="loan.itemMainPhotoUrl"
+                      [src]="loan.itemMainPhotoUrl"
+                      class="list-row__img"
+                      alt=""
+                    />
+                    <span *ngIf="!loan.itemMainPhotoUrl" class="list-row__fallback">📦</span>
+                  </div>
+                  <div class="list-row__body">
+                    <p class="list-row__title">{{ loan.itemTitle }}</p>
+                    <p class="list-row__sub">
+                      {{ loan.startDate | date: 'MMM d' }} →
+                      {{ loan.endDate | date: 'MMM d, yyyy' }}
+                    </p>
+                  </div>
+                  <span class="status-pill" [ngClass]="getLoanStatusClass(loan.status)">
+                    {{ loan.status }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Borrowed pagination -->
+              <div *ngIf="(borrowedResult?.totalPages ?? 1) > 1" class="pagination">
+                <button
+                  (click)="loadBorrowedLoans(borrowedPage - 1)"
+                  [disabled]="!borrowedResult?.hasPreviousPage"
+                  class="page-btn page-btn--arrow"
+                  aria-label="Previous page"
+                >
+                  ‹
+                </button>
+                <button
+                  *ngFor="let p of borrowedPages"
+                  (click)="loadBorrowedLoans(p)"
+                  class="page-btn"
+                  [class.page-btn--active]="p === borrowedPage"
+                >
+                  {{ p }}
+                </button>
+                <button
+                  (click)="loadBorrowedLoans(borrowedPage + 1)"
+                  [disabled]="!borrowedResult?.hasNextPage"
+                  class="page-btn page-btn--arrow"
+                  aria-label="Next page"
+                >
+                  ›
+                </button>
+              </div>
+            </ng-container>
+          </div>
+
+          <!-- Lent loans -->
+          <div *ngIf="loanView === 'lent'">
+            <div *ngIf="lentLoading" class="loading">
+              <div class="spinner"></div>
+            </div>
+
+            <ng-container *ngIf="!lentLoading">
+              <div *ngIf="(lentResult?.items?.length ?? 0) === 0" class="empty-state">
+                <span class="empty-state__icon" aria-hidden="true">🤝</span>
+                <p class="empty-state__sub">You haven't lent out any items yet.</p>
+              </div>
+
+              <div *ngIf="(lentResult?.items?.length ?? 0) > 0" class="loans-list">
+                <div
+                  *ngFor="let loan of lentResult?.items"
+                  (click)="goToLoan(loan.id)"
+                  class="list-row list-row--loan"
+                >
+                  <div class="list-row__thumb list-row__thumb--sm">
+                    <img
+                      *ngIf="loan.itemMainPhotoUrl"
+                      [src]="loan.itemMainPhotoUrl"
+                      class="list-row__img"
+                      alt=""
+                    />
+                    <span *ngIf="!loan.itemMainPhotoUrl" class="list-row__fallback">📦</span>
+                  </div>
+                  <div class="list-row__body">
+                    <p class="list-row__title">{{ loan.itemTitle }}</p>
+                    <p class="list-row__sub">To: {{ loan.otherPartyName }}</p>
+                    <p class="list-row__sub">
+                      {{ loan.startDate | date: 'MMM d' }} →
+                      <span *ngIf="loan.status === 'Completed'">{{
+                        loan.actualReturnDate | date: 'MMM d, yyyy'
+                      }}</span>
+                      <span *ngIf="loan.status !== 'Completed'">{{
+                        loan.endDate | date: 'MMM d, yyyy'
+                      }}</span>
+                    </p>
+                  </div>
+                  <span class="status-pill" [ngClass]="getLoanStatusClass(loan.status)">
+                    {{ loan.status }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Lent pagination -->
+              <div *ngIf="(lentResult?.totalPages ?? 1) > 1" class="pagination">
+                <button
+                  (click)="loadLentLoans(lentPage - 1)"
+                  [disabled]="!lentResult?.hasPreviousPage"
+                  class="page-btn page-btn--arrow"
+                  aria-label="Previous page"
+                >
+                  ‹
+                </button>
+                <button
+                  *ngFor="let p of lentPages"
+                  (click)="loadLentLoans(p)"
+                  class="page-btn"
+                  [class.page-btn--active]="p === lentPage"
+                >
+                  {{ p }}
+                </button>
+                <button
+                  (click)="loadLentLoans(lentPage + 1)"
+                  [disabled]="!lentResult?.hasNextPage"
+                  class="page-btn page-btn--arrow"
+                  aria-label="Next page"
+                >
+                  ›
+                </button>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+
+        <!-- Tab: Score History -->
+        <div *ngIf="activeTab === 'score'" class="panel__body">
+          <div *ngIf="scoreLoading" class="loading">
+            <div class="spinner"></div>
+          </div>
+
+          <ng-container *ngIf="!scoreLoading">
+            <div *ngIf="(scoreResult?.items?.length ?? 0) === 0" class="empty-state">
+              <span class="empty-state__icon" aria-hidden="true">📊</span>
+              <p class="empty-state__sub">No score changes yet.</p>
+            </div>
+
+            <div *ngIf="(scoreResult?.items?.length ?? 0) > 0" class="score-list">
+              <div *ngFor="let entry of scoreResult?.items" class="score-row">
+                <div class="score-row__left">
+                  <div
+                    class="score-row__delta"
+                    [class.score-row__delta--up]="entry.pointsChanged > 0"
+                    [class.score-row__delta--down]="entry.pointsChanged < 0"
+                    [class.score-row__delta--flat]="entry.pointsChanged === 0"
+                  >
+                    {{ entry.pointsChanged > 0 ? '↑' : entry.pointsChanged < 0 ? '↓' : '–' }}
+                  </div>
+                  <div class="score-row__text">
+                    <p class="score-row__reason">{{ entry.reason }}</p>
+                    <p *ngIf="entry.note" class="score-row__note">{{ entry.note }}</p>
+                  </div>
+                </div>
+                <div class="score-row__right">
+                  <span
+                    class="score-row__points"
+                    [class.score-row__points--up]="entry.pointsChanged > 0"
+                    [class.score-row__points--down]="entry.pointsChanged < 0"
+                    [class.score-row__points--flat]="entry.pointsChanged === 0"
+                  >
+                    {{ entry.pointsChanged > 0 ? '+' : '' }}{{ entry.pointsChanged }}
+                  </span>
+                  <p class="score-row__date">
+                    {{ entry.createdAt | date: 'MMM d, yyyy' }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Score pagination -->
+            <div *ngIf="(scoreResult?.totalPages ?? 1) > 1" class="pagination">
+              <button
+                (click)="loadScoreHistory(scorePage - 1)"
+                [disabled]="!scoreResult?.hasPreviousPage"
+                class="page-btn page-btn--arrow"
+                aria-label="Previous page"
+              >
+                ‹
+              </button>
+              <button
+                *ngFor="let p of scorePages"
+                (click)="loadScoreHistory(p)"
+                class="page-btn"
+                [class.page-btn--active]="p === scorePage"
+              >
+                {{ p }}
+              </button>
+              <button
+                (click)="loadScoreHistory(scorePage + 1)"
+                [disabled]="!scoreResult?.hasNextPage"
+                class="page-btn page-btn--arrow"
+                aria-label="Next page"
+              >
+                ›
+              </button>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT COLUMN -->
+    <aside class="dashboard__side">
+      <!-- Edit Profile -->
+      <div class="panel">
+        <div class="panel__header">
+          <h3 class="panel__title">Edit Profile</h3>
+          <button (click)="editMode = !editMode; updateError = ''" class="panel__action">
+            {{ editMode ? 'Cancel' : 'Edit' }}
+          </button>
+        </div>
+
+        <div *ngIf="updateSuccess" class="panel__message form-success">
+          ✓ Profile updated successfully.
+        </div>
+
+        <div *ngIf="!editMode && !updateSuccess" class="panel__body">
+          <p class="panel__hint">Update your profile information.</p>
+        </div>
+
+        <div *ngIf="editMode" class="panel__body panel__body--form">
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input type="text" [(ngModel)]="editForm.fullName" class="form-input" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input type="text" [(ngModel)]="editForm.userName" class="form-input" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Bio</label>
+            <textarea
+              [(ngModel)]="editForm.bio"
+              rows="3"
+              placeholder="Tell people a bit about yourself..."
+              class="form-input form-textarea"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Gender</label>
+            <select [(ngModel)]="editForm.gender" class="form-input form-select">
+              <option value="">Prefer not to say</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Avatar URL</label>
+            <input
+              type="text"
+              [(ngModel)]="editForm.avatarUrl"
+              placeholder="https://..."
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group address-autocomplete">
+            <label class="form-label">Address</label>
+            <input
+              type="text"
+              [(ngModel)]="editForm.address"
+              (ngModelChange)="onAddressInput($event)"
+              autocomplete="off"
+              placeholder="Start typing your address..."
+              class="form-input"
+            />
+            <ul
+              *ngIf="showAddressSuggestions && addressSuggestions.length"
+              class="address-autocomplete__list"
+            >
+              <li
+                *ngFor="let place of addressSuggestions"
+                (mousedown)="selectAddress(place)"
+                class="address-autocomplete__item"
+              >
+                {{ place.display_name }}
+              </li>
+            </ul>
+            <p *ngIf="editForm.latitude && editForm.longitude" class="address-autocomplete__coords">
+              📍 {{ editForm.latitude.toFixed(4) }}, {{ editForm.longitude.toFixed(4) }}
+            </p>
+          </div>
+
+          <p *ngIf="updateError" class="form-error">{{ updateError }}</p>
+
+          <button (click)="saveProfile()" [disabled]="isSaving" class="btn btn-primary btn--block">
+            {{ isSaving ? 'Saving...' : 'Save changes' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Change Password -->
+      <div class="panel">
+        <div class="panel__header">
+          <h3 class="panel__title">Change Password</h3>
+          <button (click)="passwordMode = !passwordMode; resetPasswordForm()" class="panel__action">
+            {{ passwordMode ? 'Cancel' : 'Change' }}
+          </button>
+        </div>
+
+        <div *ngIf="passwordSuccess" class="panel__message form-success">
+          ✓ Password updated successfully.
+        </div>
+
+        <div *ngIf="passwordMode" class="panel__body panel__body--form">
+          <div class="form-group">
+            <label class="form-label">Current Password</label>
+            <input
+              type="password"
+              [(ngModel)]="passwordForm.currentPassword"
+              placeholder="••••••••"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">New Password</label>
+            <input
+              type="password"
+              [(ngModel)]="passwordForm.newPassword"
+              placeholder="••••••••"
+              class="form-input"
+              [class.form-input--ok]="
+                passwordForm.newPassword &&
+                passwordForm.newPassword === passwordForm.confirmPassword
+              "
+              [class.form-input--bad]="
+                passwordForm.newPassword &&
+                passwordForm.newPassword !== passwordForm.confirmPassword
+              "
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Confirm New Password</label>
+            <input
+              type="password"
+              [(ngModel)]="passwordForm.confirmPassword"
+              placeholder="••••••••"
+              class="form-input"
+              [class.form-input--ok]="
+                passwordForm.confirmPassword &&
+                passwordForm.newPassword === passwordForm.confirmPassword
+              "
+              [class.form-input--bad]="
+                passwordForm.confirmPassword &&
+                passwordForm.newPassword !== passwordForm.confirmPassword
+              "
+            />
+            <p
+              *ngIf="
+                passwordForm.confirmPassword &&
+                passwordForm.newPassword !== passwordForm.confirmPassword
+              "
+              class="form-hint form-hint--bad"
+            >
+              Passwords do not match.
+            </p>
+            <p
+              *ngIf="
+                passwordForm.confirmPassword &&
+                passwordForm.newPassword === passwordForm.confirmPassword
+              "
+              class="form-hint form-hint--ok"
+            >
+              Passwords match ✓
+            </p>
+          </div>
+
+          <p *ngIf="passwordError" class="form-error">{{ passwordError }}</p>
+
+          <button
+            (click)="changePassword()"
+            [disabled]="
+              isSavingPassword ||
+              !passwordForm.currentPassword ||
+              !passwordForm.newPassword ||
+              passwordForm.newPassword !== passwordForm.confirmPassword
+            "
+            class="btn btn-primary btn--block"
+          >
+            {{ isSavingPassword ? 'Updating...' : 'Update password' }}
+          </button>
+        </div>
+
+        <div *ngIf="!passwordMode" class="panel__body">
+          <p class="panel__hint">Keep your account secure with a strong password.</p>
+        </div>
+      </div>
+
+      <!-- Account Info -->
+      <div class="panel">
+        <div class="panel__header panel__header--simple">
+          <h3 class="panel__title">Account Info</h3>
+        </div>
+        <div class="panel__body info-list">
+          <div class="info-list__row">
+            <span class="info-list__label">Username</span>
+            <span class="info-list__value">{{ profile?.username }}</span>
+          </div>
+          <div class="info-list__row">
+            <span class="info-list__label">Email</span>
+            <span class="info-list__value">{{ profile?.email }}</span>
+          </div>
+          <div class="info-list__row">
+            <span class="info-list__label">Age</span>
+            <span class="info-list__value">{{ profile?.age }}</span>
+          </div>
+          <div class="info-list__row">
+            <span class="info-list__label">Borrowing status</span>
+            <span
+              class="status-pill"
+              [class.status-borrowing-free]="profile?.borrowingStatus === 'Free'"
+              [class.status-borrowing-admin]="profile?.borrowingStatus === 'AdminApproval'"
+              [class.status-borrowing-blocked]="profile?.borrowingStatus === 'Blocked'"
+            >
+              {{ profile?.borrowingStatus }}
+            </span>
+          </div>
+          <div class="info-list__row">
+            <span class="info-list__label">Gender</span>
+            <span class="info-list__value">{{ profile?.gender || '—' }}</span>
+          </div>
+          <div class="info-list__row">
+            <span class="info-list__label">Address</span>
+            <span class="info-list__value">{{ profile?.address || '—' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Blocked Users -->
+      <button (click)="goToBlockedUsers()" class="nav-link-card">
+        <span class="nav-link-card__icon" aria-hidden="true">🚫</span>
+        <span class="nav-link-card__text">
+          <span class="nav-link-card__title">Blocked Users</span>
+          <span class="nav-link-card__sub">Manage who you've blocked</span>
+        </span>
+        <svg
+          class="nav-link-card__chevron"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+
+      <!-- Danger Zone -->
+      <div class="panel panel--danger danger-zone">
+        <h3 class="danger-zone__title">Danger Zone</h3>
+        <p class="danger-zone__desc">Permanently delete your account.</p>
+        <button
+          (click)="showDeleteConfirm = !showDeleteConfirm; deletePassword = ''; deleteError = ''"
+          class="delete-btn delete-btn--outline"
+        >
+          Delete my account
+        </button>
+
+        <div *ngIf="showDeleteConfirm" class="danger-zone__confirm">
+          <p class="danger-zone__confirm-label">Enter your password to confirm:</p>
+          <input
+            type="password"
+            [(ngModel)]="deletePassword"
+            placeholder="Your password"
+            class="form-input form-input--danger"
+          />
+          <p *ngIf="deleteError" class="form-error">{{ deleteError }}</p>
+          <button
+            (click)="verifyDeletePassword()"
+            [disabled]="!deletePassword || isDeletingAccount"
+            class="delete-btn delete-btn--solid"
+          >
+            {{ isDeletingAccount ? 'Verifying...' : 'Continue' }}
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<!-- ── Avatar Lightbox Modal ─────────────────────────────────────────── -->
+<div
+  *ngIf="showAvatarModal"
+  class="modal-overlay modal-overlay--lightbox"
+  (click)="showAvatarModal = false"
+>
+  <div class="modal-backdrop modal-backdrop--lightbox"></div>
+
+  <div class="pfp-lightbox" (click)="$event.stopPropagation()">
+    <button class="pfp-lightbox__close" (click)="showAvatarModal = false" aria-label="Close">
+      <svg class="pfp-lightbox__close-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M6 18L18 6M6 6l12 12"
+        />
+      </svg>
+    </button>
+
+    <img [src]="profile!.avatarUrl!" [alt]="profile?.fullName" class="pfp-lightbox__img" />
+
+    <p class="pfp-lightbox__name">{{ profile?.fullName }}</p>
+  </div>
+</div>
+
+<!-- ── Delete Final Confirmation Modal ───────────────────────────────── -->
+<div *ngIf="showDeleteFinalConfirm" class="modal-overlay" (click)="showDeleteFinalConfirm = false">
+  <div class="modal-backdrop"></div>
+  <div class="modal modal--danger" (click)="$event.stopPropagation()">
+    <div class="modal__icon-circle modal__icon-circle--danger">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+        />
+      </svg>
+    </div>
+    <h3 class="modal-title modal-title--center">Are you absolutely sure?</h3>
+    <p class="modal-sub modal-sub--center">
+      This action <span class="text-danger">cannot be undone</span>.
+    </p>
+    <p class="modal-sub modal-sub--center">
+      All your items, loans, and data will be permanently erased.
+    </p>
+    <div class="modal-footer modal-footer--stacked">
+      <button
+        (click)="deleteAccount()"
+        [disabled]="isDeletingAccount"
+        class="delete-btn delete-btn--solid"
+      >
+        {{ isDeletingAccount ? 'Deleting...' : 'Yes, permanently delete my account' }}
+      </button>
+      <button (click)="showDeleteFinalConfirm = false" class="btn btn-outline btn--block">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Verify Identity Modal ─────────────────────────────────────────── -->
+<div *ngIf="showVerifyModal" class="modal-overlay" (click)="showVerifyModal = false">
+  <div class="modal-backdrop"></div>
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <h3 class="modal-title">Verify your identity</h3>
+        <p class="modal-sub">Submit a government-issued ID to get verified</p>
+      </div>
+      <button (click)="showVerifyModal = false" class="modal-close" aria-label="Close">
+        <svg
+          class="modal-close__icon"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Document Type</label>
+        <div class="doc-type-grid">
+          <button
+            *ngFor="let type of documentTypes"
+            (click)="verifyForm.documentType = type.value"
+            class="doc-type-btn"
+            [class.doc-type-btn--active]="verifyForm.documentType === type.value"
+            type="button"
+          >
+            {{ type.label }}
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Document URL</label>
+        <input
+          type="text"
+          [(ngModel)]="verifyForm.documentUrl"
+          placeholder="https://..."
+          class="form-input"
+        />
+        <p class="form-hint">
+          Upload your ID image to a service like Imgur and paste the link here.
+        </p>
+      </div>
+
+      <p *ngIf="verifyError" class="form-error">{{ verifyError }}</p>
+    </div>
+
+    <div class="modal-footer">
+      <button
+        (click)="submitVerification()"
+        [disabled]="isSubmittingVerify || !verifyForm.documentUrl || !verifyForm.documentType"
+        class="btn btn-primary btn--block"
+      >
+        {{ isSubmittingVerify ? 'Submitting…' : 'Submit for review' }}
+      </button>
+    </div>
+  </div>
+</div>
+>>>>>>> Stashed changes

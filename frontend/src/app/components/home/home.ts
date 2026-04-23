@@ -4,6 +4,10 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+<<<<<<< Updated upstream
+=======
+  OnDestroy,
+>>>>>>> Stashed changes
   OnInit,
   ViewChild,
 } from '@angular/core';
@@ -32,7 +36,11 @@ import {
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
+<<<<<<< Updated upstream
 export class Home implements OnInit, AfterViewInit {
+=======
+export class Home implements OnInit, AfterViewInit, OnDestroy {
+>>>>>>> Stashed changes
   @ViewChild('categoryStrip') categoryStrip!: ElementRef;
   ItemAvailability = ItemAvailability;
 
@@ -109,6 +117,19 @@ export class Home implements OnInit, AfterViewInit {
     Events: 16,
     Auto: 17,
     Other: 18,
+<<<<<<< Updated upstream
+=======
+  };
+
+  // ── RxJS ──────────────────────────────────────────────────────────────────
+  private searchSubject = new Subject<string>();
+  private destroy$ = new Subject<void>();
+
+  // ── Resize listener ───────────────────────────────────────────────────────
+  private resizeHandler = () => {
+    this.currentPage = 1;
+    this.loadItems();
+>>>>>>> Stashed changes
   };
 
   constructor(
@@ -131,6 +152,23 @@ export class Home implements OnInit, AfterViewInit {
     this.loadFavorites();
     this.loadItems();
 
+<<<<<<< Updated upstream
+=======
+    // Debounce search — 350ms after user stops typing
+    this.searchSubject.pipe(debounceTime(350), takeUntil(this.destroy$)).subscribe(() => {
+      this.currentPage = 1;
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { page: 1 },
+        queryParamsHandling: 'merge',
+      });
+      this.loadItems();
+    });
+
+    window.addEventListener('resize', this.resizeHandler);
+
+    // Read page + search query from URL so back-navigation restores state
+>>>>>>> Stashed changes
     this.route.queryParams.subscribe((params) => {
       const q = params['q'] || '';
       if (q !== this.searchQuery) {
@@ -193,6 +231,15 @@ export class Home implements OnInit, AfterViewInit {
       },
       true,
     );
+<<<<<<< Updated upstream
+=======
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('resize', this.resizeHandler);
+    this.destroy$.next();
+    this.destroy$.complete();
+>>>>>>> Stashed changes
   }
 
   private loadUserInfo(): void {
@@ -381,6 +428,7 @@ export class Home implements OnInit, AfterViewInit {
     this.loadItems();
   }
 
+<<<<<<< Updated upstream
   //Helpers
 
   goToItem(slug: string): void {
@@ -401,6 +449,30 @@ export class Home implements OnInit, AfterViewInit {
 
   getAvailabilityLabel(availability: ItemAvailability): string {
     return getAvailabilityLabel(availability);
+=======
+  goToItem(slug: string): void {
+    this.router.navigate(['/items', slug]);
+  }
+  getCategoryEmoji(name: string): string {
+    return getCategoryEmoji(name);
+  }
+  getConditionClass(condition: ItemCondition): string {
+    return getConditionClass(condition);
+  }
+  getAvailabilityClass(availability: ItemAvailability): string {
+    return getAvailabilityClass(availability);
+  }
+  getAvailabilityLabel(availability: ItemAvailability): string {
+    return getAvailabilityLabel(availability);
+  }
+  getInitials(name: string): string {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+>>>>>>> Stashed changes
   }
 
   showToast(message: string): void {

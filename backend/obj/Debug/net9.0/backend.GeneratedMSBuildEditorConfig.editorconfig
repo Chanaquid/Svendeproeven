@@ -17,13 +17,21 @@ build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = backend
 build_property.RootNamespace = backend
+<<<<<<< Updated upstream
 build_property.ProjectDir = C:\Users\Chanakya Joshi\Desktop\RentIt\Svendeproeven\backend\
+=======
+build_property.ProjectDir = C:\Users\Chanakya Joshi\Desktop\Sub_RentIt\Svendeproeven\backend\
+>>>>>>> Stashed changes
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 9.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+<<<<<<< Updated upstream
 build_property.MSBuildProjectDirectory = C:\Users\Chanakya Joshi\Desktop\RentIt\Svendeproeven\backend
+=======
+build_property.MSBuildProjectDirectory = C:\Users\Chanakya Joshi\Desktop\Sub_RentIt\Svendeproeven\backend
+>>>>>>> Stashed changes
 build_property._RazorSourceGeneratorDebug = 
 build_property.EffectiveAnalysisLevelStyle = 9.0
 build_property.EnableCodeStyleSeverity = 

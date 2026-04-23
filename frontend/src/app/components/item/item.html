@@ -1,0 +1,431 @@
+<app-navbar></app-navbar>
+
+<main class="page">
+  <!-- Header -->
+  <header class="page-header">
+    <div class="page-header__row">
+      <div>
+        <p class="page-header__sub">Manage your listings</p>
+        <h1 class="page-header__title">My Items</h1>
+      </div>
+      <button (click)="openAddModal()" class="btn btn-primary">
+        <svg class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"
+          />
+        </svg>
+        List a new item
+      </button>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-dot">
+        <span class="dot dot-active"></span>
+        <span class="dot-text"
+          ><strong>{{ approvedCount }}</strong> Active</span
+        >
+      </div>
+      <div class="stat-dot">
+        <span class="dot dot-pending"></span>
+        <span class="dot-text"
+          ><strong>{{ pendingCount }}</strong> Pending</span
+        >
+      </div>
+      <div class="stat-dot">
+        <span class="dot dot-rejected"></span
+        ><span class="dot-text"
+          ><strong>{{ rejectedCount }}</strong> Rejected</span
+        >
+      </div>
+      <div class="stat-dot">
+        <span class="dot dot-inactive"></span
+        ><span class="dot-text"
+          ><strong>{{ inactiveCount }}</strong> Inactive</span
+        >
+      </div>
+    </div>
+  </header>
+
+  <div class="page-body">
+    <!-- Tabs + toolbar -->
+    <div class="toolbar">
+      <div class="tab-group">
+        <button
+          *ngFor="let tab of tabs"
+          type="button"
+          class="tab-btn"
+          [class.tab-btn--active]="activeTab === tab.key"
+          (click)="onTabChange(tab.key)"
+        >
+          {{ tab.label }}
+          <span class="tab-count">{{ getTabCount(tab.key) }}</span>
+        </button>
+      </div>
+
+      <div class="toolbar-actions">
+        <select class="select" [ngModel]="sortLabel" (ngModelChange)="onSortChange($event)">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="az">Name: A → Z</option>
+          <option value="za">Name: Z → A</option>
+          <option value="price_asc">Price: Low to High</option>
+          <option value="price_desc">Price: High to Low</option>
+          <option value="rating">Top Rated</option>
+        </select>
+
+        <div class="search-wrapper">
+          <span class="search-icon" aria-hidden="true">🔍</span>
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="onSearchChange()"
+            placeholder="Search your items..."
+            class="search-input"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading skeleton -->
+    <div *ngIf="isLoading" class="items-grid">
+      <div *ngFor="let _ of [1, 2, 3, 4, 5, 6]" class="skeleton-card">
+        <div class="skeleton-card__image"></div>
+        <div class="skeleton-card__body">
+          <div class="skeleton skeleton--line-sm"></div>
+          <div class="skeleton skeleton--line-lg"></div>
+          <div class="skeleton skeleton--line-md"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="!isLoading && filteredItems.length === 0" class="empty-state">
+      <div class="empty-icon">📦</div>
+      <h3 class="empty-title">No items found</h3>
+      <p class="empty-sub">
+        {{
+          activeTab === 'all' ? "You haven't listed any items yet." : 'No items in this category.'
+        }}
+      </p>
+      <button (click)="openAddModal()" class="btn btn-primary">List your first item</button>
+    </div>
+
+    <!-- Items grid -->
+    <div *ngIf="!isLoading && filteredItems.length > 0" class="items-grid">
+      <article *ngFor="let item of pagedItems" class="item-card" (click)="goToItem(item.slug)">
+        <!-- Image -->
+        <div class="item-card__image">
+          <img *ngIf="item.mainPhotoUrl" [src]="item.mainPhotoUrl" [alt]="item.title" />
+          <div *ngIf="!item.mainPhotoUrl" class="item-card__fallback">
+            {{ getCategoryEmoji(item.categoryName) }}
+          </div>
+
+          <span class="status-badge" [ngClass]="getStatusClass(item)">
+            {{ getStatusLabel(item) }}
+          </span>
+        </div>
+
+        <!-- Body -->
+        <div class="item-card__body">
+          <div class="item-card__header">
+            <div class="item-card__info">
+              <p class="item-card__category">{{ item.categoryName }}</p>
+              <h3 class="item-card__title">{{ item.title }}</h3>
+            </div>
+            <span class="condition-badge" [ngClass]="getConditionClass(item.condition)">
+              {{ item.condition }}
+            </span>
+          </div>
+
+          <p class="item-card__location">
+            <span class="pin" aria-hidden="true">📍</span>
+            {{ item.pickupAddress }}
+          </p>
+          <p *ngIf="item.description" class="item-card__desc">{{ item.description }}</p>
+
+          <div class="item-card__rating">
+            <span class="rating-star">★</span>
+            <span class="rating-value">
+              {{ item.averageRating ? item.averageRating.toFixed(1) : 'New' }}
+            </span>
+            <span *ngIf="item.totalReviews" class="rating-count"> ({{ item.totalReviews }}) </span>
+          </div>
+
+          <div class="item-card__price-row">
+            <span class="item-card__price">
+              {{ item.isFree ? 'Free' : item.pricePerDay + ' kr/day' }}
+            </span>
+            <span *ngIf="item.requiresVerification" class="verification-badge">
+              ⚠️ Verification required
+            </span>
+          </div>
+
+          <!-- Actions -->
+          <div class="item-card__actions" (click)="$event.stopPropagation()">
+            <button
+              class="action-btn"
+              [class.action-btn--copied]="copiedSlug === item.slug"
+              (click)="copyShareLink(item.slug, $event)"
+            >
+              {{ copiedSlug === item.slug ? '✓ Copied' : '↗ Share' }}
+            </button>
+
+            <button
+              class="action-btn"
+              [disabled]="item.status !== 'Approved'"
+              (click)="toggleActive(item)"
+            >
+              {{ item.isActive === false ? 'Activate' : 'Deactivate' }}
+            </button>
+
+            <button
+              class="action-btn action-btn--delete"
+              (click)="confirmDelete(item)"
+              aria-label="Delete item"
+            >
+              🗑
+            </button>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <!-- Pagination -->
+    <nav *ngIf="totalPages > 1" class="pagination" aria-label="Pagination">
+      <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+        ← Prev
+      </button>
+      <ng-container *ngFor="let page of pageNumbers">
+        <span *ngIf="page === -1" class="page-ellipsis">…</span>
+        <button
+          *ngIf="page !== -1"
+          class="page-btn"
+          [class.page-btn--active]="page === currentPage"
+          (click)="goToPage(page)"
+        >
+          {{ page }}
+        </button>
+      </ng-container>
+      <button
+        class="page-btn"
+        (click)="goToPage(currentPage + 1)"
+        [disabled]="currentPage === totalPages"
+      >
+        Next →
+      </button>
+    </nav>
+  </div>
+
+  <!-- ===== Add Item modal ===== -->
+  <div *ngIf="showAddModal" class="modal-overlay">
+    <div class="modal-backdrop" (click)="showAddModal = false"></div>
+
+    <div class="modal modal--wide" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div>
+          <h2 class="modal-title">List a new item</h2>
+          <p class="modal-sub">Fill in the details to list your item for borrowing</p>
+        </div>
+        <button (click)="showAddModal = false" class="modal-close" aria-label="Close">×</button>
+      </header>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Title <span class="required">*</span></label>
+          <input
+            type="text"
+            [(ngModel)]="createForm.title"
+            placeholder="e.g. Makita Cordless Drill"
+            class="form-input"
+          />
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Category <span class="required">*</span></label>
+            <select [(ngModel)]="createForm.categoryId" class="form-input">
+              <option [value]="0" disabled>Select category</option>
+              <option *ngFor="let cat of categories" [value]="cat.id">
+                {{ cat.icon }} {{ cat.name }}
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Condition <span class="required">*</span></label>
+            <select [(ngModel)]="createForm.condition" class="form-input">
+              <option value="Excellent">Excellent</option>
+              <option value="Good">Good</option>
+              <option value="Fair">Fair</option>
+              <option value="Poor">Poor</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description <span class="required">*</span></label>
+          <textarea
+            [(ngModel)]="createForm.description"
+            rows="3"
+            placeholder="Describe your item..."
+            class="form-input form-textarea"
+          ></textarea>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Current Value (kr) <span class="required">*</span></label>
+            <input
+              type="number"
+              [(ngModel)]="createForm.currentValue"
+              placeholder="0"
+              class="form-input"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Price per Day (kr)</label>
+            <input
+              type="number"
+              [(ngModel)]="createForm.pricePerDay"
+              [disabled]="createForm.isFree"
+              placeholder="0"
+              class="form-input"
+            />
+          </div>
+        </div>
+
+        <div class="toggle-row">
+          <div>
+            <p class="toggle-row__title">List as Free</p>
+            <p class="toggle-row__sub">Borrowers won't be charged anything</p>
+          </div>
+          <button
+            type="button"
+            class="toggle"
+            [class.toggle--on]="createForm.isFree"
+            (click)="createForm.isFree = !createForm.isFree; createForm.pricePerDay = 0"
+          >
+            <span class="toggle__knob"></span>
+          </button>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Min Loan Days</label>
+            <input
+              type="number"
+              [(ngModel)]="createForm.minLoanDays"
+              placeholder="No minimum"
+              class="form-input"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Max Loan Days</label>
+            <input
+              type="number"
+              [(ngModel)]="createForm.maxLoanDays"
+              placeholder="No maximum"
+              class="form-input"
+            />
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Available From <span class="required">*</span></label>
+            <input type="date" [(ngModel)]="createForm.availableFrom" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Available Until <span class="required">*</span></label>
+            <input type="date" [(ngModel)]="createForm.availableUntil" class="form-input" />
+          </div>
+        </div>
+
+        <div class="form-group form-group--relative">
+          <label class="form-label">Pickup Address</label>
+          <input
+            type="text"
+            [(ngModel)]="createForm.pickupAddress"
+            (ngModelChange)="onAddressInput($event)"
+            autocomplete="off"
+            placeholder="Start typing your address..."
+            class="form-input"
+          />
+          <ul *ngIf="showAddressSuggestions && addressSuggestions.length" class="address-dropdown">
+            <li
+              *ngFor="let place of addressSuggestions"
+              class="address-dropdown__item"
+              (mousedown)="$event.preventDefault(); selectAddress(place)"
+            >
+              {{ place.properties.formatted }}
+            </li>
+          </ul>
+          <p *ngIf="createForm.pickupLatitude && createForm.pickupLongitude" class="coords-hint">
+            <span class="pin" aria-hidden="true">📍</span>
+            {{ createForm.pickupLatitude.toFixed(4) }},
+            {{ createForm.pickupLongitude.toFixed(4) }}
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Photo URL</label>
+          <input
+            type="text"
+            [(ngModel)]="createForm.photoUrl"
+            placeholder="https://example.com/photo.jpg"
+            class="form-input"
+          />
+          <p class="form-hint">Optional — you can add more photos after listing</p>
+        </div>
+
+        <div class="toggle-row">
+          <div>
+            <p class="toggle-row__title">Requires Verification</p>
+            <p class="toggle-row__sub">Only verified users can borrow this item</p>
+          </div>
+          <button
+            type="button"
+            class="toggle"
+            [class.toggle--on]="createForm.requiresVerification"
+            (click)="createForm.requiresVerification = !createForm.requiresVerification"
+          >
+            <span class="toggle__knob"></span>
+          </button>
+        </div>
+
+        <p *ngIf="createError" class="form-error">{{ createError }}</p>
+        <p *ngIf="!isAdmin" class="info-msg">
+          ℹ️ Your item will be reviewed by an admin before becoming visible to others.
+        </p>
+      </div>
+
+      <footer class="modal-footer">
+        <button (click)="showAddModal = false" class="btn btn-outline">Cancel</button>
+        <button (click)="createItem()" [disabled]="isCreating" class="btn btn-primary">
+          {{ isCreating ? 'Listing...' : 'List item' }}
+        </button>
+      </footer>
+    </div>
+  </div>
+</main>
+
+<!-- ===== Delete confirmation modal ===== -->
+<div *ngIf="showDeleteModal" class="modal-overlay" (click)="showDeleteModal = false">
+  <div class="modal-backdrop"></div>
+  <div class="modal modal--sm" (click)="$event.stopPropagation()">
+    <div class="delete-icon-wrap" aria-hidden="true">🗑</div>
+    <h3 class="modal-title">Delete item?</h3>
+    <p class="modal-delete-text">
+      "<strong>{{ itemToDelete?.title }}</strong
+      >" will be permanently deleted. This cannot be undone.
+    </p>
+    <div class="modal-footer">
+      <button (click)="showDeleteModal = false" class="btn btn-outline">Cancel</button>
+      <button (click)="deleteItem()" [disabled]="isDeleting" class="btn btn-danger">
+        {{ isDeleting ? 'Deleting...' : 'Delete' }}
+      </button>
+    </div>
+  </div>
+</div>
