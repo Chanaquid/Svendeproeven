@@ -7923,6 +7923,26 @@
   },
   {
     "ContainingType": "backend.Controllers.LoanController",
+    "Method": "GetAllLoansCount",
+    "RelativePath": "api/loans/completed/count",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "backend.Dtos.ApiResponse\u00601[[System.Int32, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "backend.Controllers.LoanController",
     "Method": "GetMyLoansAsBorrower",
     "RelativePath": "api/loans/my/borrowing",
     "HttpMethod": "GET",

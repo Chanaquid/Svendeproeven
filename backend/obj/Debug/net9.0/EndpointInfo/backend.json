@@ -11474,6 +11474,35 @@
         }
       }
     },
+    "/api/loans/completed/count": {
+      "get": {
+        "tags": [
+          "Loan"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Int32ApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Int32ApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Int32ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/loans/admin/all": {
       "get": {
         "tags": [
@@ -18567,6 +18596,21 @@
           "resolvedByAdminAvatarUrl": {
             "type": "string",
             "nullable": true
+          },
+          "canEdit": {
+            "type": "boolean"
+          },
+          "canCancel": {
+            "type": "boolean"
+          },
+          "canRespond": {
+            "type": "boolean"
+          },
+          "canAddEvidence": {
+            "type": "boolean"
+          },
+          "canAddResponseEvidence": {
+            "type": "boolean"
           },
           "penalties": {
             "type": "array",

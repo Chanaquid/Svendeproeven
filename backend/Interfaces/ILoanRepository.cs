@@ -22,7 +22,7 @@ namespace backend.Interfaces
         Task<List<Loan>> GetOverdueActiveLoansAsync();
 
         Task<int> GetAllCompletedLoansCountByUserIdAsync(string userId);
-
+        Task<int> GetCompletedLoansCountAsync(); //TOtal loans completed for landing page
         Task<Loan?> GetActiveLoanByItemAndUserAsync(int itemId, string userId);
 
         //Paged - for UI

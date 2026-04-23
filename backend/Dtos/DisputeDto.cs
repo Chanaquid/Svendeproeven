@@ -102,9 +102,17 @@ namespace backend.Dtos
         public string? ResolvedByAdminUserName { get; set; }
         public string? ResolvedByAdminAvatarUrl { get; set; }
 
+
+        //For frontend
+        public bool CanEdit { get; set; }
+        public bool CanCancel { get; set; }
+        public bool CanRespond { get; set; }
+        public bool CanAddEvidence { get; set; }
+
+        public bool CanAddResponseEvidence { get; set; }
         public List<DisputePenaltySummaryDto> Penalties { get; set; } = new();
 
-        public ItemCondition SnapshotCondition { get; set; } //Item state at pickup
+        public ItemCondition? SnapshotCondition { get; set; } //Item state at pickup
         public List<LoanSnapshotPhotoDto> SnapshotPhotos { get; set; } = new();
     }
 

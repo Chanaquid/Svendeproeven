@@ -31,7 +31,8 @@
 
   <!-- Tab content -->
   <div class="px-6 md:px-10 py-8">
-    <app-dispute  *ngIf="activeTab === 'disputes'"></app-dispute>
+    <app-dispute  *ngIf="activeTab === 'disputes'" [openDisputeId]="selectedDisputeId"></app-dispute>
+    <app-fine *ngIf="activeTab === 'fines'"></app-fine>
     <app-appeal  *ngIf="activeTab === 'appeals'"></app-appeal>
     <app-verification-request *ngIf="activeTab === 'verification'"></app-verification-request>
   </div>

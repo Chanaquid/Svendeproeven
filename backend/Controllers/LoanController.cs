@@ -128,6 +128,15 @@ namespace backend.Controllers
             return Ok(ApiResponse<LoanDto?>.Ok(loan));
         }
 
+        [HttpGet("completed/count")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse<int>>> GetAllLoansCount()
+        {
+            var count = await _loanService.GetCompletedLoansCountAsync();
+            return Ok(ApiResponse<int>.Ok(count));
+        }
+
+
         //Admin
 
         // GET: api/loans/admin/all

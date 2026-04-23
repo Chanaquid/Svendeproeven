@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { ApiResponse } from '../dtos/apiResponseDto';
 import { PagedRequest, PagedResult } from '../dtos/paginationDto';
 import {
@@ -26,6 +26,14 @@ export class LoanService {
   private readonly baseUrl = 'https://localhost:7183/api/loans';
 
   constructor(private http: HttpClient) {}
+
+
+
+
+  getCompletedLoansCount(): Observable<number> {
+    return this.http.get<ApiResponse<number>>(`${this.baseUrl}/completed/count`)
+      .pipe(map(res => res.data ?? 0));
+  }
 
   //Borrower endpoints
 

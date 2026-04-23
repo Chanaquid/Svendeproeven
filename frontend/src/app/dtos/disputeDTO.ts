@@ -69,9 +69,16 @@ export interface DisputeDto {
   resolvedByAdminUserName: string | null;
   resolvedByAdminAvatarUrl: string | null;
   penalties: DisputePenaltySummaryDto[];
-  snapshotCondition: ItemCondition;
+  snapshotCondition: ItemCondition | null;
   snapshotPhotos: LoanSnapshotPhotoDto[];
+ 
+  canEdit: boolean;
+  canRespond: boolean;
+  canAddEvidence: boolean;
+  canCancel: boolean;
+  canAddResponseEvidence: boolean;
 }
+
 
 export interface DisputeListDto {
   id: number;

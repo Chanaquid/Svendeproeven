@@ -164,6 +164,10 @@
                                 <p class="detail-value">{{ item.minLoanDays ?? '—' }}</p>
                             </div>
                             <div class="detail-item">
+                                <p class="detail-label">Max Loan Days</p>
+                                <p class="detail-value">{{ item.maxLoanDays ?? '—' }}</p>
+                            </div>
+                            <div class="detail-item">
                                 <p class="detail-label">Available From</p>
                                 <p class="detail-value">{{ item.availableFrom | date:'MMM d, yyyy' }}</p>
                             </div>
@@ -602,15 +606,15 @@
 
             <!-- Min and max Loan Days -->
             <div class="form-row">
-    <div class="form-group">
-        <label class="form-label">Min Loan Days</label>
-        <input type="number" [(ngModel)]="editForm.minLoanDays" placeholder="—" class="form-input" />
-    </div>
-    <div class="form-group">
-        <label class="form-label">Max Loan Days</label>
-        <input type="number" [(ngModel)]="editForm.maxLoanDays" placeholder="—" class="form-input" />
-    </div>
-</div>
+                <div class="form-group">
+                    <label class="form-label">Min Loan Days</label>
+                    <input type="number" [(ngModel)]="editForm.minLoanDays" placeholder="—" class="form-input" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Max Loan Days</label>
+                    <input type="number" [(ngModel)]="editForm.maxLoanDays" placeholder="—" class="form-input" />
+                </div>
+            </div>
 
             <!-- Pickup Address (Geoapify) -->
             <div class="form-group">

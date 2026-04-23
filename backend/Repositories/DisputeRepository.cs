@@ -184,6 +184,7 @@ namespace backend.Repositories
         {
             var query = _context.Disputes
                 .AsNoTracking()
+                 .AsSplitQuery()
                 .Include(d => d.Loan)
                     .ThenInclude(l => l.Item)
                 .Include(d => d.Loan)

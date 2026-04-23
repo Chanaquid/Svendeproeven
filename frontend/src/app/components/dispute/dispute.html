@@ -16,8 +16,7 @@
       [class.bg-zinc-800]="activeTab !== tab.id" [class.text-zinc-400]="activeTab !== tab.id">
       <span>{{ tab.icon }}</span>
       <span>{{ tab.label }}</span>
-      <span *ngIf="tab.count !== undefined && tab.count !== null"
-        class="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
+      <span *ngIf="tab.count !== undefined && tab.count !== null" class="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
         [class.bg-zinc-800]="activeTab === tab.id" [class.text-zinc-600]="activeTab === tab.id"
         [class.bg-zinc-700]="activeTab !== tab.id" [class.text-zinc-400]="activeTab !== tab.id">
         {{ tab.count }}
@@ -45,8 +44,6 @@
           class="bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs rounded-xl px-3 py-2.5 outline-none cursor-pointer">
           <option value="newest">Newest first</option>
           <option value="oldest">Oldest first</option>
-          <option value="az">A → Z</option>
-          <option value="za">Z → A</option>
         </select>
       </div>
 
@@ -57,7 +54,7 @@
         <button (click)="loadDisputes()" class="text-red-400 text-xs underline cursor-pointer">Retry</button>
       </div>
 
-      <!-- List loading — only show on tab/sort change, not search -->
+      <!-- List loading -->
       <div *ngIf="listLoading && !searchQuery" class="flex justify-center py-12">
         <div class="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
       </div>
@@ -82,9 +79,11 @@
                 <span *ngIf="d.isOverDue"
                   class="text-[9px] font-bold uppercase bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded-md">Overdue</span>
               </div>
-              <p class="text-white text-sm font-semibold truncate" style="font-family:'Syne',sans-serif">{{ d.itemTitle }}</p>
+              <p class="text-white text-sm font-semibold truncate" style="font-family:'Syne',sans-serif">{{ d.itemTitle
+                }}</p>
             </div>
-            <span class="shrink-0 text-[10px] font-bold uppercase px-2 py-1 rounded-lg border" [ngClass]="getStatusClass(d.status)">
+            <span class="shrink-0 text-[10px] font-bold uppercase px-2 py-1 rounded-lg border"
+              [ngClass]="getStatusClass(d.status)">
               {{ d.status | titlecase }}
             </span>
           </div>
@@ -94,15 +93,15 @@
               class="w-5 h-5 rounded-lg object-cover bg-zinc-700 shrink-0" />
             <span class="text-zinc-400 text-xs truncate">{{ d.filedByName }}</span>
             <span class="text-zinc-600 text-xs">vs</span>
+            <img [src]="d.otherPartyAvatarUrl || getDefaultAvatar(d.otherPartyName || 'Other')"
+              class="w-5 h-5 rounded-lg object-cover bg-zinc-700 shrink-0" />
             <span class="text-zinc-500 text-xs truncate">{{ d.otherPartyName || 'Other party' }}</span>
           </div>
 
           <div class="flex items-center justify-between">
             <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md"
-              [class.bg-purple-400/10]="d.filedAs === 'AsOwner'"
-              [class.text-purple-400]="d.filedAs === 'AsOwner'"
-              [class.bg-blue-400/10]="d.filedAs === 'AsBorrower'"
-              [class.text-blue-400]="d.filedAs === 'AsBorrower'">
+              [class.bg-purple-400/10]="d.filedAs === 'AsOwner'" [class.text-purple-400]="d.filedAs === 'AsOwner'"
+              [class.bg-blue-400/10]="d.filedAs === 'AsBorrower'" [class.text-blue-400]="d.filedAs === 'AsBorrower'">
               {{ d.filedAs === 'AsOwner' ? '🏠 Owner' : '📦 Borrower' }}
             </span>
             <span class="text-zinc-600 text-[10px]">{{ d.createdAt | date:'MMM d, yyyy' }}</span>
@@ -185,7 +184,7 @@
             </div>
           </div>
 
-          <!-- Parties — label changes based on whether response exists -->
+          <!-- Parties -->
           <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
             <h3 class="font-bold text-white text-sm mb-4" style="font-family:'Syne',sans-serif">Parties</h3>
             <div class="grid grid-cols-2 gap-4">
@@ -198,12 +197,11 @@
                   <p class="text-zinc-500 text-[10px]">@{{ selectedDispute.filedByUserName }}</p>
                 </div>
               </div>
-              <!-- Show other party even if they haven't responded yet -->
               <div *ngIf="selectedDispute.respondedById; else awaitingParty" class="flex items-center gap-3">
-                <img [src]="selectedDispute.respondedByAvatarUrl || getDefaultAvatar(selectedDispute.respondedByName ?? '')"
+                <img
+                  [src]="selectedDispute.respondedByAvatarUrl || getDefaultAvatar(selectedDispute.respondedByName ?? '')"
                   class="w-10 h-10 rounded-xl object-cover bg-zinc-700 shrink-0" />
                 <div class="min-w-0">
-                  <!-- Label changes: "Responding" while open, "Responded by" when done -->
                   <p class="text-[10px] text-zinc-500 uppercase tracking-widest font-medium">
                     {{ selectedDispute.responseDescription ? 'Responded by' : 'Responding' }}
                   </p>
@@ -213,7 +211,8 @@
               </div>
               <ng-template #awaitingParty>
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-zinc-800 border border-dashed border-zinc-700 shrink-0 flex items-center justify-center">
+                  <div
+                    class="w-10 h-10 rounded-xl bg-zinc-800 border border-dashed border-zinc-700 shrink-0 flex items-center justify-center">
                     <span class="text-zinc-600 text-lg">?</span>
                   </div>
                   <div class="min-w-0">
@@ -266,29 +265,47 @@
             </div>
           </div>
 
-          <!-- Evidence photos -->
+          <!-- Filer's Evidence -->
           <div *ngIf="(selectedDispute.filedByPhotos && selectedDispute.filedByPhotos.length > 0) || canAddEvidence()"
             class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
             <div class="px-5 py-4 border-b border-zinc-800 flex items-center gap-2">
-              <h3 class="font-bold text-white text-sm" style="font-family:'Syne',sans-serif">Evidence</h3>
+              <h3 class="font-bold text-white text-sm" style="font-family:'Syne',sans-serif">
+                Evidence from @{{ selectedDispute.filedByUserName }}
+              </h3>
               <span *ngIf="selectedDispute.filedByPhotos?.length"
                 class="text-[10px] font-bold bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded-full">
                 {{ selectedDispute.filedByPhotos!.length }}
               </span>
             </div>
             <div class="p-4 space-y-3">
-              <div *ngIf="selectedDispute.filedByPhotos?.length" class="flex gap-3 flex-wrap">
-                <div *ngFor="let p of selectedDispute.filedByPhotos"
-                  class="w-24 h-24 rounded-xl overflow-hidden bg-zinc-800 cursor-pointer hover:opacity-80 transition-opacity relative"
-                  (click)="openPhoto(p.photoUrl)">
-                  <img [src]="p.photoUrl" class="w-full h-full object-cover" />
-                  <div *ngIf="p.caption"
-                    class="absolute inset-x-0 bottom-0 bg-black/70 px-1.5 py-1 text-[9px] text-white truncate">
-                    {{ p.caption }}
+
+              <!-- Photos with optional delete -->
+              <div *ngIf="selectedDispute.filedByPhotos?.length" class="flex gap-3 flex-wrap items-start">
+                <div *ngFor="let p of selectedDispute.filedByPhotos" class="flex flex-col gap-1">
+                  <div class="relative w-24 h-24 rounded-xl overflow-hidden bg-zinc-800 group cursor-pointer"
+                    (click)="openPhoto(p.photoUrl, p.caption)">
+                    <img [src]="p.photoUrl" class="w-full h-full object-cover hover:opacity-80 transition-opacity" />
+                    <button *ngIf="canAddEvidence()" (click)="$event.stopPropagation(); deleteFiledByPhoto(p.id)"
+                      [disabled]="isDeletingPhoto[p.id]"
+                      class="absolute top-1 right-1 w-5 h-5 bg-black/70 hover:bg-red-500/80 rounded-full text-white text-[9px] flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50">
+                      {{ isDeletingPhoto[p.id] ? '…' : '✕' }}
+                    </button>
                   </div>
+                  <p *ngIf="p.caption" class="text-zinc-500 text-[10px] w-24 leading-tight break-words">{{ p.caption }}
+                  </p>
                 </div>
               </div>
-              <div *ngIf="canAddEvidence()" class="border-t border-zinc-800 pt-3">
+
+              <p *ngIf="photoDeleteError" class="text-red-400 text-xs">{{ photoDeleteError }}</p>
+
+              <p *ngIf="!selectedDispute.filedByPhotos?.length && !canAddEvidence()" class="text-zinc-600 text-xs">No
+                evidence submitted.</p>
+
+              <!-- Add more photos -->
+              <div *ngIf="canAddEvidence()" class="flex flex-col gap-2"
+                [class.border-t]="selectedDispute.filedByPhotos?.length"
+                [class.border-zinc-800]="selectedDispute.filedByPhotos?.length"
+                [class.pt-3]="selectedDispute.filedByPhotos?.length">
                 <div class="flex items-center gap-2">
                   <label
                     class="flex items-center gap-1.5 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-dashed border-zinc-700 text-zinc-400 text-xs font-semibold rounded-xl cursor-pointer">
@@ -296,22 +313,50 @@
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
                     Add Photo
-                    <input type="file" accept="image/*" hidden (change)="onEvidenceFileSelected($event)" />
+                    <input type="file" accept="image/*" hidden (change)="onExtraEvidenceFileSelected($event)" />
                   </label>
-                  <input *ngIf="evidenceFile" type="text" [(ngModel)]="evidenceCaption"
+                  <input *ngIf="extraEvidenceFile" type="text" [(ngModel)]="extraEvidenceCaption"
                     placeholder="Caption (optional)"
                     class="flex-1 bg-zinc-800 border border-zinc-700 text-white text-xs rounded-xl px-3 py-2 outline-none placeholder-zinc-600" />
-                  <button *ngIf="evidenceFile" (click)="uploadEvidencePhoto()" [disabled]="uploadingEvidence"
+                  <button *ngIf="extraEvidenceFile" (click)="uploadExtraEvidencePhoto()"
+                    [disabled]="uploadingExtraEvidence"
                     class="px-3 py-2 bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-zinc-900 text-xs font-semibold rounded-xl cursor-pointer">
-                    {{ uploadingEvidence ? '...' : 'Upload' }}
+                    {{ uploadingExtraEvidence ? '...' : 'Upload' }}
                   </button>
                 </div>
-                <div *ngIf="evidencePreview" class="mt-2">
-                  <img [src]="evidencePreview" class="w-20 h-20 rounded-xl object-cover" />
+                <div *ngIf="extraEvidencePreview">
+                  <img [src]="extraEvidencePreview" class="w-20 h-20 rounded-xl object-cover" />
                 </div>
-                <p *ngIf="evidenceError"
-                  class="mt-2 text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
-                  {{ evidenceError }}
+                <p *ngIf="extraEvidenceError"
+                  class="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                  {{ extraEvidenceError }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+
+          <!-- Respondent's Evidence -->
+          <div
+            *ngIf="(selectedDispute.responsePhotos && selectedDispute.responsePhotos.length > 0) || canAddResponseEvidence()"
+            class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-zinc-800 flex items-center gap-2">
+              <h3 class="font-bold text-white text-sm" style="font-family:'Syne',sans-serif">
+                Evidence from @{{ selectedDispute.respondedByUserName }}
+              </h3>
+              <span *ngIf="selectedDispute.responsePhotos?.length"
+                class="text-[10px] font-bold bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded-full">
+                {{ selectedDispute.responsePhotos!.length }}
+              </span>
+            </div>
+            <div class="p-4 flex gap-3 flex-wrap items-start">
+              <div *ngFor="let p of selectedDispute.responsePhotos" class="flex flex-col gap-1">
+                <div
+                  class="relative w-24 h-24 rounded-xl overflow-hidden bg-zinc-800 cursor-pointer hover:opacity-80 transition-opacity"
+                  (click)="openPhoto(p.photoUrl, p?.caption)">
+                  <img [src]="p.photoUrl" class="w-full h-full object-cover" />
+                </div>
+                <p *ngIf="p.caption" class="text-zinc-500 text-[10px] w-24 leading-tight break-words">{{ p.caption }}
                 </p>
               </div>
             </div>
@@ -321,8 +366,10 @@
           <div *ngIf="selectedDispute.snapshotPhotos && selectedDispute.snapshotPhotos.length > 0"
             class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
             <div class="px-5 py-4 border-b border-zinc-800">
-              <h3 class="font-bold text-white text-sm" style="font-family:'Syne',sans-serif">Item Snapshot at Loan Start</h3>
-              <p class="text-zinc-500 text-xs mt-0.5">Condition: <span class="font-semibold text-zinc-300">{{ selectedDispute.snapshotCondition }}</span></p>
+              <h3 class="font-bold text-white text-sm" style="font-family:'Syne',sans-serif">Item Snapshot at Loan Start
+              </h3>
+              <p class="text-zinc-500 text-xs mt-0.5">Condition: <span class="font-semibold text-zinc-300">{{
+                  selectedDispute.snapshotCondition }}</span></p>
             </div>
             <div class="p-4 flex gap-3 flex-wrap">
               <div *ngFor="let p of selectedDispute.snapshotPhotos"
@@ -336,8 +383,10 @@
           <!-- Submit Response -->
           <div *ngIf="canSubmitResponse()" class="bg-zinc-900 border border-amber-400/20 rounded-2xl overflow-hidden">
             <div class="px-5 py-4 border-b border-zinc-800 bg-amber-400/5">
-              <h3 class="font-bold text-amber-400 text-sm" style="font-family:'Syne',sans-serif">Submit Your Response</h3>
-              <p class="text-zinc-500 text-xs mt-0.5">The other party filed this dispute. Respond before the deadline.</p>
+              <h3 class="font-bold text-amber-400 text-sm" style="font-family:'Syne',sans-serif">Submit Your Response
+              </h3>
+              <p class="text-zinc-500 text-xs mt-0.5">The other party filed this dispute. Respond before the deadline.
+              </p>
             </div>
             <div class="p-5 space-y-4">
               <div class="space-y-1">
@@ -370,12 +419,14 @@
                   Add Photos
                   <input type="file" accept="image/*" multiple hidden (change)="onResponsePhotosSelected($event)" />
                 </label>
-                <div *ngIf="responsePhotoPreviews.length" class="flex gap-2 flex-wrap">
+                <div *ngIf="responsePhotoPreviews.length" class="flex flex-col gap-2">
                   <div *ngFor="let p of responsePhotoPreviews; let i = index"
-                    class="relative w-16 h-16 rounded-xl overflow-hidden">
-                    <img [src]="p" class="w-full h-full object-cover" />
+                    class="flex items-center gap-3 bg-zinc-800 rounded-xl p-2">
+                    <img [src]="p" class="w-14 h-14 rounded-lg object-cover shrink-0" />
+                    <input type="text" [(ngModel)]="responsePhotoCaptions[i]" placeholder="Caption (optional)"
+                      class="flex-1 bg-zinc-700 border border-zinc-600 text-white text-xs rounded-lg px-2.5 py-1.5 outline-none placeholder-zinc-500" />
                     <button (click)="removeResponsePhoto(i)"
-                      class="absolute top-0.5 right-0.5 w-4 h-4 bg-black/70 rounded-full text-white text-[9px] flex items-center justify-center cursor-pointer">✕</button>
+                      class="text-zinc-500 hover:text-red-400 text-xs transition-colors cursor-pointer shrink-0 w-5 h-5 flex items-center justify-center">✕</button>
                   </div>
                 </div>
                 <p *ngIf="responsePhotoError"
@@ -399,20 +450,13 @@
           <div *ngIf="selectedDispute.responseDescription" class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
             <h3 class="font-bold text-white text-sm mb-3" style="font-family:'Syne',sans-serif">
               Response from @{{ selectedDispute.respondedByUserName }}
-              <span class="text-zinc-500 font-normal text-xs ml-2">{{ selectedDispute.respondedAt | date:'MMM d, yyyy' }}</span>
+              <span class="text-zinc-500 font-normal text-xs ml-2">{{ selectedDispute.respondedAt | date:'MMM d, yyyy'
+                }}</span>
             </h3>
             <p class="text-zinc-300 text-sm leading-relaxed">{{ selectedDispute.responseDescription }}</p>
-            <div *ngIf="selectedDispute.responsePhotos && selectedDispute.responsePhotos.length"
-              class="flex gap-3 flex-wrap mt-4">
-              <div *ngFor="let p of selectedDispute.responsePhotos"
-                class="w-24 h-24 rounded-xl overflow-hidden bg-zinc-800 cursor-pointer hover:opacity-80 transition-opacity"
-                (click)="openPhoto(p.photoUrl)">
-                <img [src]="p.photoUrl" class="w-full h-full object-cover" />
-              </div>
-            </div>
           </div>
 
-          <!-- Admin Verdict -->
+          <!-- Admin Verdict (read-only) -->
           <div *ngIf="selectedDispute.adminVerdict" class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
             <h3 class="font-bold text-white text-sm mb-3" style="font-family:'Syne',sans-serif">Admin Verdict</h3>
             <div class="flex items-center gap-2 mb-3">
@@ -421,23 +465,22 @@
                 {{ selectedDispute.adminVerdict }}
               </span>
             </div>
-            <p *ngIf="selectedDispute.adminNote"
-              class="text-zinc-400 text-sm leading-relaxed italic mb-3">"{{ selectedDispute.adminNote }}"</p>
+            <p *ngIf="selectedDispute.adminNote" class="text-zinc-400 text-sm leading-relaxed italic mb-3">"{{
+              selectedDispute.adminNote }}"</p>
             <p *ngIf="selectedDispute.resolvedByAdminName" class="text-zinc-500 text-xs">
               Resolved by <span class="text-zinc-300 font-medium">{{ selectedDispute.resolvedByAdminName }}</span>
               on {{ selectedDispute.resolvedAt | date:'MMM d, yyyy' }}
             </p>
           </div>
 
-          <!-- Penalties -->
+          <!-- Penalties (read-only) -->
           <div *ngIf="selectedDispute.penalties && selectedDispute.penalties.length > 0"
             class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
             <div class="px-5 py-4 border-b border-zinc-800">
               <h3 class="font-bold text-white text-sm" style="font-family:'Syne',sans-serif">Penalties Issued</h3>
             </div>
             <div class="divide-y divide-zinc-800">
-              <div *ngFor="let p of selectedDispute.penalties"
-                class="px-5 py-4 flex items-center gap-3 flex-wrap">
+              <div *ngFor="let p of selectedDispute.penalties" class="px-5 py-4 flex items-center gap-3 flex-wrap">
                 <img [src]="p.avatarUrl || getDefaultAvatar(p.fullName)"
                   class="w-8 h-8 rounded-lg object-cover bg-zinc-700 shrink-0" />
                 <div class="flex-1 min-w-0">
@@ -446,72 +489,19 @@
                 </div>
                 <div class="flex items-center gap-3">
                   <div *ngIf="p.fineAmount" class="text-right">
-                    <p class="text-red-400 font-black text-base" style="font-family:'Syne',sans-serif">kr {{ p.fineAmount }}</p>
+                    <p class="text-red-400 font-black text-base" style="font-family:'Syne',sans-serif">kr {{
+                      p.fineAmount }}</p>
                     <p class="text-zinc-500 text-[10px]">{{ p.fineStatus }}</p>
                   </div>
                   <div *ngIf="p.scoreAdjustment" class="text-right">
-                    <p class="font-black text-base"
-                      [class.text-emerald-400]="p.scoreAdjustment > 0"
-                      [class.text-red-400]="p.scoreAdjustment < 0"
-                      style="font-family:'Syne',sans-serif">
+                    <p class="font-black text-base" [class.text-emerald-400]="p.scoreAdjustment > 0"
+                      [class.text-red-400]="p.scoreAdjustment < 0" style="font-family:'Syne',sans-serif">
                       {{ p.scoreAdjustment > 0 ? '+' : '' }}{{ p.scoreAdjustment }}
                     </p>
                     <p class="text-zinc-500 text-[10px]">score</p>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <!-- Admin Resolve -->
-          <div *ngIf="isAdmin && canAdminResolve()"
-            class="bg-zinc-900 border border-amber-400/20 rounded-2xl overflow-hidden">
-            <div class="px-5 py-4 border-b border-zinc-800 bg-amber-400/5">
-              <h3 class="font-bold text-amber-400 text-sm" style="font-family:'Syne',sans-serif">⚖️ Resolve Dispute</h3>
-            </div>
-            <div class="p-5 space-y-4">
-              <div class="space-y-1.5">
-                <label class="text-zinc-400 text-[10px] uppercase tracking-widest font-medium">
-                  Verdict <span class="text-red-400">*</span>
-                </label>
-                <select [(ngModel)]="resolveVerdict"
-                  class="w-full bg-zinc-800 border border-zinc-700 text-white text-sm rounded-xl px-3 py-2.5 outline-none cursor-pointer transition-all duration-200">
-                  <option value="">— Select verdict —</option>
-                  <option value="NoPenalty">No Penalty</option>
-                  <option value="OwnerPenalized">Owner Penalized</option>
-                  <option value="BorrowerPenalized">Borrower Penalized</option>
-                  <option value="BothPenalized">Both Penalized</option>
-                </select>
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-zinc-400 text-[10px] uppercase tracking-widest font-medium">Admin Note</label>
-                <textarea [(ngModel)]="resolveNote" rows="3" placeholder="Explain the decision..."
-                  class="w-full bg-zinc-800 border border-zinc-700 focus:border-amber-400/50 text-white text-sm rounded-xl px-3 py-2.5 outline-none placeholder-zinc-600 resize-none transition-all duration-200"></textarea>
-              </div>
-              <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-2">
-                  <p class="text-zinc-400 text-[10px] uppercase tracking-widest font-medium">Owner Penalty</p>
-                  <input type="number" [(ngModel)]="ownerFine" placeholder="Fine amount (kr)"
-                    class="w-full bg-zinc-800 border border-zinc-700 text-white text-xs rounded-xl px-3 py-2 outline-none placeholder-zinc-600" />
-                  <input type="number" [(ngModel)]="ownerScore" placeholder="Score adjustment"
-                    class="w-full bg-zinc-800 border border-zinc-700 text-white text-xs rounded-xl px-3 py-2 outline-none placeholder-zinc-600" />
-                </div>
-                <div class="space-y-2">
-                  <p class="text-zinc-400 text-[10px] uppercase tracking-widest font-medium">Borrower Penalty</p>
-                  <input type="number" [(ngModel)]="borrowerFine" placeholder="Fine amount (kr)"
-                    class="w-full bg-zinc-800 border border-zinc-700 text-white text-xs rounded-xl px-3 py-2 outline-none placeholder-zinc-600" />
-                  <input type="number" [(ngModel)]="borrowerScore" placeholder="Score adjustment"
-                    class="w-full bg-zinc-800 border border-zinc-700 text-white text-xs rounded-xl px-3 py-2 outline-none placeholder-zinc-600" />
-                </div>
-              </div>
-              <p *ngIf="resolveError"
-                class="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
-                {{ resolveError }}
-              </p>
-              <button (click)="adminResolve()" [disabled]="isResolving || !resolveVerdict"
-                class="w-full flex items-center justify-center gap-2 py-2.5 bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-zinc-900 font-semibold text-sm rounded-xl cursor-pointer">
-                {{ isResolving ? 'Resolving...' : 'Submit Resolution' }}
-              </button>
             </div>
           </div>
 
@@ -566,15 +556,19 @@
 
 <!-- Photo lightbox -->
 <div *ngIf="selectedPhoto" class="fixed inset-0 z-[100] flex items-center justify-center p-4"
-  (click)="selectedPhoto = null">
+  (click)="selectedPhoto = null; selectedPhotoCaption = null">
   <div class="absolute inset-0 bg-black/90 backdrop-blur-sm"></div>
-  <div class="relative z-10" (click)="$event.stopPropagation()">
-    <button (click)="selectedPhoto = null"
+  <div class="relative z-10 flex flex-col items-center gap-3" (click)="$event.stopPropagation()">
+    <button (click)="selectedPhoto = null; selectedPhotoCaption = null"
       class="absolute -top-10 right-0 w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
       <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
       </svg>
     </button>
-    <img [src]="selectedPhoto" class="max-w-[90vw] max-h-[85vh] rounded-2xl object-contain shadow-2xl" />
+    <img [src]="selectedPhoto" class="max-w-[90vw] max-h-[80vh] rounded-2xl object-contain shadow-2xl" />
+    <p *ngIf="selectedPhotoCaption"
+      class="text-zinc-300 text-sm text-center max-w-md bg-black/60 px-4 py-2 rounded-xl">
+      {{ selectedPhotoCaption }}
+    </p>
   </div>
 </div>

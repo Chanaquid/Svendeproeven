@@ -21,6 +21,7 @@ import { ItemService } from '../../services/itemService';
 import { DisputeService } from '../../services/disputeService';
 import { UserReviewService } from '../../services/userReviewService';
 import { LoanChatHubService } from '../../services/loanChatHubService';
+import { UploadImageService } from '../../services/uploadImageService';
 
 
 @Component({
@@ -86,6 +87,9 @@ export class LoanDetail implements OnInit, OnDestroy {
   disputeForm = { description: '', photoUrl: '', photoCaption: '' };
   isFilingDispute = false;
   disputeError = '';
+  disputePhotoFiles: File[] = [];
+  disputePhotoPreviews: string[] = [];
+  disputePhotoCaptions: string[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -99,6 +103,7 @@ export class LoanDetail implements OnInit, OnDestroy {
     private itemService: ItemService,
     private disputeService: DisputeService,
     private loanChatHubService: LoanChatHubService,
+      private uploadService: UploadImageService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -167,6 +172,7 @@ export class LoanDetail implements OnInit, OnDestroy {
       next: (res) => {
         this.loan = res.data;
         this.isLoading = false;
+        console.log(this.loan)
         this.cdr.detectChanges();
         this.loadMessages(id);
         this.startSignalR(id);
@@ -414,21 +420,24 @@ export class LoanDetail implements OnInit, OnDestroy {
         description: this.disputeForm.description.trim(),
       })
       .subscribe({
-        next: (res) => {
+        next: async (res) => {
           const created = res.data!;
-          if (this.disputeForm.photoUrl.trim()) {
-            this.disputeService
-              .addFiledByPhoto(created.id, {
-                photoUrl: this.disputeForm.photoUrl.trim(),
-                caption: this.disputeForm.photoCaption.trim() || undefined,
-              })
-              .subscribe({
-                next: () => this.onDisputeSuccess(),
-                error: () => this.onDisputeSuccess(),
-              });
-          } else {
-            this.onDisputeSuccess();
+          if (this.disputePhotoFiles.length > 0) {
+            for (let i = 0; i < this.disputePhotoFiles.length; i++) {
+              try {
+                const url = await this.uploadService.uploadImage(this.disputePhotoFiles[i]);
+                await this.disputeService
+                  .addFiledByPhoto(created.id, {
+                    photoUrl: url,
+                    caption: this.disputePhotoCaptions[i]?.trim() || undefined,
+                  })
+                  .toPromise();
+              } catch {
+                // Continue uploading remaining photos even if one fails
+              }
+            }
           }
+          this.onDisputeSuccess();
         },
         error: (err) => {
           this.disputeError = err.error?.message ?? 'Failed to file dispute.';
@@ -442,6 +451,9 @@ export class LoanDetail implements OnInit, OnDestroy {
     this.isFilingDispute = false;
     this.showDisputeModal = false;
     this.disputeForm = { description: '', photoUrl: '', photoCaption: '' };
+    this.disputePhotoFiles = [];
+    this.disputePhotoPreviews = [];
+    this.disputePhotoCaptions = [];
     this.cdr.detectChanges();
     this.loadLoan(this.loan!.id);
   }
@@ -565,6 +577,35 @@ export class LoanDetail implements OnInit, OnDestroy {
     return 'Borrower';
   }
 
+  get activeDispute(): any {
+    //Only statuses that currently "lock" the loan
+    const ongoingStatuses = ['AwaitingResponse', 'PendingAdminReview', 'PastDeadline'];
+    return this.loan?.disputes?.find(d => ongoingStatuses.includes(d.status));
+  }
+
+  get resolvedDisputes(): any[] {
+    return this.loan?.disputes?.filter(d => d.status === 'Resolved' || d.status === 'Cancelled') ?? [];
+  }
+
+  get hasAlreadyFiledDispute(): boolean {
+    return this.loan?.disputes?.some(d => d.filedById === this.currentUserId) ?? false;
+  }
+
+  get canUserFileNewDispute(): boolean {
+    if (!this.loan || this.effectiveRole === 'Admin') return false;
+    if (this.isDisputeLocked) return false;
+    
+    // Rule: Cannot file if a dispute is currently being investigated
+    if (this.activeDispute) return false;
+
+    // Rule: Cannot file if user already reached their quota (1 per party, 2 total)
+    if (this.hasAlreadyFiledDispute || (this.loan.disputes?.length ?? 0) >= 2) return false;
+
+    const disputableStatuses = ['Active', 'Late', 'Completed'];
+    return disputableStatuses.includes(this.loan.status);
+  }
+
+
   goToItem(): void {
     if (this.loan) this.router.navigate(['/items', this.loan.itemSlug]);
   }
@@ -628,5 +669,39 @@ export class LoanDetail implements OnInit, OnDestroy {
     const completedAt = this.loan.actualReturnDate ?? this.loan.updatedAt;
     if (!completedAt) return false;
     return new Date(completedAt) < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  }
+
+
+  onDisputePhotoSelected(event: Event): void {
+    const files = Array.from((event.target as HTMLInputElement).files || []);
+    if (files.length === 0) return;
+    
+    files.forEach(file => {
+      this.disputePhotoFiles.push(file);
+      this.disputePhotoCaptions.push('');
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.disputePhotoPreviews.push(e.target!.result as string);
+        this.cdr.detectChanges();
+      };
+      reader.readAsDataURL(file);
+    });
+    // Reset input so same file can be re-selected
+    (event.target as HTMLInputElement).value = '';
+  }
+
+  removeDisputePhoto(i: number): void {
+    this.disputePhotoFiles.splice(i, 1);
+    this.disputePhotoPreviews.splice(i, 1);
+    this.disputePhotoCaptions.splice(i, 1);
+  }
+
+
+  getDisputeMiniClass(status: string): string {
+    switch (status) {
+      case 'Resolved': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+      case 'Cancelled': return 'bg-zinc-700 text-zinc-400 border-zinc-700';
+      default: return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+    }
   }
 }
