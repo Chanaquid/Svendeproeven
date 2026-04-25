@@ -12,6 +12,13 @@
         ],
         "parameters": [
           {
+            "name": "ExcludeAdmins",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "IncludeDeleted",
             "in": "query",
             "schema": {
@@ -169,6 +176,13 @@
         ],
         "parameters": [
           {
+            "name": "ExcludeAdmins",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "IncludeDeleted",
             "in": "query",
             "schema": {
@@ -325,6 +339,13 @@
           "AdminUser"
         ],
         "parameters": [
+          {
+            "name": "ExcludeAdmins",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
           {
             "name": "IncludeDeleted",
             "in": "query",
@@ -12076,23 +12097,107 @@
         "tags": [
           "Notification"
         ],
+        "parameters": [
+          {
+            "name": "Type",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/NotificationType"
+            }
+          },
+          {
+            "name": "ReferenceType",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/NotificationReferenceType"
+            }
+          },
+          {
+            "name": "IsRead",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "CreatedAfter",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "CreatedBefore",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "ReferenceId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "SortBy",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SortDescending",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/NotificationDtoListApiResponse"
+                  "$ref": "#/components/schemas/NotificationDtoPagedResultApiResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NotificationDtoListApiResponse"
+                  "$ref": "#/components/schemas/NotificationDtoPagedResultApiResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NotificationDtoListApiResponse"
+                  "$ref": "#/components/schemas/NotificationDtoPagedResultApiResponse"
                 }
               }
             }
@@ -14156,6 +14261,13 @@
           "User"
         ],
         "parameters": [
+          {
+            "name": "ExcludeAdmins",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
           {
             "name": "IncludeDeleted",
             "in": "query",
@@ -18834,6 +18946,14 @@
             "type": "string",
             "nullable": true
           },
+          "isCurrentUser": {
+            "type": "boolean"
+          },
+          "fineId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
           "fineAmount": {
             "type": "number",
             "format": "double",
@@ -19303,6 +19423,22 @@
           },
           "hasPendingAppeal": {
             "type": "boolean"
+          },
+          "issuedByAdminId": {
+            "type": "string",
+            "nullable": true
+          },
+          "issuedByAdminName": {
+            "type": "string",
+            "nullable": true
+          },
+          "issuedByAdminUsername": {
+            "type": "string",
+            "nullable": true
+          },
+          "issuedByAdminUserAvatarUrl": {
+            "type": "string",
+            "nullable": true
           },
           "createdAt": {
             "type": "string",
@@ -20719,7 +20855,45 @@
         },
         "additionalProperties": false
       },
-      "NotificationDtoListApiResponse": {
+      "NotificationDtoPagedResult": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationDto"
+            },
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          },
+          "hasNextPage": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "hasPreviousPage": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NotificationDtoPagedResultApiResponse": {
         "type": "object",
         "properties": {
           "success": {
@@ -20730,11 +20904,7 @@
             "nullable": true
           },
           "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/NotificationDto"
-            },
-            "nullable": true
+            "$ref": "#/components/schemas/NotificationDtoPagedResult"
           }
         },
         "additionalProperties": false
@@ -20752,6 +20922,7 @@
           "SupportThread",
           "Report",
           "Review",
+          "User",
           "ItemFavorites"
         ],
         "type": "string"
@@ -22778,6 +22949,9 @@
           "avatarUrl": {
             "type": "string",
             "nullable": true
+          },
+          "isAdmin": {
+            "type": "boolean"
           },
           "bio": {
             "type": "string",

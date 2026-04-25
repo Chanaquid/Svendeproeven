@@ -138,7 +138,7 @@ export class UserDashboard implements OnInit {
     private fineService: FineService,
     private scoreHistoryService: ScoreHistoryService,
     private verificationService: VerificationRequestService,
-    private router: Router,
+    public  router: Router,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
   ) { }
@@ -532,7 +532,7 @@ export class UserDashboard implements OnInit {
 
   goToItem(slug: string) { this.router.navigate(['/items', slug]); }
   goToLoan(id: number) { this.router.navigate(['/loans', id]); }
-  goToBlockedUsers() { this.router.navigate(['/blocked-users']); }
+  goToBlockedUsers() { this.router.navigate(['/blocked-user']); }
 
   getInitials(name: string): string {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);

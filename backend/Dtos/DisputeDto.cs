@@ -59,6 +59,10 @@ namespace backend.Dtos
         public string UserName { get; set; } = string.Empty;
         public string? AvatarUrl { get; set; }
 
+        public bool IsCurrentUser { get; set; }
+
+        public int? FineId { get; set; }
+
         public decimal? FineAmount { get; set; }
         public string? FineStatus { get; set; }  //Paid | Unpaid | Voided
         public int? ScoreAdjustment { get; set; }

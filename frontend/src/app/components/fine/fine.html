@@ -17,9 +17,9 @@
             <span>{{ tab.icon }}</span>
             <span>{{ tab.label }}</span>
             <span *ngIf="tab.count !== undefined && tab.count !== null"
-                class="px-1.5 py-0.5 rounded-md text-[10px] font-bold" [class.bg-zinc-800]="activeTab === tab.id"
-                [class.text-zinc-600]="activeTab === tab.id" [class.bg-zinc-700]="activeTab !== tab.id"
-                [class.text-zinc-400]="activeTab !== tab.id">
+                class="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
+                [class.bg-zinc-800]="activeTab === tab.id" [class.text-zinc-600]="activeTab === tab.id"
+                [class.bg-zinc-700]="activeTab !== tab.id" [class.text-zinc-400]="activeTab !== tab.id">
                 {{ tab.count }}
             </span>
         </button>
@@ -85,41 +85,65 @@
                             </p>
                         </div>
                         <div class="text-right shrink-0">
-                            <p class="font-black text-base text-white" style="font-family:'Syne',sans-serif">kr {{
-                                f.amount }}</p>
+                            <p class="font-black text-base text-white" style="font-family:'Syne',sans-serif">kr {{ f.amount }}</p>
                             <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md border"
                                 [ngClass]="getStatusClass(f.status)">{{ f.status }}</span>
                         </div>
                     </div>
 
+                    <!-- Issued by admin row -->
+                    <div *ngIf="f.issuedByAdminName" class="flex items-center gap-2 mb-3">
+                        <img *ngIf="f.issuedByAdminUserAvatarUrl" [src]="f.issuedByAdminUserAvatarUrl"
+                            class="w-4 h-4 rounded-md object-cover bg-zinc-700 shrink-0" />
+                        <div *ngIf="!f.issuedByAdminUserAvatarUrl"
+                            class="w-4 h-4 rounded-md bg-zinc-700 shrink-0 flex items-center justify-center">
+                            <span class="text-[8px] text-zinc-400 font-bold leading-none">{{ f.issuedByAdminName.charAt(0) }}</span>
+                        </div>
+                        <span class="text-zinc-500 text-[10px] truncate">
+                            Issued by <span class="text-zinc-300 font-medium">{{ f.issuedByAdminName }}</span>
+                        </span>
+                    </div>
+
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-1.5">
                             <span *ngIf="f.loanId" class="text-zinc-600 text-[10px]">Loan #{{ f.loanId }}</span>
-                            <span *ngIf="f.disputeId" class="text-zinc-600 text-[10px]">· Dispute #{{ f.disputeId
-                                }}</span>
+                            <span *ngIf="f.disputeId" class="text-zinc-600 text-[10px]">· Dispute #{{ f.disputeId }}</span>
                         </div>
                         <span class="text-zinc-600 text-[10px]">{{ f.createdAt | date:'MMM d, yyyy' }}</span>
                     </div>
 
-                    <div *ngIf="f.hasPendingAppeal"
-                        class="mt-2 pt-2 border-t border-zinc-800 flex items-center gap-1.5">
+                    <div *ngIf="f.hasPendingAppeal" class="mt-2 pt-2 border-t border-zinc-800 flex items-center gap-1.5">
                         <span class="text-amber-400 text-[10px]">📣 Appeal pending</span>
                     </div>
                 </div>
             </div>
 
             <!-- Pagination -->
-            <div *ngIf="totalPages > 1" class="flex items-center justify-center gap-3 pt-2">
+            <div *ngIf="totalPages > 1" class="flex items-center justify-center gap-1.5 pt-2 flex-wrap">
                 <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1"
                     class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer disabled:cursor-not-allowed">
                     ← Prev
                 </button>
-                <span class="text-zinc-500 text-xs font-mono">{{ currentPage }} / {{ totalPages }}</span>
+
+                <ng-container *ngFor="let page of pageNumbers">
+                    <span *ngIf="page === -1" class="text-zinc-600 text-xs px-1">…</span>
+                    <button *ngIf="page !== -1" (click)="goToPage(page)"
+                        class="w-8 h-8 flex items-center justify-center text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer"
+                        [class.bg-amber-400]="page === currentPage"
+                        [class.text-zinc-900]="page === currentPage"
+                        [class.bg-zinc-800]="page !== currentPage"
+                        [class.text-zinc-300]="page !== currentPage"
+                        [class.hover:bg-zinc-700]="page !== currentPage">
+                        {{ page }}
+                    </button>
+                </ng-container>
+
                 <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages"
                     class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer disabled:cursor-not-allowed">
                     Next →
                 </button>
             </div>
+
         </div>
 
         <!-- RIGHT: Detail -->
@@ -151,19 +175,15 @@
                         <div class="flex items-start justify-between gap-4 flex-wrap">
                             <div>
                                 <div class="flex items-center gap-2 mb-1">
-                                    <span class="text-amber-400 font-mono text-xs font-bold">FINE #{{ selectedFine.id
-                                        }}</span>
+                                    <span class="text-amber-400 font-mono text-xs font-bold">FINE #{{ selectedFine.id }}</span>
                                     <span class="text-[9px] font-bold uppercase px-2 py-0.5 rounded-md"
-                                        [ngClass]="getTypeClass(selectedFine.type)">{{ getTypeLabel(selectedFine.type)
-                                        }}</span>
+                                        [ngClass]="getTypeClass(selectedFine.type)">{{ getTypeLabel(selectedFine.type) }}</span>
                                 </div>
-                                <h2 class="font-black text-xl text-white tracking-tight"
-                                    style="font-family:'Syne',sans-serif">
+                                <h2 class="font-black text-xl text-white tracking-tight" style="font-family:'Syne',sans-serif">
                                     {{ selectedFine.itemTitle ?? 'Fine' }}
                                 </h2>
                                 <div class="flex items-center gap-3 mt-1">
-                                    <span *ngIf="selectedFine.loanId" class="text-zinc-500 text-xs">Loan #{{
-                                        selectedFine.loanId }}</span>
+                                    <span *ngIf="selectedFine.loanId" class="text-zinc-500 text-xs">Loan #{{ selectedFine.loanId }}</span>
                                     <span *ngIf="selectedFine.disputeId"
                                         class="text-zinc-500 text-xs cursor-pointer hover:text-amber-400 transition-colors"
                                         (click)="router.navigate(['/resolution-center'], { queryParams: { tab: 'disputes', disputeId: selectedFine.disputeId } })">
@@ -175,8 +195,7 @@
                                 <p class="font-black text-3xl text-white" style="font-family:'Syne',sans-serif">
                                     kr {{ selectedFine.amount }}
                                 </p>
-                                <span
-                                    class="text-xs font-bold uppercase px-3 py-1.5 rounded-xl border inline-block mt-1"
+                                <span class="text-xs font-bold uppercase px-3 py-1.5 rounded-xl border inline-block mt-1"
                                     [ngClass]="getStatusClass(selectedFine.status)">
                                     {{ selectedFine.status }}
                                 </span>
@@ -185,28 +204,41 @@
                     </div>
 
                     <!-- Success message -->
-                    <div *ngIf="proofSuccess"
-                        class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3">
+                    <div *ngIf="proofSuccess" class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3">
                         <p class="text-emerald-400 text-xs">✓ {{ proofSuccess }}</p>
                     </div>
 
                     <!-- Issued by -->
-                    <div *ngIf="selectedFine.issuedByAdminName"
-                        class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
-                        <h3 class="font-bold text-white text-sm mb-3" style="font-family:'Syne',sans-serif">Issued By
-                        </h3>
-                        <div class="flex items-center gap-3">
+                    <div *ngIf="selectedFine.issuedByAdminName" class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+                        <h3 class="font-bold text-white text-sm mb-4" style="font-family:'Syne',sans-serif">Issued By</h3>
+
+                        <!-- Admin row with date -->
+                        <div class="flex items-center gap-3 mb-4">
                             <img [src]="selectedFine.issuedByAdminAvatarUrl || getDefaultAvatar(selectedFine.issuedByAdminName)"
-                                class="w-9 h-9 rounded-xl object-cover bg-zinc-700 shrink-0" />
-                            <div>
+                                class="w-10 h-10 rounded-xl object-cover bg-zinc-700 shrink-0" />
+                            <div class="flex-1 min-w-0">
                                 <p class="text-white text-sm font-semibold">{{ selectedFine.issuedByAdminName }}</p>
                                 <p class="text-zinc-500 text-xs">@{{ selectedFine.issuedByAdminUserName }}</p>
                             </div>
+                            <div class="text-right shrink-0">
+                                <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium mb-0.5">Issued on</p>
+                                <p class="text-zinc-300 text-xs font-semibold">{{ selectedFine.createdAt | date:'MMM d, yyyy' }}</p>
+                                <p class="text-zinc-600 text-[10px]">{{ selectedFine.createdAt | date:'HH:mm' }}</p>
+                            </div>
                         </div>
-                        <p *ngIf="selectedFine.adminNote"
-                            class="mt-3 text-zinc-400 text-sm italic bg-zinc-800/50 rounded-xl px-3 py-2">
-                            "{{ selectedFine.adminNote }}"
-                        </p>
+
+                        <!-- Admin note -->
+                        <div *ngIf="selectedFine.adminNote"
+                            class="flex gap-3 bg-zinc-800/60 border border-zinc-700/50 rounded-xl px-4 py-3">
+                            <svg class="w-3.5 h-3.5 text-zinc-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                            </svg>
+                            <div>
+                                <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium mb-1">Admin Note</p>
+                                <p class="text-zinc-300 text-sm leading-relaxed italic">"{{ selectedFine.adminNote }}"</p>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Payment proof already submitted -->
@@ -257,17 +289,14 @@
                             </div>
                             <div *ngIf="selectedFine.verifiedByAdminName" class="flex items-center justify-between">
                                 <span class="text-zinc-400 text-xs">Verified by</span>
-                                <span class="text-white text-xs font-semibold">{{ selectedFine.verifiedByAdminName
-                                    }}</span>
+                                <span class="text-white text-xs font-semibold">{{ selectedFine.verifiedByAdminName }}</span>
                             </div>
                             <p *ngIf="selectedFine.paymentDescription" class="text-zinc-300 text-xs italic pt-1">
                                 "{{ selectedFine.paymentDescription }}"
                             </p>
                         </div>
-                        <!-- Payment proof image always visible -->
                         <div *ngIf="selectedFine.paymentProofImageUrl" class="mt-4">
-                            <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium mb-2">Payment
-                                Proof</p>
+                            <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium mb-2">Payment Proof</p>
                             <img [src]="selectedFine.paymentProofImageUrl"
                                 class="w-full max-h-48 object-cover rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
                                 (click)="openPhoto(selectedFine.paymentProofImageUrl!)" />
@@ -280,19 +309,35 @@
                         <h3 class="font-bold text-red-400 text-sm" style="font-family:'Syne',sans-serif">
                             ✕ Payment Proof Rejected
                         </h3>
-                        <div *ngIf="selectedFine.rejectionReason" class="space-y-1">
-                            <p class="text-zinc-400 text-[10px] uppercase tracking-widest font-medium">Rejection Reason
-                            </p>
-                            <p class="text-red-300 text-sm">{{ selectedFine.rejectionReason }}</p>
+
+                        <!-- Rejection reason -->
+                        <div *ngIf="selectedFine.rejectionReason"
+                            class="flex gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+                            <svg class="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                            </svg>
+                            <div>
+                                <p class="text-red-400 text-[10px] uppercase tracking-widest font-medium mb-1">Rejection Reason</p>
+                                <p class="text-red-300 text-sm leading-relaxed">{{ selectedFine.rejectionReason }}</p>
+                            </div>
                         </div>
-                        <div *ngIf="selectedFine.adminNote" class="space-y-1">
-                            <p class="text-zinc-400 text-[10px] uppercase tracking-widest font-medium">Admin Note</p>
-                            <p class="text-zinc-300 text-sm italic">"{{ selectedFine.adminNote }}"</p>
+
+                        <!-- Admin note -->
+                        <div *ngIf="selectedFine.adminNote"
+                            class="flex gap-3 bg-zinc-800/60 border border-zinc-700/50 rounded-xl px-4 py-3">
+                            <svg class="w-3.5 h-3.5 text-zinc-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                            </svg>
+                            <div>
+                                <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium mb-1">Admin Note</p>
+                                <p class="text-zinc-300 text-sm leading-relaxed italic">"{{ selectedFine.adminNote }}"</p>
+                            </div>
                         </div>
-                        <!-- Show rejected proof image for reference -->
+
                         <div *ngIf="selectedFine.paymentProofImageUrl" class="space-y-1">
-                            <p class="text-zinc-400 text-[10px] uppercase tracking-widest font-medium">Rejected Proof
-                            </p>
+                            <p class="text-zinc-400 text-[10px] uppercase tracking-widest font-medium">Rejected Proof</p>
                             <img [src]="selectedFine.paymentProofImageUrl"
                                 class="w-full max-h-48 object-cover rounded-xl cursor-pointer hover:opacity-90 transition-opacity opacity-50"
                                 (click)="openPhoto(selectedFine.paymentProofImageUrl!)" />
@@ -301,12 +346,10 @@
                     </div>
 
                     <!-- Submit proof form -->
-                    <div *ngIf="canSubmitProof()"
-                        class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+                    <div *ngIf="canSubmitProof()" class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
                         <div class="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
                             <div>
-                                <h3 class="font-bold text-white text-sm" style="font-family:'Syne',sans-serif">Submit
-                                    Payment Proof</h3>
+                                <h3 class="font-bold text-white text-sm" style="font-family:'Syne',sans-serif">Submit Payment Proof</h3>
                                 <p class="text-zinc-500 text-xs mt-0.5">Upload proof of payment for admin review</p>
                             </div>
                             <button (click)="showProofForm = !showProofForm"
@@ -316,7 +359,6 @@
                         </div>
 
                         <div *ngIf="showProofForm" class="p-5 space-y-4">
-                            <!-- Payment method -->
                             <div class="space-y-1.5">
                                 <label class="text-zinc-400 text-[10px] uppercase tracking-widest font-medium">
                                     Payment Method <span class="text-red-400">*</span>
@@ -327,7 +369,6 @@
                                 </select>
                             </div>
 
-                            <!-- Description -->
                             <div class="space-y-1.5">
                                 <label class="text-zinc-400 text-[10px] uppercase tracking-widest font-medium">
                                     Payment Description <span class="text-red-400">*</span>
@@ -337,7 +378,6 @@
                                     class="w-full bg-zinc-800 border border-zinc-700 focus:border-amber-400/50 text-white text-sm rounded-xl px-3 py-2.5 outline-none placeholder-zinc-600 resize-none transition-all duration-200"></textarea>
                             </div>
 
-                            <!-- Proof image -->
                             <div class="space-y-2">
                                 <label class="text-zinc-400 text-[10px] uppercase tracking-widest font-medium">
                                     Proof Image <span class="text-red-400">*</span>
@@ -345,12 +385,10 @@
                                 <label
                                     class="flex items-center gap-1.5 w-fit px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-dashed border-zinc-700 text-zinc-400 text-xs font-semibold rounded-xl cursor-pointer">
                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 4v16m8-8H4" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                     </svg>
                                     Upload Screenshot
-                                    <input type="file" accept="image/*" hidden
-                                        (change)="onProofImageSelected($event)" />
+                                    <input type="file" accept="image/*" hidden (change)="onProofImageSelected($event)" />
                                 </label>
                                 <div *ngIf="proofImagePreview">
                                     <img [src]="proofImagePreview" class="w-full max-h-48 object-cover rounded-xl" />
@@ -365,8 +403,7 @@
                             <button (click)="submitPaymentProof()"
                                 [disabled]="isSubmittingProof || !proofImageFile || !proofDescription.trim()"
                                 class="w-full flex items-center justify-center gap-2 py-2.5 bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-zinc-900 font-semibold text-sm rounded-xl cursor-pointer transition-all duration-200">
-                                {{ uploadingProofImage ? 'Uploading image...' : isSubmittingProof ? 'Submitting...' :
-                                'Submit Proof' }}
+                                {{ uploadingProofImage ? 'Uploading image...' : isSubmittingProof ? 'Submitting...' : 'Submit Proof' }}
                             </button>
                         </div>
                     </div>
@@ -376,8 +413,7 @@
                         class="bg-amber-400/5 border border-amber-400/20 rounded-2xl p-4 flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <span class="text-amber-400">📣</span>
-                            <p class="text-amber-400 text-xs font-semibold">Appeal #{{ selectedFine.activeAppealId }} is
-                                pending</p>
+                            <p class="text-amber-400 text-xs font-semibold">Appeal #{{ selectedFine.activeAppealId }} is pending</p>
                         </div>
                         <button (click)="router.navigate(['/resolution-center'], { queryParams: { tab: 'appeals' } })"
                             class="text-amber-400 text-xs font-bold hover:underline cursor-pointer">
@@ -385,17 +421,17 @@
                         </button>
                     </div>
 
-                   <!-- File appeal -->
+                    <!-- File appeal -->
                     <div *ngIf="selectedFine.status === 'Unpaid' && !selectedFine.hasPendingAppeal && !selectedFine.activeAppealId"
-                    class="border border-zinc-800 rounded-2xl p-4 flex items-center justify-between">
-                    <div>
-                        <p class="text-zinc-300 text-xs font-semibold">Disagree with this fine?</p>
-                        <p class="text-zinc-500 text-[10px] mt-0.5">You can appeal it in the Appeals tab.</p>
-                    </div>
-                    <button (click)="router.navigate(['/resolution-center'], { queryParams: { tab: 'appeals' } })"
-                        class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold rounded-xl cursor-pointer transition-all duration-200">
-                        File Appeal →
-                    </button>
+                        class="border border-zinc-800 rounded-2xl p-4 flex items-center justify-between">
+                        <div>
+                            <p class="text-zinc-300 text-xs font-semibold">Disagree with this fine?</p>
+                            <p class="text-zinc-500 text-[10px] mt-0.5">You can appeal it in the Appeals tab.</p>
+                        </div>
+                        <button (click)="router.navigate(['/resolution-center'], { queryParams: { tab: 'appeals' } })"
+                            class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold rounded-xl cursor-pointer transition-all duration-200">
+                            File Appeal →
+                        </button>
                     </div>
 
                 </div>

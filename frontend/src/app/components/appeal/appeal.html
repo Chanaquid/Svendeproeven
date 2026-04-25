@@ -23,9 +23,9 @@
                 <span>{{ tab.icon }}</span>
                 <span>{{ tab.label }}</span>
                 <span *ngIf="tab.count !== undefined && tab.count !== null"
-                    class="px-1.5 py-0.5 rounded-md text-[10px] font-bold" [class.bg-zinc-800]="activeTab === tab.id"
-                    [class.text-zinc-600]="activeTab === tab.id" [class.bg-zinc-700]="activeTab !== tab.id"
-                    [class.text-zinc-400]="activeTab !== tab.id">
+                    class="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
+                    [class.bg-zinc-800]="activeTab === tab.id" [class.text-zinc-600]="activeTab === tab.id"
+                    [class.bg-zinc-700]="activeTab !== tab.id" [class.text-zinc-400]="activeTab !== tab.id">
                     {{ tab.count }}
                 </span>
             </button>
@@ -46,8 +46,7 @@
                 <h3 class="font-bold text-amber-400 text-sm" style="font-family:'Syne',sans-serif">File an Appeal</h3>
                 <p class="text-zinc-500 text-xs mt-0.5">Contest a fine or request a score review</p>
             </div>
-            <button (click)="showCreateForm = false"
-                class="text-zinc-400 hover:text-white transition-colors cursor-pointer">
+            <button (click)="showCreateForm = false" class="text-zinc-400 hover:text-white transition-colors cursor-pointer">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -90,25 +89,24 @@
 
                 <!-- Loading -->
                 <div *ngIf="loadingFines" class="flex items-center gap-2 py-2">
-                    <div class="w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin">
-                    </div>
+                    <div class="w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
                     <span class="text-zinc-500 text-xs">Loading your fines...</span>
                 </div>
 
                 <!-- No appealable fines -->
-                <div *ngIf="!loadingFines && appealableFines.length === 0"
+                <div *ngIf="!loadingFines && finesTotalCount === 0"
                     class="bg-zinc-800/50 border border-zinc-700 rounded-xl px-3 py-3">
                     <p class="text-zinc-400 text-xs">No fines available to appeal.</p>
-                    <p class="text-zinc-600 text-[10px] mt-0.5">Only unpaid or rejected fines without an existing appeal
-                        can be appealed.</p>
+                    <p class="text-zinc-600 text-[10px] mt-0.5">Only unpaid or rejected fines without an existing appeal can be appealed.</p>
                 </div>
 
                 <!-- Fine list -->
-                <div *ngIf="!loadingFines && appealableFines.length > 0" class="space-y-2">
+                <div *ngIf="!loadingFines && finesTotalCount > 0" class="space-y-2">
                     <div *ngFor="let f of appealableFines" (click)="createFineId = f.id"
                         class="flex items-center justify-between gap-3 px-3 py-3 rounded-xl border cursor-pointer transition-all duration-200"
                         [class.bg-purple-400/10]="createFineId === f.id"
-                        [class.border-purple-400/30]="createFineId === f.id" [class.bg-zinc-800]="createFineId !== f.id"
+                        [class.border-purple-400/30]="createFineId === f.id"
+                        [class.bg-zinc-800]="createFineId !== f.id"
                         [class.border-zinc-700]="createFineId !== f.id">
                         <div class="flex items-center gap-3 min-w-0">
                             <div class="w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-all"
@@ -119,25 +117,46 @@
                             <div class="min-w-0">
                                 <div class="flex items-center gap-2">
                                     <span class="text-amber-400 font-mono text-[10px] font-bold">#{{ f.id }}</span>
-                                    <span class="text-zinc-300 text-xs font-semibold truncate">{{ f.itemTitle ?? 'Fine'
-                                        }}</span>
+                                    <span class="text-zinc-300 text-xs font-semibold truncate">{{ f.itemTitle ?? 'Fine' }}</span>
                                 </div>
                                 <div class="flex items-center gap-2 mt-0.5">
                                     <span class="text-zinc-500 text-[10px]">{{ f.type }}</span>
-                                    <span *ngIf="f.loanId" class="text-zinc-600 text-[10px]">· Loan #{{ f.loanId
-                                        }}</span>
+                                    <span *ngIf="f.loanId" class="text-zinc-600 text-[10px]">· Loan #{{ f.loanId }}</span>
                                 </div>
                             </div>
                         </div>
                         <div class="text-right shrink-0">
-                            <p class="text-white font-black text-sm" style="font-family:'Syne',sans-serif">kr {{
-                                f.amount }}</p>
+                            <p class="text-white font-black text-sm" style="font-family:'Syne',sans-serif">kr {{ f.amount }}</p>
                             <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md"
                                 [class.text-red-400]="f.status === 'Unpaid'"
                                 [class.text-rose-400]="f.status === 'Rejected'">
                                 {{ f.status }}
                             </span>
                         </div>
+                    </div>
+
+                    <!-- Fine selector pagination -->
+                    <div *ngIf="finesTotalPages > 1" class="flex items-center justify-center gap-1.5 pt-1 flex-wrap">
+                        <button (click)="goToFinesPage(finesPage - 1)" [disabled]="finesPage === 1"
+                            class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-[10px] font-semibold rounded-lg transition-all duration-200 cursor-pointer disabled:cursor-not-allowed">
+                            ←
+                        </button>
+                        <ng-container *ngFor="let page of finesPageNumbers">
+                            <span *ngIf="page === -1" class="text-zinc-600 text-[10px] px-0.5">…</span>
+                            <button *ngIf="page !== -1" (click)="goToFinesPage(page)"
+                                class="w-6 h-6 flex items-center justify-center text-[10px] font-semibold rounded-lg transition-all duration-200 cursor-pointer"
+                                [class.bg-purple-400]="page === finesPage"
+                                [class.text-zinc-900]="page === finesPage"
+                                [class.bg-zinc-800]="page !== finesPage"
+                                [class.text-zinc-300]="page !== finesPage">
+                                {{ page }}
+                            </button>
+                        </ng-container>
+                        <button (click)="goToFinesPage(finesPage + 1)" [disabled]="finesPage === finesTotalPages"
+                            class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-[10px] font-semibold rounded-lg transition-all duration-200 cursor-pointer disabled:cursor-not-allowed">
+                            →
+                        </button>
+                        <span class="text-zinc-600 text-[10px] ml-1">{{ finesTotalCount }} total</span>
                     </div>
                 </div>
             </div>
@@ -156,8 +175,7 @@
                     <p *ngIf="createMessageTooShort" class="text-red-400 text-[10px]">
                         Minimum 20 characters ({{ createMessage.trim().length }}/20)
                     </p>
-                    <p *ngIf="!createMessageTooShort && createMessage.trim().length > 0"
-                        class="text-zinc-600 text-[10px]">
+                    <p *ngIf="!createMessageTooShort && createMessage.trim().length > 0" class="text-zinc-600 text-[10px]">
                         {{ createMessage.trim().length }} characters
                     </p>
                 </div>
@@ -253,25 +271,38 @@
                         <span *ngIf="a.appealType === AppealType.Fine" class="text-zinc-600 text-[10px]">
                             Fine #{{ a.fineId ?? '—' }}
                         </span>
-                        <span *ngIf="a.appealType === AppealType.Score" class="text-zinc-600 text-[10px]">Score
-                            review</span>
+                        <span *ngIf="a.appealType === AppealType.Score" class="text-zinc-600 text-[10px]">Score review</span>
                         <span class="text-zinc-600 text-[10px]">{{ a.createdAt | date:'MMM d, yyyy' }}</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Pagination -->
-            <div *ngIf="totalPages > 1" class="flex items-center justify-center gap-3 pt-2">
+            <!-- Appeals pagination -->
+            <div *ngIf="totalPages > 1" class="flex items-center justify-center gap-1.5 pt-2 flex-wrap">
                 <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1"
                     class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer disabled:cursor-not-allowed">
                     ← Prev
                 </button>
-                <span class="text-zinc-500 text-xs font-mono">{{ currentPage }} / {{ totalPages }}</span>
+
+                <ng-container *ngFor="let page of pageNumbers">
+                    <span *ngIf="page === -1" class="text-zinc-600 text-xs px-1">…</span>
+                    <button *ngIf="page !== -1" (click)="goToPage(page)"
+                        class="w-8 h-8 flex items-center justify-center text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer"
+                        [class.bg-amber-400]="page === currentPage"
+                        [class.text-zinc-900]="page === currentPage"
+                        [class.bg-zinc-800]="page !== currentPage"
+                        [class.text-zinc-300]="page !== currentPage"
+                        [class.hover:bg-zinc-700]="page !== currentPage">
+                        {{ page }}
+                    </button>
+                </ng-container>
+
                 <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages"
                     class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer disabled:cursor-not-allowed">
                     Next →
                 </button>
             </div>
+
         </div>
 
         <!-- RIGHT: Detail -->
@@ -303,8 +334,7 @@
                         <div class="flex items-start justify-between gap-4 flex-wrap">
                             <div>
                                 <div class="flex items-center gap-2 mb-1">
-                                    <span class="text-amber-400 font-mono text-xs font-bold">APPEAL #{{
-                                        selectedAppeal.id }}</span>
+                                    <span class="text-amber-400 font-mono text-xs font-bold">APPEAL #{{ selectedAppeal.id }}</span>
                                     <span class="text-[9px] font-bold uppercase px-2 py-0.5 rounded-md"
                                         [ngClass]="getTypeClass(selectedAppeal.appealType)">
                                         {{ selectedAppeal.appealType === AppealType.Score ? '📊 Score' : '💸 Fine' }}
@@ -317,8 +347,7 @@
                                         Fine #{{ selectedAppeal.fineId }} →
                                     </span>
                                     <span *ngIf="selectedAppeal.fineAmount" class="text-zinc-500 text-xs">
-                                        Amount: <span class="text-white font-semibold">kr {{ selectedAppeal.fineAmount
-                                            }}</span>
+                                        Amount: <span class="text-white font-semibold">kr {{ selectedAppeal.fineAmount }}</span>
                                     </span>
                                 </div>
                             </div>
@@ -331,27 +360,22 @@
 
                     <!-- Your message -->
                     <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
-                        <h3 class="font-bold text-white text-sm mb-3" style="font-family:'Syne',sans-serif">Your Message
-                        </h3>
+                        <h3 class="font-bold text-white text-sm mb-3" style="font-family:'Syne',sans-serif">Your Message</h3>
                         <p class="text-zinc-300 text-sm leading-relaxed">{{ selectedAppeal.message }}</p>
-                        <p class="text-zinc-600 text-[10px] mt-3">Submitted {{ selectedAppeal.createdAt | date:'MMM d,
-                            yyyy · HH:mm' }}</p>
+                        <p class="text-zinc-600 text-[10px] mt-3">Submitted {{ selectedAppeal.createdAt | date:'MMM d, yyyy · HH:mm' }}</p>
                     </div>
 
                     <!-- Pending notice -->
                     <div *ngIf="selectedAppeal.status === AppealStatus.Pending"
                         class="bg-amber-400/5 border border-amber-400/20 rounded-2xl p-4">
-                        <p class="text-amber-400 text-xs">⏳ Your appeal is under review. An admin will respond shortly.
-                        </p>
+                        <p class="text-amber-400 text-xs">⏳ Your appeal is under review. An admin will respond shortly.</p>
                     </div>
 
                     <!-- Approved -->
                     <div *ngIf="selectedAppeal.status === AppealStatus.Approved"
                         class="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-5 space-y-3">
-                        <h3 class="font-bold text-emerald-400 text-sm" style="font-family:'Syne',sans-serif">✓ Appeal
-                            Approved</h3>
+                        <h3 class="font-bold text-emerald-400 text-sm" style="font-family:'Syne',sans-serif">✓ Appeal Approved</h3>
 
-                        <!-- Score outcome -->
                         <div *ngIf="selectedAppeal.appealType === AppealType.Score && selectedAppeal.restoredScore != null"
                             class="flex items-center justify-between bg-zinc-800/50 rounded-xl px-4 py-3">
                             <span class="text-zinc-400 text-xs">Score restored to</span>
@@ -360,18 +384,14 @@
                             </span>
                         </div>
 
-                        <!-- Fine outcome -->
                         <div *ngIf="selectedAppeal.appealType === AppealType.Fine" class="space-y-1.5">
                             <div *ngIf="selectedAppeal.fineResolution" class="flex items-center justify-between">
                                 <span class="text-zinc-400 text-xs">Resolution</span>
-                                <span class="text-white text-xs font-semibold">{{ selectedAppeal.fineResolution
-                                    }}</span>
+                                <span class="text-white text-xs font-semibold">{{ selectedAppeal.fineResolution }}</span>
                             </div>
-                            <div *ngIf="selectedAppeal.customFineAmount != null"
-                                class="flex items-center justify-between">
+                            <div *ngIf="selectedAppeal.customFineAmount != null" class="flex items-center justify-between">
                                 <span class="text-zinc-400 text-xs">Adjusted amount</span>
-                                <span class="text-white text-xs font-semibold">kr {{ selectedAppeal.customFineAmount
-                                    }}</span>
+                                <span class="text-white text-xs font-semibold">kr {{ selectedAppeal.customFineAmount }}</span>
                             </div>
                         </div>
 
@@ -393,8 +413,7 @@
                     <!-- Rejected -->
                     <div *ngIf="selectedAppeal.status === AppealStatus.Rejected"
                         class="bg-red-500/10 border border-red-500/20 rounded-2xl p-5 space-y-3">
-                        <h3 class="font-bold text-red-400 text-sm" style="font-family:'Syne',sans-serif">✕ Appeal
-                            Rejected</h3>
+                        <h3 class="font-bold text-red-400 text-sm" style="font-family:'Syne',sans-serif">✕ Appeal Rejected</h3>
 
                         <div *ngIf="selectedAppeal.adminNote" class="text-zinc-300 text-sm leading-relaxed">
                             {{ selectedAppeal.adminNote }}
@@ -415,8 +434,7 @@
                         <button (click)="showCancelConfirm = true"
                             class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 hover:bg-red-500/10 border border-zinc-800 hover:border-red-500/30 text-zinc-400 hover:text-red-400 text-xs font-semibold rounded-2xl transition-all duration-200 cursor-pointer">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                             Withdraw Appeal
                         </button>
@@ -430,46 +448,45 @@
 
 <!-- Cancel Confirm Modal -->
 <div *ngIf="showCancelConfirm" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-  <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" (click)="showCancelConfirm = false"></div>
-  <div class="relative z-10 w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl p-6 space-y-4">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
-        <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round"
-            d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-        </svg>
-      </div>
-      <div>
-        <h3 class="font-black text-white text-base" style="font-family:'Syne',sans-serif">Withdraw Appeal?</h3>
-        <p class="text-red-500 text-xs mt-0.5">This action cannot be undone.</p>
-      </div>
-    </div>
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" (click)="showCancelConfirm = false"></div>
+    <div class="relative z-10 w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl p-6 space-y-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="font-black text-white text-base" style="font-family:'Syne',sans-serif">Withdraw Appeal?</h3>
+                <p class="text-red-500 text-xs mt-0.5">This action cannot be undone.</p>
+            </div>
+        </div>
 
-    <p class="text-zinc-400 text-sm">Are you sure you want to withdraw appeal
-      <span class="text-white font-semibold">#{{ selectedAppeal?.id }}</span>?
-    </p>
-
-    <!-- Extra warning for fine appeals -->
-    <div *ngIf="selectedAppeal?.appealType === AppealType.Fine"
-      class="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
-      <div class="flex items-start gap-2">
-        <span class="text-red-400 text-sm shrink-0">⚠️</span>
-        <p class="text-red-300 text-xs leading-relaxed">
-          You will <span class="font-bold text-red-400">not be able to file another appeal</span> for
-          Fine #{{ selectedAppeal?.fineId }} if you withdraw. This is your only chance to contest it.
+        <p class="text-zinc-400 text-sm">Are you sure you want to withdraw appeal
+            <span class="text-white font-semibold">#{{ selectedAppeal?.id }}</span>?
         </p>
-      </div>
-    </div>
 
-    <div class="flex gap-3 pt-1">
-      <button (click)="showCancelConfirm = false"
-        class="flex-1 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-sm rounded-xl cursor-pointer">
-        Keep It
-      </button>
-      <button (click)="cancelAppeal()" [disabled]="isCancelling"
-        class="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 font-semibold text-sm rounded-xl disabled:opacity-50 cursor-pointer">
-        {{ isCancelling ? 'Withdrawing...' : 'Yes, Withdraw' }}
-      </button>
+        <div *ngIf="selectedAppeal?.appealType === AppealType.Fine"
+            class="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+            <div class="flex items-start gap-2">
+                <span class="text-red-400 text-sm shrink-0">⚠️</span>
+                <p class="text-red-300 text-xs leading-relaxed">
+                    You will <span class="font-bold text-red-400">not be able to file another appeal</span> for
+                    Fine #{{ selectedAppeal?.fineId }} if you withdraw. This is your only chance to contest it.
+                </p>
+            </div>
+        </div>
+
+        <div class="flex gap-3 pt-1">
+            <button (click)="showCancelConfirm = false"
+                class="flex-1 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-sm rounded-xl cursor-pointer">
+                Keep It
+            </button>
+            <button (click)="cancelAppeal()" [disabled]="isCancelling"
+                class="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 font-semibold text-sm rounded-xl disabled:opacity-50 cursor-pointer">
+                {{ isCancelling ? 'Withdrawing...' : 'Yes, Withdraw' }}
+            </button>
+        </div>
     </div>
-  </div>
 </div>

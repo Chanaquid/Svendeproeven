@@ -79,8 +79,7 @@
                 <span *ngIf="d.isOverDue"
                   class="text-[9px] font-bold uppercase bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded-md">Overdue</span>
               </div>
-              <p class="text-white text-sm font-semibold truncate" style="font-family:'Syne',sans-serif">{{ d.itemTitle
-                }}</p>
+              <p class="text-white text-sm font-semibold truncate" style="font-family:'Syne',sans-serif">{{ d.itemTitle }}</p>
             </div>
             <span class="shrink-0 text-[10px] font-bold uppercase px-2 py-1 rounded-lg border"
               [ngClass]="getStatusClass(d.status)">
@@ -114,17 +113,31 @@
       </div>
 
       <!-- Pagination -->
-      <div *ngIf="totalPages > 1" class="flex items-center justify-center gap-3 pt-2">
+      <div *ngIf="totalPages > 1" class="flex items-center justify-center gap-1.5 pt-2 flex-wrap">
         <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1"
           class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer disabled:cursor-not-allowed">
           ← Prev
         </button>
-        <span class="text-zinc-500 text-xs font-mono">{{ currentPage }} / {{ totalPages }}</span>
+
+        <ng-container *ngFor="let page of pageNumbers">
+          <span *ngIf="page === -1" class="text-zinc-600 text-xs px-1">…</span>
+          <button *ngIf="page !== -1" (click)="goToPage(page)"
+            class="w-8 h-8 flex items-center justify-center text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer"
+            [class.bg-amber-400]="page === currentPage"
+            [class.text-zinc-900]="page === currentPage"
+            [class.bg-zinc-800]="page !== currentPage"
+            [class.text-zinc-300]="page !== currentPage"
+            [class.hover:bg-zinc-700]="page !== currentPage">
+            {{ page }}
+          </button>
+        </ng-container>
+
         <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages"
           class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer disabled:cursor-not-allowed">
           Next →
         </button>
       </div>
+
     </div>
 
     <!-- RIGHT: Detail -->
@@ -278,8 +291,6 @@
               </span>
             </div>
             <div class="p-4 space-y-3">
-
-              <!-- Photos with optional delete -->
               <div *ngIf="selectedDispute.filedByPhotos?.length" class="flex gap-3 flex-wrap items-start">
                 <div *ngFor="let p of selectedDispute.filedByPhotos" class="flex flex-col gap-1">
                   <div class="relative w-24 h-24 rounded-xl overflow-hidden bg-zinc-800 group cursor-pointer"
@@ -291,15 +302,12 @@
                       {{ isDeletingPhoto[p.id] ? '…' : '✕' }}
                     </button>
                   </div>
-                  <p *ngIf="p.caption" class="text-zinc-500 text-[10px] w-24 leading-tight break-words">{{ p.caption }}
-                  </p>
+                  <p *ngIf="p.caption" class="text-zinc-500 text-[10px] w-24 leading-tight break-words">{{ p.caption }}</p>
                 </div>
               </div>
 
               <p *ngIf="photoDeleteError" class="text-red-400 text-xs">{{ photoDeleteError }}</p>
-
-              <p *ngIf="!selectedDispute.filedByPhotos?.length && !canAddEvidence()" class="text-zinc-600 text-xs">No
-                evidence submitted.</p>
+              <p *ngIf="!selectedDispute.filedByPhotos?.length && !canAddEvidence()" class="text-zinc-600 text-xs">No evidence submitted.</p>
 
               <!-- Add more photos -->
               <div *ngIf="canAddEvidence()" class="flex flex-col gap-2"
@@ -335,7 +343,6 @@
             </div>
           </div>
 
-
           <!-- Respondent's Evidence -->
           <div
             *ngIf="(selectedDispute.responsePhotos && selectedDispute.responsePhotos.length > 0) || canAddResponseEvidence()"
@@ -356,8 +363,7 @@
                   (click)="openPhoto(p.photoUrl, p?.caption)">
                   <img [src]="p.photoUrl" class="w-full h-full object-cover" />
                 </div>
-                <p *ngIf="p.caption" class="text-zinc-500 text-[10px] w-24 leading-tight break-words">{{ p.caption }}
-                </p>
+                <p *ngIf="p.caption" class="text-zinc-500 text-[10px] w-24 leading-tight break-words">{{ p.caption }}</p>
               </div>
             </div>
           </div>
@@ -366,10 +372,8 @@
           <div *ngIf="selectedDispute.snapshotPhotos && selectedDispute.snapshotPhotos.length > 0"
             class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
             <div class="px-5 py-4 border-b border-zinc-800">
-              <h3 class="font-bold text-white text-sm" style="font-family:'Syne',sans-serif">Item Snapshot at Loan Start
-              </h3>
-              <p class="text-zinc-500 text-xs mt-0.5">Condition: <span class="font-semibold text-zinc-300">{{
-                  selectedDispute.snapshotCondition }}</span></p>
+              <h3 class="font-bold text-white text-sm" style="font-family:'Syne',sans-serif">Item Snapshot at Loan Start</h3>
+              <p class="text-zinc-500 text-xs mt-0.5">Condition: <span class="font-semibold text-zinc-300">{{ selectedDispute.snapshotCondition }}</span></p>
             </div>
             <div class="p-4 flex gap-3 flex-wrap">
               <div *ngFor="let p of selectedDispute.snapshotPhotos"
@@ -383,10 +387,8 @@
           <!-- Submit Response -->
           <div *ngIf="canSubmitResponse()" class="bg-zinc-900 border border-amber-400/20 rounded-2xl overflow-hidden">
             <div class="px-5 py-4 border-b border-zinc-800 bg-amber-400/5">
-              <h3 class="font-bold text-amber-400 text-sm" style="font-family:'Syne',sans-serif">Submit Your Response
-              </h3>
-              <p class="text-zinc-500 text-xs mt-0.5">The other party filed this dispute. Respond before the deadline.
-              </p>
+              <h3 class="font-bold text-amber-400 text-sm" style="font-family:'Syne',sans-serif">Submit Your Response</h3>
+              <p class="text-zinc-500 text-xs mt-0.5">The other party filed this dispute. Respond before the deadline.</p>
             </div>
             <div class="p-5 space-y-4">
               <div class="space-y-1">
@@ -450,13 +452,12 @@
           <div *ngIf="selectedDispute.responseDescription" class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
             <h3 class="font-bold text-white text-sm mb-3" style="font-family:'Syne',sans-serif">
               Response from @{{ selectedDispute.respondedByUserName }}
-              <span class="text-zinc-500 font-normal text-xs ml-2">{{ selectedDispute.respondedAt | date:'MMM d, yyyy'
-                }}</span>
+              <span class="text-zinc-500 font-normal text-xs ml-2">{{ selectedDispute.respondedAt | date:'MMM d, yyyy' }}</span>
             </h3>
             <p class="text-zinc-300 text-sm leading-relaxed">{{ selectedDispute.responseDescription }}</p>
           </div>
 
-          <!-- Admin Verdict (read-only) -->
+          <!-- Admin Verdict -->
           <div *ngIf="selectedDispute.adminVerdict" class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
             <h3 class="font-bold text-white text-sm mb-3" style="font-family:'Syne',sans-serif">Admin Verdict</h3>
             <div class="flex items-center gap-2 mb-3">
@@ -465,15 +466,14 @@
                 {{ selectedDispute.adminVerdict }}
               </span>
             </div>
-            <p *ngIf="selectedDispute.adminNote" class="text-zinc-400 text-sm leading-relaxed italic mb-3">"{{
-              selectedDispute.adminNote }}"</p>
+            <p *ngIf="selectedDispute.adminNote" class="text-zinc-400 text-sm leading-relaxed italic mb-3">"{{ selectedDispute.adminNote }}"</p>
             <p *ngIf="selectedDispute.resolvedByAdminName" class="text-zinc-500 text-xs">
               Resolved by <span class="text-zinc-300 font-medium">{{ selectedDispute.resolvedByAdminName }}</span>
               on {{ selectedDispute.resolvedAt | date:'MMM d, yyyy' }}
             </p>
           </div>
 
-          <!-- Penalties (read-only) -->
+          <!-- Penalties -->
           <div *ngIf="selectedDispute.penalties && selectedDispute.penalties.length > 0"
             class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
             <div class="px-5 py-4 border-b border-zinc-800">
@@ -489,8 +489,7 @@
                 </div>
                 <div class="flex items-center gap-3">
                   <div *ngIf="p.fineAmount" class="text-right">
-                    <p class="text-red-400 font-black text-base" style="font-family:'Syne',sans-serif">kr {{
-                      p.fineAmount }}</p>
+                    <p class="text-red-400 font-black text-base" style="font-family:'Syne',sans-serif">kr {{ p.fineAmount }}</p>
                     <p class="text-zinc-500 text-[10px]">{{ p.fineStatus }}</p>
                   </div>
                   <div *ngIf="p.scoreAdjustment" class="text-right">
@@ -500,6 +499,11 @@
                     </p>
                     <p class="text-zinc-500 text-[10px]">score</p>
                   </div>
+                  <button *ngIf="p.fineId && p.isCurrentUser"
+                    (click)="router.navigate(['/resolution-center'], { queryParams: { tab: 'fines', fineId: p.fineId } })"
+                    class="px-3 py-1.5 bg-zinc-800 hover:bg-amber-400/10 border border-zinc-700 hover:border-amber-400/30 text-zinc-400 hover:text-amber-400 text-[10px] font-semibold rounded-xl transition-all duration-200 cursor-pointer whitespace-nowrap">
+                    View Fine →
+                  </button>
                 </div>
               </div>
             </div>

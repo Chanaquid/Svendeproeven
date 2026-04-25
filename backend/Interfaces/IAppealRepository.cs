@@ -5,6 +5,9 @@ namespace backend.Interfaces
 {
     public interface IAppealRepository
     {
+
+        Task<int> CountAsync(AppealFilter filter);
+
         Task<Appeal?> GetByIdAsync(int appealId);
         Task<Appeal?> GetByIdWithDetailsAsync(int appealId);
 

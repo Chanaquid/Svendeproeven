@@ -723,7 +723,9 @@ namespace backend.Services
                             : dispute.Loan.Borrower?.AvatarUrl,
                         FineAmount = f.Amount,
                         FineStatus = f.Status.ToString(),
-                        ScoreAdjustment = null
+                        ScoreAdjustment = null,
+                        FineId = f.Id,
+                        IsCurrentUser = f.UserId == currentUserId
                     }).ToList()
             };
 

@@ -35,10 +35,9 @@ namespace backend.Services
         }
 
         //Get all notifications for a user
-        public async Task<List<NotificationDto>> GetAllAsync(string userId)
+        public async Task<PagedResult<NotificationDto>> GetAllAsync(string userId, NotificationFilter filter, PagedRequest request)
         {
-            var notifications = await _notificationRepository.GetByUserIdAsync(userId);
-            return notifications.Select(MapToNotificationDTO).ToList();
+            return await _notificationRepository.GetPagedAsync(userId, filter, request);
         }
 
         //Mark a notification as read

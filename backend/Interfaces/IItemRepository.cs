@@ -13,24 +13,24 @@ namespace backend.Interfaces
         Task<Item?> GetByQrCodeAsync(string qrCode);
         Task<Item?> GetBySlugAsync(string slug);
         Task<Item?> GetBySlugWithDetailsAsync(string slug);
+        Task<int> CountAsync(ItemFilter filter);
 
-        Task<PagedResult<Item>> GetAllApprovedAsync(ItemFilter? filter, PagedRequest request); //for public - only sees active items
+        Task<PagedResult<Item>> GetAllApprovedAsync(ItemFilter? filter, PagedRequest request, IEnumerable<string>? excludeOwnerIds = null);//for public - only sees active items
         Task<PagedResult<Item>> GetAllAsAdminAsync(ItemFilter? filter, PagedRequest request); //Admin — pass true to see inactive
         Task<PagedResult<Item>> GetByOwnerIdAsync(string ownerId, ItemFilter? filter, PagedRequest request);
         Task<List<Item>> GetByOwnerIdAsync(string ownerId); //For soft delete
         Task<PagedResult<Item>> GetPublicByOwnerAsync(string ownerId, ItemFilter? filter, PagedRequest request); //Only approved + active items
-        Task<PagedResult<Item>> GetByCategoryAsync(int categoryId, ItemFilter? filter, PagedRequest request);
+        Task<PagedResult<Item>> GetByCategoryAsync(int categoryId, ItemFilter? filter, PagedRequest request, IEnumerable<string>? excludeOwnerIds = null);
         Task<PagedResult<Item>> GetPendingApprovalsAsync(ItemFilter? filter, PagedRequest request);
         Task<PagedResult<Item>> GetActiveItemsExpiredBeforeAsync(DateTime date, ItemFilter? filter, PagedRequest request);
-        Task<PagedResult<Item>> GetAvailableItemsAsync(ItemFilter? filter, PagedRequest request); //Approved + active + Available status
+        Task<PagedResult<Item>> GetAvailableItemsAsync(ItemFilter? filter, PagedRequest request, IEnumerable<string>? excludeOwnerIds = null); //Approved + active + Available status
 
         //4 items 
         Task<List<Item>> GetNewestListedAsync(int count = 4);
         Task<int> GetAvailableCountAsync();
 
         //Returns items within a certain radius of the user's current location
-        Task<PagedResult<Item>> GetNearbyItemsAsync(double lat, double lon, double radiusKm, ItemFilter? filter, PagedRequest request);
-
+        Task<PagedResult<Item>> GetNearbyItemsAsync(double lat, double lon, double radiusKm, ItemFilter? filter, PagedRequest request, IEnumerable<string>? excludeOwnerIds = null);
         //Checks
         Task<bool> QrCodeExistsAsync(string qrCode);
         Task<bool> IsOwnerAsync(int itemId, string userId);

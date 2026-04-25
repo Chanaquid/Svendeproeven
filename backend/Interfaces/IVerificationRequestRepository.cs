@@ -5,6 +5,7 @@ namespace backend.Interfaces
 {
     public interface IVerificationRequestRepository
     {
+        Task<int> CountAsync(VerificationRequestFilter filter);
         Task<VerificationRequest?> GetByIdAsync(int id);
         Task<VerificationRequest?> GetByIdWithDetailsAsync(int id);
         Task<VerificationRequest?> GetPendingByUserIdAsync(string userId);

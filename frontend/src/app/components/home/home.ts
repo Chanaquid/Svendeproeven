@@ -252,6 +252,8 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
     this.itemService.getAllApproved(filter, request).subscribe({
       next: (res) => {
         this.items = res.data?.items ?? [];
+        console.log('items.length:', this.items.length);
+        console.log('totalCount:', this.totalCount);
         this.totalCount = res.data?.totalCount ?? 0;
         this.isLoading = false;
         this.isInitialLoad = false;

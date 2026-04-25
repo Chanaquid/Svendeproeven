@@ -16,6 +16,15 @@ namespace backend.Repositories
             _context = context;
         }
 
+
+        public async Task<int> CountAsync(VerificationRequestFilter filter)
+        {
+            var query = _context.VerificationRequests.AsQueryable();
+            if (filter.Status.HasValue)
+                query = query.Where(x => x.Status == filter.Status.Value);
+            return await query.CountAsync();
+        }
+
         public async Task<VerificationRequest?> GetByIdAsync(int id)
         {
             return await _context.VerificationRequests.FindAsync(id);
@@ -141,7 +150,13 @@ namespace backend.Repositories
             {
                 var search = filter.Search.ToLower();
                 query = query.Where(v =>
-                    v.AdminNote != null && v.AdminNote.ToLower().Contains(search));
+                    v.DocumentType.ToString().ToLower().Contains(search) ||
+                    (v.AdminNote != null && v.AdminNote.ToLower().Contains(search)) ||
+                    (v.User != null && (
+                        v.User.FullName.ToLower().Contains(search) ||
+                        v.User.UserName!.ToLower().Contains(search)
+                    ))
+                );
             }
 
             return query;

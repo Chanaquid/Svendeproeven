@@ -73,10 +73,9 @@ namespace backend.Services
         //Use the block check helpers and filters
         public async Task<PagedResult<ItemListDto>> GetAllApprovedAsync(ItemFilter? filter, PagedRequest request, string? currentUserId)
         {
-            var result = await _itemRepository.GetAllApprovedAsync(filter, request);
-            var mapped = MapToPagedListDto(result, currentUserId);
-            var blocked = await GetBlockedOwnerIdsAsync(currentUserId);
-            return FilterBlockedOwners(mapped, blocked);
+            var blocked = await GetBlockedOwnerIdsAsync(currentUserId);  //fetch once
+            var result = await _itemRepository.GetAllApprovedAsync(filter, request, blocked); 
+            return MapToPagedListDto(result, currentUserId);
         }
 
         public async Task<PagedResult<ItemListDto>> GetAvailableItemsAsync(ItemFilter? filter, PagedRequest request, string? currentUserId)

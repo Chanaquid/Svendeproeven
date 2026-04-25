@@ -1,7 +1,9 @@
 ﻿using backend.Dtos;
+using backend.Hubs;
 using backend.Interfaces;
 using backend.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 
 namespace backend.Services
 {
@@ -10,15 +12,27 @@ namespace backend.Services
         private readonly IDirectMessageRepository _directMessageRepository;
         private readonly IDirectConversationRepository _directConversationRepository;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IHubContext<DirectChatHub> _chatHub;
+        private readonly IHubContext<NotificationHub> _notificationHub;
+        private readonly INotificationService _notificationService;
+        private readonly IOnlineTracker _onlineTracker;
 
         public DirectMessageService(
             IDirectMessageRepository directMessageRepository,
             IDirectConversationRepository directConversationRepository,
-            UserManager<ApplicationUser> userManager)
+            UserManager<ApplicationUser> userManager,
+            IHubContext<DirectChatHub> chatHub,
+            IHubContext<NotificationHub> notificationHub,
+            INotificationService notificationService,
+            IOnlineTracker onlineTracker)
         {
             _directMessageRepository = directMessageRepository;
             _directConversationRepository = directConversationRepository;
             _userManager = userManager;
+            _chatHub = chatHub;
+            _notificationHub = notificationHub;
+            _notificationService = notificationService;
+            _onlineTracker = onlineTracker;
         }
 
         public async Task<DirectMessageDto> SendMessageAsync(int conversationId, string senderId, string content)
@@ -39,7 +53,7 @@ namespace backend.Services
                 ? conversation.OtherUserId
                 : conversation.InitiatedById;
 
-            //Block check — direct messages are blocked between blocked users.
+            // Block check
             if (await _directConversationRepository.AreUsersBlockedAsync(senderId, otherUserId))
                 throw new InvalidOperationException("This conversation is unavailable.");
 
@@ -55,27 +69,25 @@ namespace backend.Services
             };
 
             await _directMessageRepository.AddAsync(message);
+            await _directMessageRepository.SaveChangesAsync();
 
-            //Update conversation metadata
+            // Update conversation metadata
             conversation.LastMessageAt = now;
             conversation.MessageCount += 1;
+            conversation.LastMessageId = message.Id;
 
-            //Reopen conversation for recipient if they had previously hidden it.
+            // Reopen for recipient if they had hidden the conversation
             if (conversation.InitiatedById == otherUserId && conversation.HiddenForInitiator)
-            {
                 conversation.HiddenForInitiator = false;
-            }
             else if (conversation.OtherUserId == otherUserId && conversation.HiddenForOther)
-            {
                 conversation.HiddenForOther = false;
-            }
 
             _directConversationRepository.Update(conversation);
             await _directConversationRepository.SaveChangesAsync();
 
             var sender = await _userManager.FindByIdAsync(senderId);
 
-            return new DirectMessageDto
+            var messageDto = new DirectMessageDto
             {
                 Id = message.Id,
                 ConversationId = conversationId,
@@ -88,7 +100,58 @@ namespace backend.Services
                 IsRead = false,
                 IsMine = true
             };
+
+            // Broadcast message to both parties in the conversation group (real-time chat)
+            await _chatHub.Clients
+                .Group($"conversation_{conversationId}")
+                .SendAsync("ReceiveMessage", messageDto);
+
+            //Push sidebar update to recipient's personal group so their
+            //conversation list reorders in real time even if they're on another page
+            await _chatHub.Clients
+                .Group($"user_{otherUserId}")
+                .SendAsync("ConversationUpdated", new
+                {
+                    ConversationId = conversationId,
+                    LastMessageContent = messageDto.Content,
+                    LastMessageSentAt = messageDto.SentAt,
+                    SenderId = messageDto.SenderId,
+                    SenderFullName = messageDto.SenderFullName,
+                    SenderAvatarUrl = messageDto.SenderAvatarUrl,
+                });
+
+            // If recipient is NOT currently viewing this chat, send notification
+            var recipientOnline = _onlineTracker.IsUserInDirectChat(otherUserId, conversationId);
+
+            if (recipientOnline)
+            {
+                // They're viewing the chat — mark as read immediately
+                message.IsRead = true;
+                await _directMessageRepository.SaveChangesAsync();
+            }
+            else
+            {
+                //Persist a notification so it shows in their notification list
+                await _notificationService.SendAsync(
+                    otherUserId,
+                    NotificationType.DirectMessageReceived,
+                    $"New message from {sender?.FullName ?? "Someone"}.",
+                    conversationId,
+                    NotificationReferenceType.DirectConversation);
+
+                //Real-time bump — red dot on navbar bell even if they're on another page
+                await _notificationHub.Clients
+                    .Group($"user_{otherUserId}")
+                    .SendAsync("NewMessageNotification", new
+                    {
+                        ConversationId = conversationId,
+                        From = sender?.FullName ?? "Someone"
+                    });
+            }
+
+            return messageDto;
         }
+
 
         public async Task<PagedResult<DirectMessageDto>> GetConversationMessagesAsync(
             int conversationId,

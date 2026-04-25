@@ -1,16 +1,38 @@
 export interface AdminDashboardDto {
+  // Action queues
   pendingItemApprovals: number;
   pendingLoanApprovals: number;
   openDisputes: number;
+  overdueDisputeResponses: number;
   pendingAppeals: number;
   pendingUserVerifications: number;
   pendingPaymentVerifications: number;
   pendingReports: number;
+
+  // Users
   totalUsers: number;
+  verifiedUsers: number;
+  bannedUsers: number;
+  newUsersThisWeek: number;
+
+  // Items
   totalActiveItems: number;
+  itemsListedThisWeek: number;
+
+  // Loans
   totalActiveLoans: number;
+  overdueLoans: number;
+  loansCreatedThisWeek: number;
+
+  // Fines
   totalUnpaidFines: number;
   totalUnpaidFinesAmount: number;
+  finesCollectedThisMonth: number;
+  finesIssuedThisMonth: number;
+
+  // Disputes
+  disputesResolvedThisMonth: number;
+  averageDisputeResolutionDays: number;
 }
 
 export interface ItemReviewEntryDto {

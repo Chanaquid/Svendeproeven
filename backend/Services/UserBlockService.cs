@@ -39,9 +39,9 @@ namespace backend.Services
                 throw new InvalidOperationException("Admins cannot be blocked.");
 
             //Admins cannot block regular users either (for now)
-            var blockerRoles = await _userManager.GetRolesAsync(blocker);
-            if (blockerRoles.Contains(Roles.Admin))
-                throw new InvalidOperationException("Admins cannot block users.");
+            //var blockerRoles = await _userManager.GetRolesAsync(blocker);
+            //if (blockerRoles.Contains(Roles.Admin))
+            //    throw new InvalidOperationException("Admins cannot block users.");
 
             if (await _blockRepository.IsBlockedAsync(blockerId, blockedId))
                 throw new InvalidOperationException("You have already blocked this user.");

@@ -156,6 +156,23 @@ namespace backend.Repositories
                     (b.BlockerId == userId2 && b.BlockedId == userId1));
         }
 
+
+        public async Task<HashSet<string>> GetOutgoingBlockedUserIdsAsync(string userId)
+        {
+            var ids = await _context.UserBlocks
+                .Where(b => b.BlockerId == userId)
+                .Select(b => b.BlockedId)
+                .ToListAsync();
+
+            return ids.ToHashSet();
+        }
+
+        public async Task<bool> IsBlockedByCurrentUserAsync(string blockerId, string blockedId)
+        {
+            return await _context.UserBlocks
+                .AnyAsync(b => b.BlockerId == blockerId && b.BlockedId == blockedId);
+        }
+
         public void Update(DirectConversation conversation)
         {
             _context.DirectConversations.Update(conversation);

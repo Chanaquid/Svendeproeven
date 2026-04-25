@@ -16,6 +16,27 @@ namespace backend.Repositories
             _context = context;
         }
 
+
+        public async Task<int> CountAsync(DisputeFilter filter)
+        {
+            var query = _context.Disputes.AsQueryable();
+
+            if (filter.Status.HasValue)
+                query = query.Where(x => x.Status == filter.Status.Value);
+
+            if (filter.ResolvedAfter.HasValue)
+                query = query.Where(x => x.ResolvedAt >= filter.ResolvedAfter.Value);
+
+            return await query.CountAsync();
+        }
+
+        public async Task<double> GetAverageResolutionDaysAsync()
+        {
+            return await _context.Disputes
+                .Where(x => x.ResolvedAt != null)
+                .AverageAsync(x => EF.Functions.DateDiffDay(x.CreatedAt, x.ResolvedAt!.Value));
+        }
+
         public async Task<Dispute?> GetByIdAsync(int disputeId)
         {
             return await _context.Disputes

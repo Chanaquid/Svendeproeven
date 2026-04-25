@@ -5,6 +5,9 @@ namespace backend.Interfaces
 {
     public interface IFineRepository
     {
+        Task<int> CountAsync(FineFilter filter);
+        Task<decimal> SumAmountAsync(FineFilter filter);
+
         Task<Fine?> GetByIdAsync(int fineId);
         Task<Fine?> GetByIdWithDetailsAsync(int fineId);
 

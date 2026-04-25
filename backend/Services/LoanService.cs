@@ -16,6 +16,11 @@ namespace backend.Services
         private readonly IItemReviewRepository _itemReviewRepository;
         private readonly UserManager<ApplicationUser> _userManager;
 
+        //Penalty and rewards
+        public const int OnTimeReturnScore = 5;
+        private const int LatePenaltyPerDay = -5;
+        private const int MaxLatePenaltyTotal = -15;
+
         public LoanService(
             ILoanRepository loanRepository,
             IItemRepository itemRepository,
@@ -379,80 +384,118 @@ namespace backend.Services
             if (scannerId != loan.BorrowerId)
                 throw new UnauthorizedAccessException("Only the borrower can confirm return.");
 
-            var returnDate = DateTime.UtcNow;
+            var now = DateTime.UtcNow;
+            var borrower = loan.Borrower;
 
-            // loan.EndDate is a plain calendar date stored as UTC midnight —
-            // compare date parts only to avoid time-of-day false positives
-            var isLate = returnDate.Date > loan.EndDate.Date;
-
+            // --- Loan updates ---
             loan.Status = LoanStatus.Completed;
-            loan.ReturnedAt = returnDate;
-            loan.ActualReturnDate = returnDate;
-            // Set 14-day dispute window from return date
-            loan.DisputeDeadline = returnDate.AddDays(14);
-            loan.UpdatedAt = DateTime.UtcNow;
+            loan.ReturnedAt = now;
+            loan.ActualReturnDate = now;
+            loan.DisputeDeadline = now.AddDays(14);
+            loan.UpdatedAt = now;
 
+            _loanRepository.Update(loan);
+
+            // --- Item becomes available ---
             item.Availability = ItemAvailability.Available;
             _itemRepository.Update(item);
 
-            // Score logic
-            var borrower = loan.Borrower;
+            // --- Determine lateness ---
+            var isLate = now.Date > loan.EndDate.Date;
 
-            if (isLate)
+            if (borrower != null)
             {
-                // -5 points per day, capped at -15 per item loan
-                var daysLate = (returnDate.Date - loan.EndDate.Date).Days;
-                var penalty = -Math.Min(daysLate * 5, 15);
-                var newScore = Math.Max(0, borrower.Score + penalty);
-
-                borrower.Score = newScore;
-                await _scoreHistoryRepository.AddAsync(new ScoreHistory
+                if (isLate)
                 {
-                    UserId = loan.BorrowerId,
-                    PointsChanged = penalty,
-                    ScoreAfterChange = newScore,
-                    Reason = ScoreChangeReason.LateReturn,
-                    LoanId = loan.Id,
-                    Note = $"{daysLate} day(s) late.",
-                    CreatedAt = DateTime.UtcNow
-                });
-            }
-            else if (borrower.Score < 100)
-            {
-                // Skip entirely if score already at 100
-                var newScore = Math.Min(100, borrower.Score + 5);
-                borrower.Score = newScore;
-                await _scoreHistoryRepository.AddAsync(new ScoreHistory
+                    var daysLate = (now.Date - loan.EndDate.Date).Days;
+                    var penalty = -Math.Min(daysLate * 5, 15);
+
+                    var newScore = Math.Max(0, borrower.Score + penalty);
+                    var actualPenaltyApplied = newScore - borrower.Score;
+
+                    if (actualPenaltyApplied != 0)
+                    {
+                        borrower.Score = newScore;
+                        _userRepository.Update(borrower);
+
+                        await _scoreHistoryRepository.AddAsync(new ScoreHistory
+                        {
+                            UserId = borrower.Id,
+                            PointsChanged = actualPenaltyApplied,
+                            ScoreAfterChange = newScore,
+                            Reason = ScoreChangeReason.LateReturn,
+                            LoanId = loan.Id,
+                            Note = $"{daysLate} day(s) late return of '{item.Title}'.",
+                            CreatedAt = now
+                        });
+                    }
+
+                    await _notificationService.SendAsync(
+                        borrower.Id,
+                        NotificationType.LoanReturned,
+                        $"You returned '{item.Title}' {daysLate} day(s) late. " +
+                        $"{(actualPenaltyApplied != 0 ? $"{actualPenaltyApplied} points applied." : "No further penalty applied.")} " +
+                        $"Current score: {borrower.Score}.",
+                        loan.Id,
+                        NotificationReferenceType.Loan
+                    );
+                }
+                else
                 {
-                    UserId = loan.BorrowerId,
-                    PointsChanged = 5,
-                    ScoreAfterChange = newScore,
-                    Reason = ScoreChangeReason.OnTimeReturn,
-                    LoanId = loan.Id,
-                    CreatedAt = DateTime.UtcNow
-                });
+                    var newScore = Math.Min(borrower.Score + OnTimeReturnScore, 100);
+                    var actualPointsAdded = newScore - borrower.Score;
+
+                    if (actualPointsAdded > 0)
+                    {
+                        borrower.Score = newScore;
+                        _userRepository.Update(borrower);
+
+                        await _scoreHistoryRepository.AddAsync(new ScoreHistory
+                        {
+                            UserId = borrower.Id,
+                            PointsChanged = actualPointsAdded,
+                            ScoreAfterChange = newScore,
+                            Reason = ScoreChangeReason.OnTimeReturn,
+                            LoanId = loan.Id,
+                            Note = $"On-time return of '{item.Title}'.",
+                            CreatedAt = now
+                        });
+
+                        await _notificationService.SendAsync(
+                            borrower.Id,
+                            NotificationType.LoanReturned,
+                            $"You returned '{item.Title}' on time. +{actualPointsAdded} points! Current score: {borrower.Score}.",
+                            loan.Id,
+                            NotificationReferenceType.Loan
+                        );
+                    }
+                    else
+                    {
+                        await _notificationService.SendAsync(
+                            borrower.Id,
+                            NotificationType.LoanReturned,
+                            $"You returned '{item.Title}' on time. Your score is already at maximum (100).",
+                            loan.Id,
+                            NotificationReferenceType.Loan
+                        );
+                    }
+                }
             }
 
-            _loanRepository.Update(loan);
+            //Notify owner
+            await _notificationService.SendAsync(
+                item.OwnerId,
+                NotificationType.LoanReturned,
+                $"'{item.Title}' has been returned by {borrower?.FullName}" +
+                $"{(isLate ? " (late)" : " on time")}. It is now available.",
+                loan.Id,
+                NotificationReferenceType.Loan
+            );
+
             await _loanRepository.SaveChangesAsync();
-
-            await _notificationService.SendAsync(
-                loan.LenderId,
-                NotificationType.LoanReturned,
-                $"'{item.Title}' has been returned by {borrower.FullName}{(isLate ? " (late)" : "")}.",
-                loan.Id,
-                NotificationReferenceType.Loan);
-
-            await _notificationService.SendAsync(
-                loan.BorrowerId,
-                NotificationType.LoanReturned,
-                $"You have successfully returned '{item.Title}'.",
-                loan.Id,
-                NotificationReferenceType.Loan);
 
             return await GetByIdAsync(loan.Id, scannerId);
         }
-
 
         //Admin
         public async Task<LoanDto> AdminReviewLoanAsync(string adminId, int loanId, AdminReviewLoanDto dto)
@@ -616,6 +659,44 @@ namespace backend.Services
         public async Task<int> GetCompletedLoansCountAsync()
         {
             return await _loanRepository.GetCompletedLoansCountAsync();
+        }
+
+        public async Task ForceCancelLoanAsync(int loanId, string adminId, string reason)
+        {
+            var loan = await _loanRepository.GetByIdWithDetailsAsync(loanId)
+                ?? throw new KeyNotFoundException("Loan not found.");
+
+            var cancellableStatuses = new[]
+            {
+                LoanStatus.Pending,
+                LoanStatus.AdminPending,
+                LoanStatus.Approved
+            };
+
+            if (!cancellableStatuses.Contains(loan.Status))
+                throw new InvalidOperationException(
+                    $"Only pending, admin-pending, or approved loans can be force cancelled. Current status: {loan.Status}.");
+
+            loan.Status = LoanStatus.Cancelled;
+            loan.DecisionNote = reason;
+            loan.UpdatedAt = DateTime.UtcNow;
+
+            _loanRepository.Update(loan);
+            await _loanRepository.SaveChangesAsync();
+
+            await _notificationService.SendAsync(
+                loan.BorrowerId,
+                NotificationType.LoanCancelled,
+                $"Your loan request for '{loan.Item.Title}' was cancelled by an admin. Reason: {reason}",
+                loan.Id,
+                NotificationReferenceType.Loan);
+
+            await _notificationService.SendAsync(
+                loan.LenderId,
+                NotificationType.LoanCancelled,
+                $"A loan request for '{loan.Item.Title}' was cancelled by an admin. Reason: {reason}",
+                loan.Id,
+                NotificationReferenceType.Loan);
         }
 
 

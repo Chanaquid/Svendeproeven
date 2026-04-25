@@ -23,6 +23,7 @@ import {
 import { ReportService } from '../../services/reportService';
 import { ItemFilter } from '../../dtos/filterDto';
 import { PagedRequest } from '../../dtos/paginationDto';
+import { UserBlockService } from '../../services/userBlockService';
 
 @Component({
   selector: 'app-user',
@@ -89,6 +90,13 @@ export class UserProfile implements OnInit, OnDestroy {
   reportSuccess = '';
   reportError = '';
 
+
+  //Block modal
+  showBlockModal = false;
+  isBlocking = false;
+  blockError = '';
+  blockSuccess = '';
+
   // ── RxJS ─────────────────────────────────────────────────────────────────
   private searchSubject = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -141,6 +149,7 @@ export class UserProfile implements OnInit, OnDestroy {
     private itemService: ItemService,
     private reviewService: UserReviewService,
     private reportService: ReportService,
+    private userBlockService: UserBlockService,
     private route: ActivatedRoute,
     public router: Router,
     private cdr: ChangeDetectorRef,
@@ -176,22 +185,47 @@ export class UserProfile implements OnInit, OnDestroy {
     this.isLoadingReviews = true;
     this.isInitialItemLoad = true;
     this.profile = null;
-    this.filteredItems = [];
-    this.reviews = [];
-    this.reviewPage = 1;
-    this.itemTotalCount = 0;
+    // this.filteredItems = [];
+    // this.reviews = [];
+    // this.reviewPage = 1;
+    // this.itemTotalCount = 0;
 
     this.userService.getMyProfile().subscribe({
       next: (res) => { this.currentUserId = res.data?.id ?? ''; this.cdr.detectChanges(); },
       error: () => { }
     });
     this.userService.getPublicProfile(this.userId).subscribe({
-      next: (res) => { this.profile = res.data; this.isLoadingProfile = false; this.cdr.detectChanges(); },
-      error: () => { this.isLoadingProfile = false; this.cdr.detectChanges(); }
+      next: (res) => { 
+        if(res.data) {
+          this.profile = res.data;
+          this.isLoadingProfile = false;
+          this.loadInitialTotal();
+          this.loadItems();
+          this.loadReviews();
+        } else {
+          this.handleUserNotFound();
+        }
+        this.cdr.detectChanges(); 
+        },
+      error: () => { 
+        this.handleUserNotFound();
+        this.cdr.detectChanges(); 
+
+       }
     });
     this.loadInitialTotal();
     this.loadItems();
     this.loadReviews();
+  }
+
+  private handleUserNotFound(): void {
+    this.profile = null;
+    this.isLoadingProfile = false;
+    this.isLoadingItems = false;
+    this.isLoadingReviews = false;
+    this.filteredItems = [];
+    this.reviews = [];
+    this.cdr.detectChanges();
   }
 
   loadReviews(): void {
@@ -407,6 +441,50 @@ export class UserProfile implements OnInit, OnDestroy {
       document.body.style.overflow = this.showPfpModal ? 'hidden' : 'auto';
     }
   }
+
+  canBlockUser(): boolean {
+    if (!this.profile || !this.authService.isLoggedIn()) return false;
+
+    if (this.currentUserId === this.userId) return false;
+
+    if (this.profile.isAdmin) {
+      return false; //No one (User or Admin) can block an Admin
+    }
+
+    //Current user is Admin viewing a User OR User viewing a User
+    return true;
+  }
+
+  openBlockModal(): void {
+    this.blockError = '';
+    this.blockSuccess = '';
+    this.showBlockModal = true;
+  }
+
+  submitBlock(): void {
+    this.isBlocking = true;
+    this.blockError = '';
+
+    this.userBlockService.blockUser(this.userId).subscribe({
+      next: () => {
+        this.isBlocking = false;
+        this.blockSuccess = 'User blocked successfully.';
+        this.cdr.detectChanges();
+
+        setTimeout(() => {
+          this.showBlockModal = false;
+          this.router.navigate(['/']); // optional: redirect away
+        }, 1200);
+      },
+      error: (err) => {
+        this.blockError = err.error?.message ?? 'Failed to block user.';
+        this.isBlocking = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+
 
   goToItem(slug: string): void { this.router.navigate(['/items', slug]); }
   getCategoryEmoji(name: string): string { return getCategoryEmoji(name); }

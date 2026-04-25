@@ -17,6 +17,14 @@ namespace backend.Repositories
             _context = context;
         }
 
+        public async Task<int> CountAsync(LoanFilter filter)
+        {
+            var query = _context.Loans.AsQueryable();
+            if (filter.Status.HasValue)
+                query = query.Where(x => x.Status == filter.Status.Value);
+            return await query.CountAsync();
+        }
+
 
         //Status group used for "ongoing loan" checks
         private static readonly LoanStatus[] OngoingStatuses =

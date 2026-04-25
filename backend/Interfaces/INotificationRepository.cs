@@ -1,9 +1,11 @@
-﻿using backend.Models;
+﻿using backend.Dtos;
+using backend.Models;
 
 namespace backend.Interfaces
 {
     public interface INotificationRepository
     {
+        Task<PagedResult<NotificationDto>> GetPagedAsync(string userId, NotificationFilter filter, PagedRequest request);
         Task<List<Notification>> GetByUserIdAsync(string userId);
         Task<Notification?> GetByIdAsync(int id);
         Task AddAsync(Notification notification);

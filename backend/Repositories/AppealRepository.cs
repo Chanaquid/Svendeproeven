@@ -16,6 +16,15 @@ namespace backend.Repositories
             _context = context;
         }
 
+
+        public async Task<int> CountAsync(AppealFilter filter)
+        {
+            var query = _context.Appeals.AsQueryable();
+            if (filter.Status.HasValue)
+                query = query.Where(x => x.Status == filter.Status.Value);
+            return await query.CountAsync();
+        }
+
         public async Task<Appeal?> GetByIdAsync(int appealId)
         {
             return await _context.Appeals.FindAsync(appealId);

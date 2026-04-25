@@ -16,6 +16,14 @@ namespace backend.Repositories
             _context = context;
         }
 
+        public async Task<int> CountAsync(ReportFilter filter)
+        {
+            var query = _context.Reports.AsQueryable();
+            if (filter.Status.HasValue)
+                query = query.Where(x => x.Status == filter.Status.Value);
+            return await query.CountAsync();
+        }
+
         public async Task<Report?> GetByIdAsync(int id)
         {
             return await _context.Reports.FindAsync(id);
@@ -47,6 +55,8 @@ namespace backend.Repositories
         {
             var query = _context.Reports
                 .AsNoTracking()
+                .Include(r => r.ReportedBy) 
+                .Include(r => r.HandledByAdmin)
                 .Where(r => r.ReportedById == userId)
                 .AsQueryable();
 
@@ -138,7 +148,9 @@ namespace backend.Repositories
                 var search = filter.Search.ToLower();
                 query = query.Where(r =>
                     (r.AdditionalDetails != null && r.AdditionalDetails.ToLower().Contains(search)) ||
-                    (r.AdminNote != null && r.AdminNote.ToLower().Contains(search)));
+                    (r.AdminNote != null && r.AdminNote.ToLower().Contains(search)) ||
+                    r.Type.ToString().ToLower().Contains(search) ||   
+                    r.Reasons.ToString().ToLower().Contains(search));  
             }
 
             return query;

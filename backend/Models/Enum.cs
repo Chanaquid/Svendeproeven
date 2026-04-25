@@ -198,7 +198,8 @@
         SupportThread = 8,
         Report = 9,
         Review = 10,
-        ItemFavorites = 11
+        User = 11,
+        ItemFavorites = 12
 
     }
 

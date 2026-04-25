@@ -131,6 +131,7 @@ export enum NotificationReferenceType {
   DirectConversation = 'DirectConversation',
   SupportThread = 'SupportThread',
   Report = 'Report',
+  User = 'User',
   Review = 'Review',
   ItemFavorites = 'ItemFavorites',
 }
