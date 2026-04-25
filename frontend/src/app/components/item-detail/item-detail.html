@@ -418,6 +418,12 @@
                                 existingLoan.status }}</span>
                         </div>
                         <div class="loan-status-row">
+                            <span class="avail-label">Total Price</span>
+                            <span class="detail-value" [class.detail-value--amber]="existingLoan.totalPrice > 0">
+                                {{ existingLoan.totalPrice === 0 ? 'Free' : 'kr ' + existingLoan.totalPrice }}
+                            </span>
+                        </div>
+                        <div class="loan-status-row">
                             <span class="avail-label">Start</span>
                             <span class="detail-value">{{ existingLoan.startDate | date:'MMM d, yyyy' }}</span>
                         </div>

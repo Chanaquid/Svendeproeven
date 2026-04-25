@@ -14,8 +14,9 @@ namespace backend.Dtos
         public int OverdueDisputeResponses { get; set; }
         public int PendingAppeals { get; set; }
         public int PendingUserVerifications { get; set; }
-        public int PendingPaymentVerifications { get; set; }
         public int PendingReports { get; set; }
+        public int PendingSupports { get; set; }
+        public int PendingFines { get; set; }
 
         //User stats
         public int TotalUsers { get; set; }
@@ -42,6 +43,8 @@ namespace backend.Dtos
         public int DisputesResolvedThisMonth { get; set; }
         public double AverageDisputeResolutionDays { get; set; }
     }
+    
+    
     //Admin looks up an item's full audit trail by item ID
     public class ItemHistoryDto
         {
@@ -75,9 +78,9 @@ namespace backend.Dtos
         public DateTime? ActualReturnDate { get; set; }
         public string Status { get; set; } = string.Empty;
         public string SnapshotCondition { get; set; } = string.Empty;
-        //public List<LoanSnapshotPhotoDto> SnapshotPhotos { get; set; } = new();
-        //public List<FineResponseDto> Fines { get; set; } = new();
-        //public List<DisputeDto.DisputeSummaryDto> Disputes { get; set; } = new();
+        public List<LoanSnapshotPhotoListDto> SnapshotPhotos { get; set; } = new();
+        public List<FineListDto> Fines { get; set; } = new();
+        public List<DisputeListDto> Disputes { get; set; } = new();
         
 }
 
@@ -97,6 +100,12 @@ namespace backend.Dtos
         public string Message { get; set; } = string.Empty;
         public NotificationType Type { get; set; }
     }
+
+    public class AdminSoftDeleteUserDto
+    {
+        public string? Note { get; set; }
+    }
+
 
 
 }

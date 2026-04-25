@@ -30,6 +30,7 @@ namespace backend.Services
         private readonly IUserBanHistoryService _userBanHistoryService;
         private readonly IDirectConversationRepository _conversationRepository;
         private readonly IScoreHistoryService _scoreHistoryService;
+        private readonly ISupportRepository _supportRepository;
         private readonly UserManager<ApplicationUser> _userManager;
 
         public AdminService(
@@ -54,6 +55,7 @@ namespace backend.Services
             IUserBanHistoryService userBanHistoryService,
             IScoreHistoryService scoreHistoryService,
             IDirectConversationRepository conversationRepository,
+            ISupportRepository supportRepository,
             UserManager<ApplicationUser> userManager)
         {
             _adminUserService = adminUserService;
@@ -78,6 +80,7 @@ namespace backend.Services
             _userBanHistoryService = userBanHistoryService;
             _conversationRepository = conversationRepository;
             _userManager = userManager;
+            _supportRepository = supportRepository;
         }
 
 
@@ -98,6 +101,8 @@ namespace backend.Services
             var pendingVerif = await _verificationRequestRepository.CountAsync(new VerificationRequestFilter { Status = VerificationStatus.Pending });
             var pendingPayments = await _fineRepository.CountAsync(new FineFilter { Status = FineStatus.PendingVerification });
             var pendingReports = await _reportRepository.CountAsync(new ReportFilter { Status = ReportStatus.Pending });
+            var pendingSupport = await _supportRepository.CountAsync(new SupportThreadFilter { Status = SupportThreadStatus.Open});
+
 
             // Platform stats
             var totalUsers = await _userManager.Users.CountAsync();
@@ -133,8 +138,9 @@ namespace backend.Services
                 OverdueDisputeResponses = overdueDisputes,
                 PendingAppeals = pendingAppeals,
                 PendingUserVerifications = pendingVerif,
-                PendingPaymentVerifications = pendingPayments,
                 PendingReports = pendingReports,
+                PendingFines = pendingPayments,
+                PendingSupports = pendingSupport,
                 TotalUsers = totalUsers,
                 VerifiedUsers = verifiedUsers,
                 BannedUsers = bannedUsers,
@@ -191,12 +197,23 @@ namespace backend.Services
             };
         }
 
-        public async Task<UserProfileDto> GetUserByIdAsync(string userId)
+        public async Task<AdminUserDto> GetAdminUserByIdAsync(string userId)
         {
-            var user = await _userManager.FindByIdAsync(userId)
-                ?? throw new KeyNotFoundException("User not found.");
-            return MapToProfileDto(user);
+            return await _adminUserService.GetUserByIdWIthDetailsAsync(userId);
         }
+
+        public async Task<AdminUserDto> AdminEditUserAsync(string userId, string adminId, AdminEditUserDto dto)
+        {
+            return await _adminUserService.AdminEditUserAsync(userId, adminId, dto);
+        }
+
+
+        public async Task<AdminDeleteResultDto> AdminSoftDeleteUserAsync(string userId, string adminId, string? note = null)
+        {
+            return await _adminUserService.AdminSoftDeleteUserAsync(userId, adminId, note);
+        }
+
+
 
         public async Task BanUserAsync(string userId, string adminId, BanUserDto dto)
         {

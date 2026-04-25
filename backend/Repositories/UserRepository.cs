@@ -22,15 +22,17 @@ namespace backend.Repositories
 
         public async Task<ApplicationUser?> GetByIdAsync(string userId)
         {
-            return await _context.Users.FindAsync(userId);
+            return await _context.Users
+                .Where(u => !u.IsDeleted)
+                .FirstOrDefaultAsync(u => u.Id == userId);
         }
 
         public async Task<ApplicationUser?> GetByIdWithDetails(string userId)
         {
             return await _context.Users
-                .AsSplitQuery() 
-                .Include(u => u.OwnedItems)
-                    .ThenInclude(i => i.Loans)
+                .Where(u => !u.IsDeleted)
+                .AsSplitQuery()
+                .Include(u => u.OwnedItems).ThenInclude(i => i.Loans)
                 .Include(u => u.ReviewsReceived)
                 .Include(u => u.BorrowedLoans)
                 .FirstOrDefaultAsync(u => u.Id == userId);
@@ -38,23 +40,31 @@ namespace backend.Repositories
 
         public async Task<ApplicationUser?> GetByEmailAsync(string email)
         {
-            return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            return await _context.Users
+                .Where(u => !u.IsDeleted)
+                .FirstOrDefaultAsync(u => u.Email == email);
         }
 
         public async Task<ApplicationUser?> GetByUsernameAsync(string username)
         {
-            return await _context.Users.FirstOrDefaultAsync(u => u.UserName == username);
+            return await _context.Users
+                .Where(u => !u.IsDeleted)
+                .FirstOrDefaultAsync(u => u.UserName == username);
         }
 
 
         public async Task<bool> EmailExistsAsync(string email)
         {
-            return await _context.Users.AnyAsync(u => u.Email == email);
+            return await _context.Users
+                .Where(u => !u.IsDeleted)
+                .AnyAsync(u => u.Email == email);
         }
 
         public async Task<bool> UsernameExistsAsync(string username)
         {
-            return await _context.Users.AnyAsync(u => u.UserName == username);
+            return await _context.Users
+                .Where(u => !u.IsDeleted)
+                .AnyAsync(u => u.UserName == username);
         }
 
 
@@ -83,7 +93,9 @@ namespace backend.Repositories
         public async Task<PagedResult<ApplicationUser>> SearchByUsernameOrEmailAsync(UserFilter? filter, PagedRequest request, string? currentUserId = null)
         {
             filter ??= new UserFilter();
-            var query = _context.Users.AsQueryable();
+            var query = _context.Users
+                .Where(u => !u.IsDeleted)
+                .AsQueryable();
 
             // Exclude blocked users
             if (!string.IsNullOrEmpty(currentUserId))
@@ -117,7 +129,7 @@ namespace backend.Repositories
                     query = query.Where(u => u.IsBanned == filter.IsBanned.Value);
 
                 if (filter.IsDeleted.HasValue)
-                    query = query.IgnoreQueryFilters().Where(u => u.IsDeleted == filter.IsDeleted.Value);
+                    query = query.Where(u => u.IsDeleted == filter.IsDeleted.Value);
 
                 if (filter.IsVerified.HasValue)
                     query = query.Where(u => u.IsVerified == filter.IsVerified.Value);
@@ -159,6 +171,7 @@ namespace backend.Repositories
                 return null;
 
             var user = await _context.Users
+                .Where(u => !u.IsDeleted)
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null) return null;
@@ -168,7 +181,7 @@ namespace backend.Repositories
 
             //no need to load whole navs
             return await _context.Users
-            .Where(u => u.Id == userId)
+            .Where(u => u.Id == userId && !u.IsDeleted)
             .Select(u => new UserPublicProfileDto
             {
                 Id = u.Id,
@@ -200,7 +213,7 @@ namespace backend.Repositories
         public async Task<int> GetTotalUsersCountAsync()
         {
             return await _context.Users
-                .CountAsync(u => !u.IsDeleted); //redundant?
+                .CountAsync(u => !u.IsDeleted);
         }
 
 

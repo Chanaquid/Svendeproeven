@@ -738,20 +738,32 @@ export class ItemDetail implements OnInit {
 
   get totalLoanPrice(): number | null {
     if (!this.item || this.item.isFree) return null;
-    if (!this.loanForm.startDate || !this.loanForm.endDate) return null;
-    const start = new Date(this.loanForm.startDate);
-    const end   = new Date(this.loanForm.endDate);
-    const days  = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // USE THE LOANDAYS HELPER HERE INSTEAD OF DOING MATH AGAIN
+    const days = this.loanDays; 
+    
     if (days <= 0) return null;
+    
     return days * this.item.pricePerDay;
   }
 
   get loanDays(): number {
     if (!this.loanForm.startDate || !this.loanForm.endDate) return 0;
+    
     const start = new Date(this.loanForm.startDate);
-    const end   = new Date(this.loanForm.endDate);
-    return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    const end = new Date(this.loanForm.endDate);
+
+    // Normalize to midnight
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    const diffTime = end.getTime() - start.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    
+    // This +1 makes it inclusive (picking up 26th and returning 28th = 3 days)
+    return diffDays >= 0 ? diffDays + 1 : 0;
   }
+
 
   // ── Generic helpers ───────────────────────────────────────────
 

@@ -8,7 +8,9 @@ public interface IAdminService
 
     // Users
     Task<PagedResult<UserProfileDto>> GetAllUsersAsync(UserFilter filter, PagedRequest request);
-    Task<UserProfileDto> GetUserByIdAsync(string userId);
+    Task<AdminUserDto> GetAdminUserByIdAsync(string userId);
+    Task<AdminUserDto> AdminEditUserAsync(string userId, string adminId, AdminEditUserDto dto);
+    Task<AdminDeleteResultDto> AdminSoftDeleteUserAsync(string userId, string adminId, string? note = null);
     Task BanUserAsync(string userId, string adminId, BanUserDto dto);
     Task UnbanUserAsync(string userId, string adminId, UnbanUserDto dto);
     Task<PagedResult<UserBanHistoryDto>> GetBanHistoryAsync(string userId, UserBanHistoryFilter? filter, PagedRequest request);

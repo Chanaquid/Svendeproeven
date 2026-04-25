@@ -359,6 +359,9 @@ namespace backend.Repositories
         {
             if (filter is null) return query;
 
+            if (filter.UserId != null)
+                query = query.Where(l => l.BorrowerId == filter.UserId || l.LenderId == filter.UserId);
+
             if (filter.BorrowerId != null)
                 query = query.Where(l => l.BorrowerId == filter.BorrowerId);
 

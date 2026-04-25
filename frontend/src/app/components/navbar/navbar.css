@@ -500,3 +500,8 @@
   margin-top: 0.25rem;
   padding-top: 0.25rem;
 }
+
+@keyframes shrink {
+  from { width: 100%; }
+  to   { width: 0%; }
+}

@@ -205,7 +205,7 @@ namespace backend.Repositories
         {
             var query = _context.Disputes
                 .AsNoTracking()
-                 .AsSplitQuery()
+                .AsSplitQuery()
                 .Include(d => d.Loan)
                     .ThenInclude(l => l.Item)
                 .Include(d => d.Loan)
@@ -217,7 +217,7 @@ namespace backend.Repositories
                 .Include(d => d.Photos)
                 .Where(d => d.FiledById == userId
                  || d.RespondedById == userId
-                 || d.Loan.LenderId == userId   
+                 || d.Loan.LenderId == userId
                  || d.Loan.BorrowerId == userId)
                 .AsQueryable();
 
@@ -228,6 +228,8 @@ namespace backend.Repositories
 
             return await query.ToPagedResultAsync(request);
         }
+
+        // ── Admin queries — exclude disputes involving deleted users ──────────
 
         public async Task<PagedResult<Dispute>> GetAllAsync(
             DisputeFilter? filter, PagedRequest request)
@@ -242,6 +244,10 @@ namespace backend.Repositories
                 .Include(d => d.FiledBy)
                 .Include(d => d.RespondedBy)
                 .Include(d => d.Photos)
+                .Where(d =>
+                    d.FiledBy != null && !d.FiledBy.IsDeleted &&
+                    d.Loan.Lender != null && !d.Loan.Lender.IsDeleted &&
+                    d.Loan.Borrower != null && !d.Loan.Borrower.IsDeleted)
                 .AsQueryable();
 
             query = ApplyFilter(query, filter);
@@ -266,9 +272,12 @@ namespace backend.Repositories
                 .Include(d => d.RespondedBy)
                 .Include(d => d.Photos)
                 .Where(d =>
-                    d.Status == DisputeStatus.AwaitingResponse ||
-                    d.Status == DisputeStatus.PendingAdminReview ||
-                    d.Status == DisputeStatus.PastDeadline)
+                    (d.Status == DisputeStatus.AwaitingResponse ||
+                     d.Status == DisputeStatus.PendingAdminReview ||
+                     d.Status == DisputeStatus.PastDeadline) &&
+                    d.FiledBy != null && !d.FiledBy.IsDeleted &&
+                    d.Loan.Lender != null && !d.Loan.Lender.IsDeleted &&
+                    d.Loan.Borrower != null && !d.Loan.Borrower.IsDeleted)
                 .AsQueryable();
 
             query = ApplyFilter(query, filter);
@@ -292,7 +301,11 @@ namespace backend.Repositories
                 .Include(d => d.FiledBy)
                 .Include(d => d.RespondedBy)
                 .Include(d => d.Photos)
-                .Where(d => d.Status == status)
+                .Where(d =>
+                    d.Status == status &&
+                    d.FiledBy != null && !d.FiledBy.IsDeleted &&
+                    d.Loan.Lender != null && !d.Loan.Lender.IsDeleted &&
+                    d.Loan.Borrower != null && !d.Loan.Borrower.IsDeleted)
                 .AsQueryable();
 
             query = ApplyFilter(query, filter);
@@ -316,7 +329,11 @@ namespace backend.Repositories
                 .Include(d => d.FiledBy)
                 .Include(d => d.RespondedBy)
                 .Include(d => d.Photos)
-                .Where(d => d.Loan.ItemId == itemId)
+                .Where(d =>
+                    d.Loan.ItemId == itemId &&
+                    d.FiledBy != null && !d.FiledBy.IsDeleted &&
+                    d.Loan.Lender != null && !d.Loan.Lender.IsDeleted &&
+                    d.Loan.Borrower != null && !d.Loan.Borrower.IsDeleted)
                 .AsQueryable();
 
             query = ApplyFilter(query, filter);
@@ -483,6 +500,12 @@ namespace backend.Repositories
                 query = query.Where(d =>
                     d.Description.ToLower().Contains(term) ||
                     (d.ResponseDescription != null && d.ResponseDescription.ToLower().Contains(term)) ||
+                    (d.FiledBy != null && !d.FiledBy.IsDeleted && (
+                        d.FiledBy.FullName.ToLower().Contains(term) ||
+                        d.FiledBy.UserName!.ToLower().Contains(term))) ||
+                    (d.RespondedBy != null && !d.RespondedBy.IsDeleted && (
+                        d.RespondedBy.FullName.ToLower().Contains(term) ||
+                        d.RespondedBy.UserName!.ToLower().Contains(term))) ||
                     d.Loan.Item.Title.ToLower().Contains(term));
             }
 

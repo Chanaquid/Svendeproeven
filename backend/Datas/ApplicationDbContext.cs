@@ -57,8 +57,6 @@ namespace backend.Data
                 // Index for score appeal cooldown lookups
                 entity.HasIndex(u => u.LastScoreAppealRejectedAt);
 
-                entity.HasQueryFilter(u => !u.IsDeleted);
-
                 entity.HasOne(u => u.BannedByAdmin)
                     .WithMany()
                     .HasForeignKey(u => u.BannedByAdminId)

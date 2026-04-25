@@ -11,6 +11,10 @@ namespace backend.Interfaces
         Task<SupportMessageDto> SendMessageAsync(int threadId, string senderId, SendSupportMessageDto dto, bool isAdmin);
         Task CloseThreadAsync(int threadId, string userId, bool isAdmin);
         Task MarkMessagesAsReadAsync(int threadId, string userId, MarkSupportMessagesReadDto dto);
+        Task<bool> CanUserAccessThreadAsync(int threadId, string userId);
+
+        Task<PagedResult<SupportMessageDto>> GetMessagesAsync(int threadId, string userId, bool isAdmin, PagedRequest request);
+
 
         //Admin
         Task<SupportThreadDto> AdminCreateThreadAsync(string adminId, string targetUserId, CreateSupportThreadDto dto);

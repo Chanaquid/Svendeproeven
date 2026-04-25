@@ -82,6 +82,7 @@ namespace backend.Dtos
     public class LoanFilter
     {
         //Identity
+        public string? UserId { get; set; }
         public string? BorrowerId { get; set; }
         public string? LenderId { get; set; }
         public int? ItemId { get; set; }

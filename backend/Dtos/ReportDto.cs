@@ -53,6 +53,7 @@ namespace backend.Dtos
         //Report details
         public ReportType Type { get; set; }
         public string TargetId { get; set; } = string.Empty;
+        //public string? TargetSlug { get; set; }
         public ReportReason Reasons { get; set; }
         public string? AdditionalDetails { get; set; }
         public ReportStatus Status { get; set; }

@@ -57,6 +57,17 @@ export class SupportService {
     );
   }
 
+  // GET /api/support/{id}/messages
+  getMessages(
+    id: number,
+    request: PagedRequest
+  ): Observable<ApiResponse<PagedResult<SupportMessageDto>>> {
+    return this.http.get<ApiResponse<PagedResult<SupportMessageDto>>>(
+      `${this.baseUrl}/${id}/messages`,
+      { params: { ...request } as any }
+    );
+  }
+
   // PATCH /api/support/{id}/close
   closeThread(id: number): Observable<ApiResponse<string>> {
     return this.http.patch<ApiResponse<string>>(

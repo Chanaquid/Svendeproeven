@@ -1,26 +1,22 @@
 <nav class="navbar">
 
   <!-- Left: Logo -->
-<a routerLink="/home" class="navbar__logo">
-  <img src="logo.svg"  alt="RentIt logo" class="navbar__logo-icon" />
+  <a routerLink="/home" class="navbar__logo">
+    <img src="logo.svg" alt="RentIt logo" class="navbar__logo-icon" />
     <span class="navbar__logo-text">RentIt</span>
-</a>
+  </a>
 
   <!-- Right: Actions -->
   <div class="navbar__actions">
 
     <!-- My Chats -->
-    <a
-      (click)="router.navigate(['/my-chats']); showUserMenu = false"
-      class="navbar__btn-primary">
+    <a (click)="router.navigate(['/my-chats']); showUserMenu = false" class="navbar__btn-primary">
       My chats
     </a>
 
     <!-- Notifications -->
     <div class="navbar__dropdown-wrapper" (clickOutside)="showNotifications = false">
-      <button
-        (click)="showNotifications = !showNotifications; showUserMenu = false"
-        class="navbar__icon-btn">
+      <button (click)="showNotifications = !showNotifications; showUserMenu = false" class="navbar__icon-btn">
         <svg class="navbar__icon-btn-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -52,10 +48,7 @@
           </div>
 
           <!-- Items -->
-          <div
-            *ngFor="let n of notifications"
-            (click)="onNotificationClick(n)"
-            class="navbar__notif-item"
+          <div *ngFor="let n of notifications" (click)="onNotificationClick(n)" class="navbar__notif-item"
             [class.navbar__notif-item--unread]="!n.isRead">
 
             <div class="navbar__notif-icon" [ngClass]="getNotificationIconBg(n.type)">
@@ -150,10 +143,18 @@
           </svg>
           Favorites
         </a>
+        <a *ngIf="!isAdmin" routerLink="/supports" (click)="showUserMenu = false" class="navbar__menu-item">
+          <svg class="navbar__menu-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          Support
+        </a>
 
         <!-- Admin section -->
         <div *ngIf="isAdmin" class="navbar__menu-divider">
-          <a routerLink="/admin-dashboard" (click)="showUserMenu = false" class="navbar__menu-item navbar__menu-item--admin">
+          <a routerLink="/admin-dashboard" (click)="showUserMenu = false"
+            class="navbar__menu-item navbar__menu-item--admin">
             <svg class="navbar__menu-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -176,5 +177,17 @@
       </div>
     </div>
 
+  </div>
+
+  <div *ngIf="showBanToast"
+    class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div class="bg-zinc-900 border border-red-500/30 rounded-2xl px-8 py-6 shadow-2xl max-w-sm w-full mx-4 text-center">
+      <p class="text-4xl mb-3">🔨</p>
+      <p class="text-red-400 text-lg font-black mb-1" style="font-family:'Syne',sans-serif">Account Banned</p>
+      <p class="text-zinc-400 text-sm">Your account has been banned. You will be logged out automatically.</p>
+      <div class="mt-4 h-1 bg-zinc-800 rounded-full overflow-hidden">
+        <div class="h-full bg-red-500 rounded-full animate-[shrink_5s_linear_forwards]"></div>
+      </div>
+    </div>
   </div>
 </nav>

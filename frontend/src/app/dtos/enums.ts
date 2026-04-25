@@ -118,6 +118,9 @@ export enum NotificationType {
   SupportThreadClosed = 'SupportThreadClosed',
   SupportThreadClaimed = 'SupportThreadClaimed',
   DisputeExpired = 'DisputeExpired',
+  SystemAlert = 'SystemAlert',
+  AdminSent = 'AdminSent',
+  Broadcast = 'Broadcast'
 }
 
 export enum NotificationReferenceType {
@@ -134,6 +137,8 @@ export enum NotificationReferenceType {
   User = 'User',
   Review = 'Review',
   ItemFavorites = 'ItemFavorites',
+  SystemAlert = 'SystemAlert',
+  Broadcast = 'Broadcast'
 }
 
 export enum MessageType {

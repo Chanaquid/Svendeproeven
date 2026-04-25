@@ -1,0 +1,52 @@
+/* Ensure the component itself takes up the full screen */
+:host {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden; /* Prevent double scrollbars */
+}
+
+/* The container now just flexes to fill remaining space */
+.map-container {
+    flex: 1; 
+    padding: 20px; /* Instead of margin, use padding for the "frame" look */
+    position: relative; /* Leaflet needs a relative or absolute parent */
+    background-color: #f8fafc; /* Optional background */
+}
+
+.map-frame {
+    border: 2px solid #18181b;
+    border-radius: 12px; /* Smoother look */
+    height: 100%;
+    overflow: hidden; /* Keeps map inside the rounded corners */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+#map {
+    height: 100%;
+    width: 100%;
+    z-index: 1; /* Ensure map stays below navbar dropdowns */
+}
+
+.item-panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 280px;
+  z-index: 1000;
+
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.item-card h3 {
+  margin: 0 0 8px;
+}
+
+.item-card button {
+  margin-top: 8px;
+  width: 100%;
+}

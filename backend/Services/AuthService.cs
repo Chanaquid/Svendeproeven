@@ -114,7 +114,15 @@ namespace backend.Services
 
             if (user == null) throw new ArgumentException("Invalid email or password.");
             if (user.IsDeleted) throw new ArgumentException("This account has been deleted."); //Just in case soft delete fails
-            if (user.IsBanned) throw new ArgumentException($"This account has been banned. Reason: {user.BanReason}");
+
+            if (user.IsBanned)
+            {
+                if (user.BanExpiresAt.HasValue)
+                    throw new ArgumentException($"TEMP_BAN|{DateTime.SpecifyKind(user.BanExpiresAt.Value, DateTimeKind.Utc):O}|{user.BanReason}");
+                else
+                    throw new ArgumentException($"PERM_BAN|{user.BanReason}");
+            }
+
             if (!await _userManager.IsEmailConfirmedAsync(user)) throw new ArgumentException("Please confirm your email before logging in.");
 
             var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, lockoutOnFailure: true);

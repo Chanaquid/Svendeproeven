@@ -17,6 +17,7 @@ namespace backend.Services
         private readonly IItemRepository _itemRepository;
         private readonly ILoanRepository _loanRepository;
         private readonly IFineRepository _fineRepository;
+        private readonly INotificationService _notificationService;
         private readonly IDisputeRepository _disputeRepository;
 
         private readonly IScoreHistoryRepository _scoreHistoryRepository;
@@ -29,6 +30,7 @@ namespace backend.Services
             ILoanRepository loanRepository,
             IFineRepository fineRepository,
             IDisputeRepository disputeRepository,
+            INotificationService notificationService,
             IScoreHistoryRepository scoreHistoryRepository
             )
         {
@@ -40,6 +42,7 @@ namespace backend.Services
             _loanRepository = loanRepository;
             _fineRepository = fineRepository;
             _disputeRepository = disputeRepository;
+            _notificationService = notificationService;
             _scoreHistoryRepository = scoreHistoryRepository;
         }
 
@@ -160,6 +163,9 @@ namespace backend.Services
 
             if (!string.IsNullOrWhiteSpace(dto.NewPassword))
             {
+                if (dto.NewPassword.Length < 8)
+                    throw new ArgumentException("Password must be at least 8 characters.");
+
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                 var res = await _userManager.ResetPasswordAsync(user, token, dto.NewPassword);
                 if (!res.Succeeded) throw new ArgumentException("Failed to reset password.");
@@ -353,6 +359,13 @@ namespace backend.Services
 
             _adminRepo.Update(user);
             await _adminRepo.SaveChangesAsync();
+
+            await _notificationService.SendAsync(
+                targetUserId,
+                NotificationType.SystemAlert,
+                $"Your account has been banned{(dto.BanExpiresAt.HasValue ? $" until {dto.BanExpiresAt.Value:MMM d, yyyy HH:mm} UTC" : " permanently")}. Reason: {dto.Reason}",
+                referenceId: null,
+                referenceType: NotificationReferenceType.SystemAlert);
 
             //Send email notification to user
 

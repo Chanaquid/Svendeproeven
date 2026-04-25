@@ -230,6 +230,8 @@ namespace backend.Dtos
         public string Slug { get; set; } = string.Empty;
         public string? MainPhotoUrl { get; set; }
         public string PickupAddress { get; set; } = string.Empty;
+        public double PickupLatitude { get; set; }
+        public double PickupLongitude { get; set; }
 
         //Category
         public int CategoryId { get; set; }

@@ -404,6 +404,8 @@ export class Item implements OnInit, OnDestroy {
     this.isCreating = true;
     this.createError = '';
 
+
+
     const { photoUrl, ...itemDto } = this.createForm;
     if (!itemDto.minLoanDays) itemDto.minLoanDays = undefined;
     if (!itemDto.maxLoanDays) itemDto.maxLoanDays = undefined;

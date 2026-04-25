@@ -16,6 +16,7 @@ namespace backend.Interfaces
         Task<bool> HasActiveThreadAsync(string userId);
         Task AddThreadAsync(SupportThread thread);
         void UpdateThread(SupportThread thread);
+        Task<int> CountAsync(SupportThreadFilter filter);
 
         //Message
         Task<SupportMessage?> GetMessageByIdAsync(int id);

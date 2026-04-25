@@ -1,0 +1,552 @@
+<!-- Background -->
+<div class="fixed inset-0 bg-zinc-950 -z-10"></div>
+<div class="fixed inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:52px_52px] -z-10"></div>
+
+<app-navbar></app-navbar>
+
+<main class="pt-16 min-h-screen">
+
+  <!-- Header -->
+  <div class="px-6 md:px-10 pt-10 pb-8 border-b border-zinc-800/60">
+    <div class="flex items-center gap-3 mb-1">
+      <a routerLink="/admin-dashboard"
+        class="flex items-center gap-1.5 text-zinc-500 hover:text-white text-xs font-medium transition-colors no-underline">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Dashboard
+      </a>
+      <span class="text-zinc-700">/</span>
+      <span class="text-zinc-500 text-xs">Disputes</span>
+    </div>
+
+    <div class="flex items-center justify-between gap-4 flex-wrap mt-2">
+      <div>
+        <h1 class="font-black text-3xl md:text-4xl text-white tracking-tight" style="font-family:'Syne',sans-serif">
+          All Disputes
+        </h1>
+        <p class="text-zinc-500 text-sm mt-1">{{ totalCount }} disputes in current view</p>
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="flex items-center gap-5 mt-6 flex-wrap">
+      <ng-container *ngFor="let tab of tabs">
+        <div *ngIf="tab.key !== 'all'" class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full"
+            [class.bg-amber-400]="tab.key === 'awaiting'"
+            [class.bg-blue-400]="tab.key === 'pending'"
+            [class.bg-red-400]="tab.key === 'overdue'"
+            [class.bg-emerald-400]="tab.key === 'resolved'"
+            [class.bg-zinc-500]="tab.key === 'cancelled'"></span>
+          <span class="text-zinc-400 text-sm">
+            <span class="text-white font-semibold">{{ tab.count ?? '—' }}</span> {{ tab.label }}
+          </span>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+
+  <div class="px-6 md:px-10 py-8">
+
+    <!-- Tabs + Search -->
+    <div class="flex items-center justify-between gap-4 mb-6 flex-wrap">
+      <div class="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-xl p-1 overflow-x-auto">
+        <button *ngFor="let tab of tabs" (click)="switchTab(tab.key)"
+          class="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer whitespace-nowrap"
+          [class.bg-amber-400]="activeTab === tab.key"
+          [class.text-zinc-900]="activeTab === tab.key"
+          [class.text-zinc-400]="activeTab !== tab.key">
+          {{ tab.label }}
+          <span class="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+            [class.bg-zinc-900]="activeTab === tab.key"
+            [class.text-amber-400]="activeTab === tab.key"
+            [class.bg-zinc-800]="activeTab !== tab.key"
+            [class.text-zinc-500]="activeTab !== tab.key">
+            {{ tab.count ?? '—' }}
+          </span>
+        </button>
+      </div>
+      <div class="relative">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+        </svg>
+        <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearch()"
+          placeholder="Search item, user..."
+          class="bg-zinc-900 border border-zinc-800 text-white text-sm rounded-xl pl-9 pr-4 py-2 outline-none placeholder-zinc-600 focus:border-amber-400/50 transition-all duration-200 w-72" />
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="listError"
+      class="flex items-center justify-between gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 mb-4">
+      <p class="text-red-400 text-sm">{{ listError }}</p>
+      <button (click)="loadDisputes()" class="text-red-400 text-xs underline cursor-pointer">Retry</button>
+    </div>
+
+    <!-- Loading skeleton -->
+    <div *ngIf="isLoading" class="space-y-3">
+      <div *ngFor="let _ of [1,2,3,4,5]" class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 animate-pulse">
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 bg-zinc-800 rounded-xl shrink-0"></div>
+          <div class="flex-1 space-y-2">
+            <div class="h-4 bg-zinc-800 rounded w-48"></div>
+            <div class="h-3 bg-zinc-800 rounded w-32"></div>
+          </div>
+          <div class="w-24 h-6 bg-zinc-800 rounded-xl"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="!isLoading && disputes.length === 0 && !listError"
+      class="flex flex-col items-center justify-center py-24 text-center">
+      <div class="w-16 h-16 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-center text-3xl mb-4">⚖️</div>
+      <h3 class="font-bold text-white text-lg mb-2" style="font-family:'Syne',sans-serif">No disputes found</h3>
+      <p class="text-zinc-500 text-sm">Try a different tab or search term.</p>
+    </div>
+
+    <!-- Dispute list -->
+    <div *ngIf="!isLoading && disputes.length > 0" class="space-y-3">
+      <div *ngFor="let d of disputes" (click)="openModal(d)"
+        class="bg-zinc-900 border border-zinc-800 hover:border-zinc-600 rounded-2xl p-5 transition-all duration-200 cursor-pointer group hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/40">
+        <div class="flex items-center gap-4">
+
+          <!-- Filer avatar -->
+          <div class="w-10 h-10 rounded-xl bg-zinc-800 overflow-hidden shrink-0 flex items-center justify-center text-xs font-bold text-amber-400">
+            <img *ngIf="d.filedByAvatarUrl" [src]="d.filedByAvatarUrl" class="w-full h-full object-cover" />
+            <span *ngIf="!d.filedByAvatarUrl">{{ getInitials(d.filedByName) }}</span>
+          </div>
+
+          <!-- Info -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-0.5 flex-wrap">
+              <p class="text-white text-sm font-semibold truncate" style="font-family:'Syne',sans-serif">{{ d.itemTitle }}</p>
+              <span *ngIf="d.isOverDue"
+                class="text-[9px] font-bold uppercase bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded-md">
+                Overdue
+              </span>
+            </div>
+            <p class="text-zinc-500 text-xs">
+              <span class="text-zinc-400">{{ d.filedByName }}</span>
+              <span class="text-zinc-700 mx-1">vs</span>
+              <span class="text-zinc-400">{{ d.otherPartyName ?? 'Other party' }}</span>
+              <span class="text-zinc-700 mx-1.5">·</span>
+              <span class="font-mono">#{{ d.id }}</span>
+              <span class="text-zinc-700 mx-1.5">·</span>
+              {{ d.createdAt | date:'MMM d, yyyy' }}
+            </p>
+          </div>
+
+          <!-- Filed as chip -->
+          <span class="hidden sm:inline-flex shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg"
+            [class.bg-purple-400/10]="d.filedAs === DisputeFiledAs.AsOwner"
+            [class.text-purple-400]="d.filedAs === DisputeFiledAs.AsOwner"
+            [class.bg-blue-400/10]="d.filedAs === DisputeFiledAs.AsBorrower"
+            [class.text-blue-400]="d.filedAs === DisputeFiledAs.AsBorrower">
+            {{ d.filedAs === DisputeFiledAs.AsOwner ? '🏠 Owner' : '📦 Borrower' }}
+          </span>
+
+          <!-- Status + arrow -->
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="text-[10px] font-bold uppercase px-2.5 py-1 rounded-lg border"
+              [ngClass]="getStatusClass(d.status)">{{ d.status }}</span>
+            <svg class="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="totalPages > 1" class="flex items-center justify-center gap-1.5 pt-6 flex-wrap">
+      <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1"
+        class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer disabled:cursor-not-allowed">
+        ← Prev
+      </button>
+      <ng-container *ngFor="let page of pageNumbers">
+        <span *ngIf="page === -1" class="text-zinc-600 text-xs px-1">…</span>
+        <button *ngIf="page !== -1" (click)="goToPage(page)"
+          class="w-8 h-8 flex items-center justify-center text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer"
+          [class.bg-amber-400]="page === currentPage"
+          [class.text-zinc-900]="page === currentPage"
+          [class.bg-zinc-800]="page !== currentPage"
+          [class.text-zinc-300]="page !== currentPage">
+          {{ page }}
+        </button>
+      </ng-container>
+      <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages"
+        class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer disabled:cursor-not-allowed">
+        Next →
+      </button>
+    </div>
+
+  </div>
+</main>
+
+
+<!-- ══════════════ DETAIL MODAL ══════════════ -->
+<div *ngIf="showModal && selectedItem" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" (click)="closeModal()"></div>
+  <div class="relative z-10 w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+
+    <!-- Modal header -->
+    <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between sticky top-0 bg-zinc-900 z-10">
+      <div>
+        <div class="flex items-center gap-2 mb-0.5">
+          <h2 class="font-black text-lg text-white" style="font-family:'Syne',sans-serif">{{ selectedItem.itemTitle }}</h2>
+          <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border"
+            [ngClass]="getStatusClass(selectedItem.status)">{{ selectedItem.status }}</span>
+        </div>
+        <p class="text-zinc-500 text-xs">Dispute <span class="font-mono">#{{ selectedItem.id }}</span></p>
+      </div>
+      <button (click)="closeModal()"
+        class="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-white transition-colors rounded-lg hover:bg-zinc-800 cursor-pointer">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="isLoadingDetail" class="flex items-center justify-center py-16">
+      <div class="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+
+    <div *ngIf="!isLoadingDetail && detail" class="p-6 space-y-5">
+
+      <!-- Meta row -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+        <div class="bg-zinc-800 rounded-xl px-3 py-2.5">
+          <p class="text-zinc-500 mb-0.5">Loan</p>
+          <p class="text-white font-medium font-mono">#{{ detail.loanId }}</p>
+        </div>
+        <div class="bg-zinc-800 rounded-xl px-3 py-2.5">
+          <p class="text-zinc-500 mb-0.5">Filed</p>
+          <p class="text-white font-medium">{{ detail.createdAt | date:'MMM d, yyyy' }}</p>
+        </div>
+        <div class="bg-zinc-800 rounded-xl px-3 py-2.5">
+          <p class="text-zinc-500 mb-0.5">Response deadline</p>
+          <p class="font-medium"
+            [class.text-red-400]="detail.status === DisputeStatus.PastDeadline"
+            [class.text-white]="detail.status !== DisputeStatus.PastDeadline">
+            {{ detail.responseDeadline | date:'MMM d, yyyy · HH:mm' }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Overdue banner -->
+      <div *ngIf="detail.status === DisputeStatus.PastDeadline"
+        class="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 flex items-center gap-2">
+        <span>⚠️</span>
+        <p class="text-red-400 text-sm font-medium">Response deadline has passed — no reply from the other party</p>
+      </div>
+
+      <!-- Parties -->
+      <div class="grid grid-cols-2 gap-3">
+        <!-- Filed by -->
+        <div class="bg-zinc-800 rounded-xl p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Filed by</p>
+            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md"
+              [class.bg-purple-400/10]="detail.filedAs === DisputeFiledAs.AsOwner"
+              [class.text-purple-400]="detail.filedAs === DisputeFiledAs.AsOwner"
+              [class.bg-blue-400/10]="detail.filedAs === DisputeFiledAs.AsBorrower"
+              [class.text-blue-400]="detail.filedAs === DisputeFiledAs.AsBorrower">
+              {{ detail.filedAs === DisputeFiledAs.AsOwner ? '🏠 Owner' : '📦 Borrower' }}
+            </span>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl overflow-hidden bg-zinc-700 shrink-0 flex items-center justify-center text-xs font-bold text-amber-400 cursor-pointer"
+              (click)="router.navigate(['/users', detail.filedById])">
+              <img *ngIf="detail.filedByAvatarUrl" [src]="detail.filedByAvatarUrl" class="w-full h-full object-cover" />
+              <span *ngIf="!detail.filedByAvatarUrl">{{ getInitials(detail.filedByName) }}</span>
+            </div>
+            <div class="min-w-0">
+              <p class="text-white text-xs font-semibold truncate cursor-pointer hover:text-amber-400 transition-colors"
+                (click)="router.navigate(['/users', detail.filedById])">{{ detail.filedByName }}</p>
+              <p class="text-zinc-500 text-[10px]">@{{ detail.filedByUserName }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Respondent -->
+        <div class="bg-zinc-800 rounded-xl p-4">
+          <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium mb-3">Responding party</p>
+          <ng-container *ngIf="detail.respondedById; else noResponder">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl overflow-hidden bg-zinc-700 shrink-0 flex items-center justify-center text-xs font-bold text-amber-400 cursor-pointer"
+                (click)="router.navigate(['/users', detail.respondedById])">
+                <img *ngIf="detail.respondedByAvatarUrl" [src]="detail.respondedByAvatarUrl" class="w-full h-full object-cover" />
+                <span *ngIf="!detail.respondedByAvatarUrl">{{ getInitials(detail.respondedByName || '') }}</span>
+              </div>
+              <div class="min-w-0">
+                <p class="text-white text-xs font-semibold truncate cursor-pointer hover:text-amber-400 transition-colors"
+                  (click)="router.navigate(['/users', detail.respondedById])">{{ detail.respondedByName }}</p>
+                <p class="text-zinc-500 text-[10px]">@{{ detail.respondedByUserName }}</p>
+              </div>
+            </div>
+          </ng-container>
+          <ng-template #noResponder>
+            <div class="flex items-center gap-2">
+              <div class="w-9 h-9 rounded-xl bg-zinc-700 border border-dashed border-zinc-600 shrink-0 flex items-center justify-center text-zinc-600 text-lg">?</div>
+              <p class="text-zinc-500 text-xs">No response yet</p>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+
+      <!-- Claim -->
+      <div class="bg-zinc-800 rounded-xl p-4">
+        <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium mb-2">Claim</p>
+        <p class="text-zinc-300 text-sm leading-relaxed">{{ detail.description }}</p>
+      </div>
+
+      <!-- Filer's evidence -->
+      <div *ngIf="detail.filedByPhotos && detail.filedByPhotos.length > 0" class="bg-zinc-800 rounded-xl overflow-hidden">
+        <div class="px-4 py-3 border-b border-zinc-700 flex items-center gap-2">
+          <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Evidence from @{{ detail.filedByUserName }}</p>
+          <span class="text-[10px] font-bold bg-zinc-700 text-zinc-400 px-1.5 py-0.5 rounded-full">{{ detail.filedByPhotos.length }}</span>
+        </div>
+        <div class="p-4 flex gap-3 flex-wrap">
+          <div *ngFor="let p of detail.filedByPhotos" class="flex flex-col gap-1">
+            <div class="w-20 h-20 rounded-xl overflow-hidden bg-zinc-700 cursor-pointer hover:opacity-80 transition-opacity"
+              (click)="openPhoto(p.photoUrl, p.caption)">
+              <img [src]="p.photoUrl" class="w-full h-full object-cover" />
+            </div>
+            <p *ngIf="p.caption" class="text-zinc-500 text-[10px] w-20 leading-tight break-words">{{ p.caption }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Response -->
+      <div *ngIf="detail.responseDescription" class="bg-zinc-800 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Response from @{{ detail.respondedByUserName }}</p>
+          <span class="text-zinc-600 text-[10px]">{{ detail.respondedAt | date:'MMM d, yyyy' }}</span>
+        </div>
+        <p class="text-zinc-300 text-sm leading-relaxed">{{ detail.responseDescription }}</p>
+      </div>
+
+      <!-- Respondent's evidence -->
+      <div *ngIf="detail.responsePhotos && detail.responsePhotos.length > 0" class="bg-zinc-800 rounded-xl overflow-hidden">
+        <div class="px-4 py-3 border-b border-zinc-700 flex items-center gap-2">
+          <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Evidence from @{{ detail.respondedByUserName }}</p>
+          <span class="text-[10px] font-bold bg-zinc-700 text-zinc-400 px-1.5 py-0.5 rounded-full">{{ detail.responsePhotos.length }}</span>
+        </div>
+        <div class="p-4 flex gap-3 flex-wrap">
+          <div *ngFor="let p of detail.responsePhotos" class="flex flex-col gap-1">
+            <div class="w-20 h-20 rounded-xl overflow-hidden bg-zinc-700 cursor-pointer hover:opacity-80 transition-opacity"
+              (click)="openPhoto(p.photoUrl, p.caption)">
+              <img [src]="p.photoUrl" class="w-full h-full object-cover" />
+            </div>
+            <p *ngIf="p.caption" class="text-zinc-500 text-[10px] w-20 leading-tight break-words">{{ p.caption }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Snapshot photos -->
+      <div *ngIf="detail.snapshotPhotos && detail.snapshotPhotos.length > 0" class="bg-zinc-800 rounded-xl overflow-hidden">
+        <div class="px-4 py-3 border-b border-zinc-700 flex items-center justify-between">
+          <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Item snapshot at loan start</p>
+          <span *ngIf="detail.snapshotCondition" class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md border"
+            [ngClass]="getConditionClass(detail.snapshotCondition)">{{ detail.snapshotCondition }}</span>
+        </div>
+        <div class="p-4 flex gap-3 flex-wrap">
+          <div *ngFor="let p of detail.snapshotPhotos"
+            class="w-20 h-20 rounded-xl overflow-hidden bg-zinc-700 cursor-pointer hover:opacity-80 transition-opacity"
+            (click)="openPhoto(p.photoUrl)">
+            <img [src]="p.photoUrl" class="w-full h-full object-cover" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Existing verdict (already resolved) -->
+      <div *ngIf="detail.adminVerdict" class="bg-zinc-800 rounded-xl p-4 space-y-3">
+        <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Admin Verdict</p>
+        <span class="inline-flex text-sm font-bold px-3 py-1.5 rounded-xl border"
+          [ngClass]="getVerdictClass(detail.adminVerdict)">
+          {{ detail.adminVerdict }}
+        </span>
+        <p *ngIf="detail.adminNote" class="text-zinc-400 text-sm leading-relaxed italic">"{{ detail.adminNote }}"</p>
+
+        <!-- Resolved by -->
+        <div *ngIf="detail.resolvedByAdminName" class="flex items-center gap-3 pt-1 border-t border-zinc-700">
+          <div class="w-8 h-8 rounded-xl overflow-hidden bg-zinc-700 shrink-0 flex items-center justify-center text-xs font-bold text-indigo-400 cursor-pointer"
+            (click)="router.navigate(['/users', detail.resolvedByAdminId])">
+            <img *ngIf="detail.resolvedByAdminAvatarUrl" [src]="detail.resolvedByAdminAvatarUrl" class="w-full h-full object-cover" />
+            <span *ngIf="!detail.resolvedByAdminAvatarUrl">{{ getInitials(detail.resolvedByAdminName) }}</span>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-white text-xs font-semibold cursor-pointer hover:text-indigo-400 transition-colors"
+              (click)="router.navigate(['/users', detail.resolvedByAdminId])">
+              {{ detail.resolvedByAdminName }}
+            </p>
+            <p class="text-zinc-600 text-[10px]">{{ detail.resolvedAt | date:'MMM d, yyyy · HH:mm' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Penalties -->
+      <div *ngIf="detail.penalties && detail.penalties.length > 0" class="bg-zinc-800 rounded-xl overflow-hidden">
+        <div class="px-4 py-3 border-b border-zinc-700">
+          <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Penalties issued</p>
+        </div>
+        <div class="divide-y divide-zinc-700">
+          <div *ngFor="let p of detail.penalties" class="px-4 py-3 flex items-center gap-3 flex-wrap">
+            <img [src]="p.avatarUrl || getDefaultAvatar(p.fullName)"
+              class="w-8 h-8 rounded-lg object-cover bg-zinc-700 shrink-0" />
+            <div class="flex-1 min-w-0">
+              <p class="text-white text-xs font-semibold truncate">{{ p.fullName }}</p>
+              <p class="text-zinc-500 text-[10px]">@{{ p.userName }}</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div *ngIf="p.fineAmount" class="text-right">
+                <p class="text-red-400 font-black text-sm" style="font-family:'Syne',sans-serif">kr {{ p.fineAmount }}</p>
+                <p class="text-zinc-500 text-[10px]">{{ p.fineStatus }}</p>
+              </div>
+              <div *ngIf="p.scoreAdjustment" class="text-right">
+                <p class="font-black text-sm"
+                  [class.text-emerald-400]="p.scoreAdjustment > 0"
+                  [class.text-red-400]="p.scoreAdjustment < 0"
+                  style="font-family:'Syne',sans-serif">
+                  {{ p.scoreAdjustment > 0 ? '+' : '' }}{{ p.scoreAdjustment }}
+                </p>
+                <p class="text-zinc-500 text-[10px]">score</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resolve section — toggle button -->
+      <div *ngIf="canResolve && !showResolveForm && resolveSuccess === ''">
+        <button (click)="showResolveForm = true"
+          class="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 font-semibold text-sm rounded-xl transition-all duration-200 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Resolve Dispute
+        </button>
+      </div>
+
+      <!-- Resolve form -->
+      <div *ngIf="canResolve && showResolveForm"
+        class="bg-blue-400/5 border border-blue-400/20 rounded-xl p-5 space-y-5">
+        <div>
+          <p class="text-blue-400 text-sm font-semibold" style="font-family:'Syne',sans-serif">⚖️ Resolve Dispute</p>
+          <p class="text-zinc-500 text-xs mt-1">Select a verdict and optionally add penalties for either party.</p>
+        </div>
+
+        <!-- Verdict selection -->
+        <div class="space-y-2">
+          <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Verdict <span class="text-red-400">*</span></label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button *ngFor="let v of verdictOptions" (click)="resolveVerdict = v.value"
+              class="text-left px-4 py-3 rounded-xl border transition-all duration-200 cursor-pointer"
+              [class.border-blue-400]="resolveVerdict === v.value"
+              [class.bg-blue-400/10]="resolveVerdict === v.value"
+              [class.border-zinc-700]="resolveVerdict !== v.value"
+              [class.bg-zinc-800]="resolveVerdict !== v.value"
+              [class.hover:border-zinc-600]="resolveVerdict !== v.value">
+              <p class="text-white text-xs font-semibold">{{ v.label }}</p>
+              <p class="text-zinc-500 text-[10px] mt-0.5">{{ v.desc }}</p>
+            </button>
+          </div>
+        </div>
+
+        <!-- Owner penalty -->
+        <div *ngIf="showOwnerPenalty" class="bg-zinc-800 rounded-xl p-4 space-y-3">
+          <p class="text-purple-400 text-xs font-semibold">🏠 Owner Penalty</p>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-1">
+              <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Fine (kr)</label>
+              <input type="number" [(ngModel)]="ownerFine" placeholder="0"
+                class="w-full bg-zinc-700 border border-zinc-600 focus:border-purple-400/50 text-white text-sm rounded-xl px-3 py-2 outline-none placeholder-zinc-500 transition-all duration-200" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Score adjustment</label>
+              <input type="number" [(ngModel)]="ownerScore" placeholder="e.g. -10"
+                class="w-full bg-zinc-700 border border-zinc-600 focus:border-purple-400/50 text-white text-sm rounded-xl px-3 py-2 outline-none placeholder-zinc-500 transition-all duration-200" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Borrower penalty -->
+        <div *ngIf="showBorrowerPenalty" class="bg-zinc-800 rounded-xl p-4 space-y-3">
+          <p class="text-blue-400 text-xs font-semibold">📦 Borrower Penalty</p>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-1">
+              <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Fine (kr)</label>
+              <input type="number" [(ngModel)]="borrowerFine" placeholder="0"
+                class="w-full bg-zinc-700 border border-zinc-600 focus:border-blue-400/50 text-white text-sm rounded-xl px-3 py-2 outline-none placeholder-zinc-500 transition-all duration-200" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Score adjustment</label>
+              <input type="number" [(ngModel)]="borrowerScore" placeholder="e.g. -10"
+                class="w-full bg-zinc-700 border border-zinc-600 focus:border-blue-400/50 text-white text-sm rounded-xl px-3 py-2 outline-none placeholder-zinc-500 transition-all duration-200" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin note -->
+        <div class="space-y-1.5">
+          <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Admin Note (optional)</label>
+          <textarea [(ngModel)]="resolveAdminNote" rows="2" placeholder="Add a note visible to both parties..."
+            class="w-full bg-zinc-800 border border-zinc-700 focus:border-blue-400/50 text-white text-sm rounded-xl px-3 py-2.5 outline-none placeholder-zinc-600 resize-none transition-all duration-200"></textarea>
+        </div>
+
+        <p *ngIf="resolveError" class="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+          {{ resolveError }}
+        </p>
+        <p *ngIf="resolveSuccess" class="text-emerald-400 text-xs bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
+          {{ resolveSuccess }}
+        </p>
+
+        <div class="flex gap-3">
+          <button (click)="showResolveForm = false"
+            class="flex-1 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-sm rounded-xl cursor-pointer transition-all duration-200">
+            Cancel
+          </button>
+          <button (click)="resolve()" [disabled]="isResolving || !resolveVerdict"
+            class="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 font-semibold text-sm rounded-xl disabled:opacity-50 cursor-pointer transition-all duration-200">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            {{ isResolving ? 'Resolving...' : 'Confirm Verdict' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigate to loan -->
+      <button (click)="router.navigate(['/loans', detail.loanId])"
+        class="w-full flex items-center justify-center gap-2 py-2.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 hover:text-white font-semibold text-sm rounded-xl transition-all duration-200 cursor-pointer">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+        </svg>
+        View Loan #{{ detail.loanId }}
+      </button>
+
+    </div>
+  </div>
+</div>
+
+<!-- Photo lightbox -->
+<div *ngIf="selectedPhoto" class="fixed inset-0 z-[110] flex items-center justify-center p-4"
+  (click)="selectedPhoto = null; selectedPhotoCaption = null">
+  <div class="absolute inset-0 bg-black/90 backdrop-blur-sm"></div>
+  <div class="relative z-10 flex flex-col items-center gap-3" (click)="$event.stopPropagation()">
+    <button (click)="selectedPhoto = null; selectedPhotoCaption = null"
+      class="absolute -top-10 right-0 w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-white">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+    <img [src]="selectedPhoto" class="max-w-[90vw] max-h-[80vh] rounded-2xl object-contain shadow-2xl" />
+    <p *ngIf="selectedPhotoCaption"
+      class="text-zinc-300 text-sm text-center max-w-md bg-black/60 px-4 py-2 rounded-xl">
+      {{ selectedPhotoCaption }}
+    </p>
+  </div>
+</div>

@@ -19,7 +19,9 @@ namespace backend.Repositories
 
         public async Task<int> CountAsync(VerificationRequestFilter filter)
         {
-            var query = _context.VerificationRequests.AsQueryable();
+            var query = _context.VerificationRequests
+                .Where(x => x.User != null && !x.User.IsDeleted)
+                .AsQueryable();
             if (filter.Status.HasValue)
                 query = query.Where(x => x.Status == filter.Status.Value);
             return await query.CountAsync();
@@ -53,7 +55,7 @@ namespace backend.Repositories
                 .AsNoTracking()
                 .Include(v => v.User)
                 .Include(v => v.ReviewedByAdmin)
-                .Where(v => v.UserId == userId)
+                .Where(v => v.UserId == userId && v.User != null && !v.User.IsDeleted)
                 .AsQueryable();
 
             query = ApplyFilter(query, filter);
@@ -70,6 +72,7 @@ namespace backend.Repositories
                 .AsNoTracking()
                 .Include(v => v.User)
                 .Include(v => v.ReviewedByAdmin)
+                .Where(v => v.User != null && !v.User.IsDeleted)
                 .AsQueryable();
 
             query = ApplyFilter(query, filter);
@@ -119,7 +122,7 @@ namespace backend.Repositories
             if (filter.DocumentType.HasValue)
                 query = query.Where(v => v.DocumentType == filter.DocumentType.Value);
 
-          
+
             if (!filter.Status.HasValue)
             {
                 if (filter.IsReviewed.HasValue)
@@ -152,7 +155,7 @@ namespace backend.Repositories
                 query = query.Where(v =>
                     v.DocumentType.ToString().ToLower().Contains(search) ||
                     (v.AdminNote != null && v.AdminNote.ToLower().Contains(search)) ||
-                    (v.User != null && (
+                    (v.User != null && !v.User.IsDeleted && (
                         v.User.FullName.ToLower().Contains(search) ||
                         v.User.UserName!.ToLower().Contains(search)
                     ))

@@ -8,6 +8,7 @@ namespace backend.Services
     {
         private readonly IReportRepository _reportRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IItemRepository _itemRepository;
         private readonly INotificationService _notificationService;
 
         private const int ReportCooldownMinutes = 60;
@@ -15,10 +16,12 @@ namespace backend.Services
         public ReportService(
             IReportRepository reportRepository,
             IUserRepository userRepository,
+            IItemRepository itemRepository,
             INotificationService notificationService)
         {
             _reportRepository = reportRepository;
             _userRepository = userRepository;
+            _itemRepository = itemRepository;
             _notificationService = notificationService;
         }
 
@@ -151,7 +154,7 @@ namespace backend.Services
             return MapToDto(report, adminView: true);
         }
 
-        // ── Helpers ───────────────────────────────────────────────────────────────
+        //Helpers
 
         // Enforces single reason rule
         private static bool IsSingleFlag(ReportReason reasons)
@@ -161,6 +164,8 @@ namespace backend.Services
 
         private static ReportDto MapToDto(Report report, string? currentUserId = null, bool adminView = false)
         {
+
+
             return new ReportDto
             {
                 Id = report.Id,

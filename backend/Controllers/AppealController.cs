@@ -28,12 +28,11 @@ namespace backend.Controllers
             return Ok(ApiResponse<PagedResult<AppealDto>>.Ok(result));
         }
 
-        // GET /api/appeals/{id}
+        // GET /api/appeals/{id}  — regular users see AppealDto, admins are redirected to /admin/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<ApiResponse<AppealDto>>> GetById(int id)
         {
-            var isAdmin = Caller.IsAdmin;
-            var result = await _appealService.GetByIdAsync(id, Caller.UserId, isAdmin);
+            var result = await _appealService.GetByIdAsync(id, Caller.UserId, isAdmin: false);
             return Ok(ApiResponse<AppealDto>.Ok(result));
         }
 
@@ -72,7 +71,7 @@ namespace backend.Controllers
         }
 
 
-        // -------------------- Admin Endpoints --------------------
+        // ── Admin Endpoints ───────────────────────────────────────────────────
 
         // GET /api/appeals
         [HttpGet]
@@ -94,6 +93,15 @@ namespace backend.Controllers
         {
             var result = await _appealService.GetAllPendingAsync(filter, request);
             return Ok(ApiResponse<PagedResult<AppealDto>>.Ok(result));
+        }
+
+        // GET /api/appeals/admin/{id}  — returns full AdminAppealDto with user stats
+        [HttpGet("admin/{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<ApiResponse<AdminAppealDto>>> GetByIdForAdmin(int id)
+        {
+            var result = await _appealService.GetByIdWithDetailsAsync(id);
+            return Ok(ApiResponse<AdminAppealDto>.Ok((AdminAppealDto)result));
         }
 
         // GET /api/appeals/user/{userId}
@@ -123,29 +131,23 @@ namespace backend.Controllers
         // POST /api/appeals/{id}/decide/score
         [HttpPost("{id}/decide/score")]
         [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<ApiResponse<AppealDto>>> DecideScoreAppeal(
+        public async Task<ActionResult<ApiResponse<AdminAppealDto>>> DecideScoreAppeal(
             int id,
             [FromBody] AdminDecidesScoreAppealDto dto)
         {
             var result = await _appealService.DecideScoreAppealAsync(id, Caller.UserId, dto);
-            return Ok(ApiResponse<AppealDto>.Ok(result, "Score appeal decision recorded."));
+            return Ok(ApiResponse<AdminAppealDto>.Ok((AdminAppealDto)result, "Score appeal decision recorded."));
         }
 
         // POST /api/appeals/{id}/decide/fine
         [HttpPost("{id}/decide/fine")]
         [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<ApiResponse<AppealDto>>> DecideFineAppeal(
+        public async Task<ActionResult<ApiResponse<AdminAppealDto>>> DecideFineAppeal(
             int id,
             [FromBody] AdminDecidesFineAppealDto dto)
         {
             var result = await _appealService.DecideFineAppealAsync(id, Caller.UserId, dto);
-            return Ok(ApiResponse<AppealDto>.Ok(result, "Fine appeal decision recorded."));
+            return Ok(ApiResponse<AdminAppealDto>.Ok((AdminAppealDto)result, "Fine appeal decision recorded."));
         }
-
-
-
-
-
-
     }
 }

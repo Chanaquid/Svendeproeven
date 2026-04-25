@@ -1,6 +1,9 @@
 ﻿using backend.Dtos;
 using backend.Interfaces;
 using backend.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
+using backend.Hubs;
 
 namespace backend.Services
 {
@@ -8,28 +11,33 @@ namespace backend.Services
     {
         private readonly ISupportRepository _supportRepository;
         private readonly IUserRepository _userRepository;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly INotificationService _notificationService;
+        private readonly IHubContext<SupportChatHub> _hubContext;
 
         private const int InactiveHours = 48;
 
         public SupportService(
             ISupportRepository supportRepository,
             IUserRepository userRepository,
-            INotificationService notificationService)
+            UserManager<ApplicationUser> userManager,
+            INotificationService notificationService,
+            IHubContext<SupportChatHub> hubContext)
         {
             _supportRepository = supportRepository;
             _userRepository = userRepository;
+            _userManager = userManager;
             _notificationService = notificationService;
+            _hubContext = hubContext;
         }
 
-        //User actions
+        // ─── User actions ─────────────────────────────────────────────────────────
 
         public async Task<SupportThreadDto> CreateThreadAsync(string userId, CreateSupportThreadDto dto)
         {
             _ = await _userRepository.GetByIdAsync(userId)
                 ?? throw new KeyNotFoundException("User not found.");
 
-            //Users can only have one active (non-closed) thread at a time
             if (await _supportRepository.HasActiveThreadAsync(userId))
                 throw new InvalidOperationException("You already have an open support thread. Please wait for it to be resolved before opening a new one.");
 
@@ -44,7 +52,6 @@ namespace backend.Services
             await _supportRepository.AddThreadAsync(thread);
             await _supportRepository.SaveChangesAsync();
 
-            //Add initial message
             var message = new SupportMessage
             {
                 SupportThreadId = thread.Id,
@@ -74,7 +81,6 @@ namespace backend.Services
             var thread = await _supportRepository.GetThreadByIdWithMessagesAsync(id)
                 ?? throw new KeyNotFoundException("Support thread not found.");
 
-            //Users can only see their own threads; admins can see all
             if (!isAdmin && thread.UserId != userId)
                 throw new UnauthorizedAccessException("You do not have access to this thread.");
 
@@ -99,11 +105,9 @@ namespace backend.Services
             var thread = await _supportRepository.GetThreadByIdAsync(threadId)
                 ?? throw new KeyNotFoundException("Support thread not found.");
 
-            //Only the thread owner or any admin can message
             if (!isAdmin && thread.UserId != senderId)
                 throw new UnauthorizedAccessException("You do not have access to this thread.");
 
-            //Closed threads accept no messages from anyone
             if (thread.Status == SupportThreadStatus.Closed)
                 throw new InvalidOperationException("This support thread is closed. No further messages can be sent.");
 
@@ -117,10 +121,8 @@ namespace backend.Services
             };
 
             await _supportRepository.AddMessageAsync(message);
-
             await _supportRepository.SaveChangesAsync();
 
-            //Notify the other party
             var recipientId = isAdmin ? thread.UserId : thread.ClaimedByAdminId;
             if (!string.IsNullOrEmpty(recipientId))
             {
@@ -135,7 +137,7 @@ namespace backend.Services
 
             var sender = await _userRepository.GetByIdAsync(senderId);
 
-            return new SupportMessageDto
+            var messageDto = new SupportMessageDto
             {
                 Id = message.Id,
                 SupportThreadId = threadId,
@@ -149,10 +151,79 @@ namespace backend.Services
                 IsRead = false,
                 SentAt = message.SentAt
             };
+
+            // Broadcast to everyone viewing this thread
+            await _hubContext.Clients
+                .Group($"support_thread_{threadId}")
+                .SendAsync("ReceiveMessage", messageDto);
+
+            // Build preview for sidebar update
+            var preview = message.Content.Length > 60
+                ? message.Content[..60] + "…"
+                : message.Content;
+
+            var threadUpdate = new
+            {
+                threadId = thread.Id,
+                lastMessagePreview = preview,
+                lastMessageAt = message.SentAt,
+                senderId = senderId,
+            };
+
+            // Notify the thread owner's sidebar
+            await _hubContext.Clients
+                .Group($"support_user_{thread.UserId}")
+                .SendAsync("ThreadUpdated", threadUpdate);
+
+            // Notify the claimed admin's sidebar (if different from sender)
+            if (!string.IsNullOrEmpty(thread.ClaimedByAdminId) && thread.ClaimedByAdminId != senderId)
+            {
+                await _hubContext.Clients
+                    .Group($"support_user_{thread.ClaimedByAdminId}")
+                    .SendAsync("ThreadUpdated", threadUpdate);
+            }
+
+            return messageDto;
         }
 
+        public async Task<PagedResult<SupportMessageDto>> GetMessagesAsync(
+            int threadId,
+            string userId,
+            bool isAdmin,
+            PagedRequest request)
+        {
+            var thread = await _supportRepository.GetThreadByIdAsync(threadId)
+                ?? throw new KeyNotFoundException("Support thread not found.");
 
-        //Admin or threadowner can close the thread
+            if (!isAdmin && thread.UserId != userId)
+                throw new UnauthorizedAccessException("You do not have access to this thread.");
+
+            var paged = await _supportRepository.GetMessagesAsync(threadId, request);
+
+            var items = paged.Items.Select(m => new SupportMessageDto
+            {
+                Id = m.Id,
+                SupportThreadId = m.SupportThreadId,
+                SenderId = m.SenderId,
+                SenderName = m.Sender?.UserName ?? string.Empty,
+                SenderFullName = m.Sender?.FullName ?? string.Empty,
+                SenderAvatarUrl = m.Sender?.AvatarUrl,
+                IsAdminMessage = m.SenderId == thread.ClaimedByAdminId,
+                IsMine = m.SenderId == userId,
+                Content = m.Content,
+                IsRead = m.IsRead,
+                SentAt = m.SentAt
+            }).ToList();
+
+            return new PagedResult<SupportMessageDto>
+            {
+                Items = items,
+                TotalCount = paged.TotalCount,
+                Page = paged.Page,
+                PageSize = paged.PageSize
+            };
+        }
+
         public async Task CloseThreadAsync(int threadId, string userId, bool isAdmin)
         {
             var thread = await _supportRepository.GetThreadByIdAsync(threadId)
@@ -170,7 +241,6 @@ namespace backend.Services
             _supportRepository.UpdateThread(thread);
             await _supportRepository.SaveChangesAsync();
 
-            //Notify the other party
             var recipientId = isAdmin ? thread.UserId : thread.ClaimedByAdminId;
             if (!string.IsNullOrEmpty(recipientId))
             {
@@ -181,6 +251,20 @@ namespace backend.Services
                     threadId,
                     NotificationReferenceType.SupportThread
                 );
+            }
+
+            // Notify both parties that the thread status changed
+            var statusUpdate = new { threadId = thread.Id, status = SupportThreadStatus.Closed.ToString() };
+
+            await _hubContext.Clients
+                .Group($"support_user_{thread.UserId}")
+                .SendAsync("ThreadStatusUpdated", statusUpdate);
+
+            if (!string.IsNullOrEmpty(thread.ClaimedByAdminId))
+            {
+                await _hubContext.Clients
+                    .Group($"support_user_{thread.ClaimedByAdminId}")
+                    .SendAsync("ThreadStatusUpdated", statusUpdate);
             }
         }
 
@@ -195,7 +279,19 @@ namespace backend.Services
             await _supportRepository.MarkMessagesAsReadAsync(threadId, userId, dto.UpToMessageId);
         }
 
-        //Admins
+        public async Task<bool> CanUserAccessThreadAsync(int threadId, string userId)
+        {
+            var thread = await _supportRepository.GetThreadByIdAsync(threadId);
+            if (thread == null) return false;
+
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) return false;
+
+            var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+            return isAdmin || thread.UserId == userId;
+        }
+
+        //Admin actions
 
         public async Task<SupportThreadDto> AdminCreateThreadAsync(
             string adminId,
@@ -205,12 +301,11 @@ namespace backend.Services
             _ = await _userRepository.GetByIdAsync(targetUserId)
                 ?? throw new KeyNotFoundException("Target user not found.");
 
-            //Admins bypass the one-active-thread restriction
             var thread = new SupportThread
             {
                 UserId = targetUserId,
                 Subject = dto.Subject.Trim(),
-                Status = SupportThreadStatus.Claimed, //Admin-created threads are immediately claimed
+                Status = SupportThreadStatus.Claimed,
                 ClaimedByAdminId = adminId,
                 ClaimedAt = DateTime.UtcNow,
                 CreatedAt = DateTime.UtcNow
@@ -219,7 +314,6 @@ namespace backend.Services
             await _supportRepository.AddThreadAsync(thread);
             await _supportRepository.SaveChangesAsync();
 
-            //Admin's initial message
             var message = new SupportMessage
             {
                 SupportThreadId = thread.Id,
@@ -239,6 +333,19 @@ namespace backend.Services
                 thread.Id,
                 NotificationReferenceType.SupportThread
             );
+
+            // Notify the user's sidebar of the new thread
+            await _hubContext.Clients
+                .Group($"support_user_{targetUserId}")
+                .SendAsync("ThreadUpdated", new
+                {
+                    threadId = thread.Id,
+                    lastMessagePreview = dto.InitialMessage.Length > 60
+                        ? dto.InitialMessage[..60] + "…"
+                        : dto.InitialMessage,
+                    lastMessageAt = message.SentAt,
+                    senderId = adminId,
+                });
 
             var created = await _supportRepository.GetThreadByIdWithMessagesAsync(thread.Id);
             return MapToDto(created!, adminId);
@@ -266,7 +373,6 @@ namespace backend.Services
             thread.Status = SupportThreadStatus.Claimed;
             _supportRepository.UpdateThread(thread);
 
-            //Automatic greeting message from admin
             var greeting = new SupportMessage
             {
                 SupportThreadId = threadId,
@@ -284,9 +390,54 @@ namespace backend.Services
             await _notificationService.SendAsync(
                 thread.UserId,
                 NotificationType.SupportThreadClaimed,
-                $"{admin.FullName} from the support team has picked up your thread: '{thread.Subject}'", threadId,
+                $"{admin.FullName} from the support team has picked up your thread: '{thread.Subject}'",
+                threadId,
                 NotificationReferenceType.SupportThread
             );
+
+            var greetingDto = new SupportMessageDto
+            {
+                Id = greeting.Id,
+                SupportThreadId = threadId,
+                SenderId = adminId,
+                SenderName = admin.UserName ?? string.Empty,
+                SenderFullName = admin.FullName ?? string.Empty,
+                SenderAvatarUrl = admin.AvatarUrl,
+                IsAdminMessage = true,
+                IsMine = false,
+                Content = greeting.Content,
+                IsRead = false,
+                SentAt = greeting.SentAt
+            };
+
+            //Push greeting message to the thread in real-time
+            await _hubContext.Clients
+                .Group($"support_thread_{threadId}")
+                .SendAsync("ReceiveMessage", greetingDto);
+
+            var preview = greeting.Content.Length > 60
+                ? greeting.Content[..60] + "…"
+                : greeting.Content;
+
+            var threadUpdate = new
+            {
+                threadId = thread.Id,
+                lastMessagePreview = preview,
+                lastMessageAt = greeting.SentAt,
+                senderId = adminId,
+            };
+
+            // Notify user's sidebar
+            await _hubContext.Clients
+                .Group($"support_user_{thread.UserId}")
+                .SendAsync("ThreadUpdated", threadUpdate);
+
+            // Notify status change
+            var statusUpdate = new { threadId = thread.Id, status = SupportThreadStatus.Claimed.ToString() };
+
+            await _hubContext.Clients
+                .Group($"support_user_{thread.UserId}")
+                .SendAsync("ThreadStatusUpdated", statusUpdate);
 
             var updated = await _supportRepository.GetThreadByIdWithMessagesAsync(threadId);
             return MapToDto(updated!, adminId);
@@ -320,6 +471,19 @@ namespace backend.Services
                     thread.Id,
                     NotificationReferenceType.SupportThread
                 );
+
+                var statusUpdate = new { threadId = thread.Id, status = SupportThreadStatus.Closed.ToString() };
+
+                await _hubContext.Clients
+                    .Group($"support_user_{thread.UserId}")
+                    .SendAsync("ThreadStatusUpdated", statusUpdate);
+
+                if (!string.IsNullOrEmpty(thread.ClaimedByAdminId))
+                {
+                    await _hubContext.Clients
+                        .Group($"support_user_{thread.ClaimedByAdminId}")
+                        .SendAsync("ThreadStatusUpdated", statusUpdate);
+                }
             }
 
             await _supportRepository.SaveChangesAsync();

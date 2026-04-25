@@ -165,6 +165,13 @@ export class UserService {
     });
   }
 
+  getUserReports(userId: string, request: PagedRequest): Observable<ApiResponse<PagedResult<any>>> {
+    return this.http.get<ApiResponse<PagedResult<any>>>(
+      `${this.adminBaseUrl}/${userId}/reports`,
+      { params: { ...request } as any }
+    );
+  }
+
   getUserDisputes(userId: string, filter: DisputeFilter, request: PagedRequest): Observable<ApiResponse<PagedResult<DisputeListDto>>> {
     return this.http.get<ApiResponse<PagedResult<DisputeListDto>>>(`${this.adminBaseUrl}/${userId}/disputes`, {
       params: this.buildParams(filter, request),
@@ -187,7 +194,7 @@ export class UserService {
     return this.http.put<ApiResponse<AdminUserDto>>(`${this.adminBaseUrl}/${userId}`, dto);
   }
 
-  adjustScore(userId: string, dto: Omit<AdminAdjustScoreDto, 'userId'>): Observable<ApiResponse<string>> {
+  adjustScore(userId: string, dto: AdminAdjustScoreDto): Observable<ApiResponse<string>> {
     return this.http.post<ApiResponse<string>>(`${this.adminBaseUrl}/${userId}/score`, dto);
   }
 
