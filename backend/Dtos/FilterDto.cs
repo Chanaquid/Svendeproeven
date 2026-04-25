@@ -4,7 +4,7 @@ namespace backend.Dtos
 {
     public class UserFilter
     {
-
+        public bool? ExcludeAdmins { get; set; }
         public bool? IncludeDeleted { get; set; }
         public bool? IsPermanentBan { get; set; }
         public bool? IsBanned { get; set; } //true = banned, false = not banned
@@ -51,6 +51,7 @@ namespace backend.Dtos
 
         public int? MaxLoanDays { get; set; }
         public int? MinLoanDays { get; set; }
+        public DateTime? CreatedAfter { get; set; }
 
 
         //Admins

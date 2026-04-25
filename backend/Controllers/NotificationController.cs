@@ -28,14 +28,15 @@ namespace backend.Controllers
         }
 
         //GET: api/notifications
-        //Full list — when user opens their notification panel
+        //Full pagedlist — when user opens their notification panel
         [HttpGet]
-        public async Task<ActionResult<ApiResponse<List<NotificationDto>>>> GetAll()
+        public async Task<ActionResult<ApiResponse<PagedResult<NotificationDto>>>> GetAll(
+            [FromQuery] NotificationFilter filter,
+            [FromQuery] PagedRequest request)
         {
-            var result = await _notificationService.GetAllAsync(Caller.UserId);
-            return Ok(ApiResponse<List<NotificationDto>>.Ok(result));
+            var result = await _notificationService.GetAllAsync(Caller.UserId, filter, request);
+            return Ok(ApiResponse<PagedResult<NotificationDto>>.Ok(result));
         }
-
         //PATCH: api/notifications/{id}/read
         [HttpPatch("{id:int}/read")]
         public async Task<ActionResult<ApiResponse<string>>> MarkAsRead(int id)

@@ -89,6 +89,7 @@ export interface UserPublicProfileDto {
   fullName: string;
   username: string;
   avatarUrl: string | null;
+  isAdmin: boolean;
   bio: string | null;
   gender: string | null;
   age: number;

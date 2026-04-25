@@ -21,6 +21,7 @@ import { AddDisputePhotoDto } from '../../dtos/disputePhotoDto';
 import { DisputeStatus } from '../../dtos/enums';
 import { DisputeFilter } from '../../dtos/filterDto';
 import { PagedRequest } from '../../dtos/paginationDto';
+import { getPageNumbers, getTotalPages } from '../../utils/pagination.utils';
 
 type TabId = 'all' | 'awaiting' | 'pending' | 'overdue' | 'resolved' | 'cancelled';
 
@@ -41,9 +42,13 @@ interface Tab {
 export class Dispute implements OnInit, OnDestroy {
 
   @Input() openDisputeId: number | null = null;
-  
+
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
+  private resizeHandler = () => {
+    this.currentPage = 1;
+    this.loadDisputes();
+  };
 
   isLoading = true;
 
@@ -62,8 +67,7 @@ export class Dispute implements OnInit, OnDestroy {
   listLoading = false;
   listError: string | null = null;
   currentPage = 1;
-  pageSize = 10;
-  totalPages = 1;
+  totalCount = 0;
   searchQuery = '';
   sortFilter = 'newest';
 
@@ -74,6 +78,7 @@ export class Dispute implements OnInit, OnDestroy {
 
   // Photo lightbox
   selectedPhoto: string | null = null;
+  selectedPhotoCaption: string | null = null;
 
   // Edit claim
   editMode = false;
@@ -81,20 +86,16 @@ export class Dispute implements OnInit, OnDestroy {
   editError = '';
   isSavingEdit = false;
 
-
-  //filer
+  // Photo delete
   isDeletingPhoto: { [photoId: number]: boolean } = {};
   photoDeleteError = '';
 
-  // separate file input state for adding more evidence
+  // Extra evidence
   extraEvidenceFile: File | null = null;
   extraEvidencePreview: string | null = null;
   extraEvidenceCaption = '';
   uploadingExtraEvidence = false;
   extraEvidenceError = '';
-
-
-  selectedPhotoCaption: string | null = null;
 
   // Submit response
   responseText = '';
@@ -103,6 +104,7 @@ export class Dispute implements OnInit, OnDestroy {
   responsePhotoFiles: File[] = [];
   responsePhotoPreviews: string[] = [];
   responsePhotoError = '';
+  responsePhotoCaptions: string[] = [];
 
   // Evidence photo
   evidenceFile: File | null = null;
@@ -110,9 +112,6 @@ export class Dispute implements OnInit, OnDestroy {
   evidenceCaption = '';
   uploadingEvidence = false;
   evidenceError = '';
-  responsePhotoCaptions: string[] = [];
-
-
 
   // Cancel
   showCancelConfirm = false;
@@ -126,6 +125,26 @@ export class Dispute implements OnInit, OnDestroy {
     public router: Router,
   ) { }
 
+  // ─── Dynamic page size ────────────────────────────────────────────────────────
+  // Height-driven: subtract navbar (64) + tabs (52) + search bar (48) + padding (80)
+  // Each dispute card is ~118px tall including gap
+
+  get pageSize(): number {
+    const availableHeight = window.innerHeight - 64 - 52 - 48 - 80;
+    const cardHeight = 118;
+    return Math.max(5, Math.floor(availableHeight / cardHeight));
+  }
+
+  get totalPages(): number {
+    return getTotalPages(this.totalCount, this.pageSize);
+  }
+
+  get pageNumbers(): number[] {
+    return getPageNumbers(this.currentPage, this.totalPages);
+  }
+
+  // ─── Lifecycle ────────────────────────────────────────────────────────────────
+
   ngOnInit(): void {
     this.loadDisputes();
     this.loadTabCounts();
@@ -138,6 +157,8 @@ export class Dispute implements OnInit, OnDestroy {
       this.currentPage = 1;
       this.loadDisputes();
     });
+
+    window.addEventListener('resize', this.resizeHandler);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -146,13 +167,13 @@ export class Dispute implements OnInit, OnDestroy {
     }
   }
 
-
   ngOnDestroy(): void {
+    window.removeEventListener('resize', this.resizeHandler);
     this.destroy$.next();
     this.destroy$.complete();
   }
 
-  //Load
+  // ─── Load ─────────────────────────────────────────────────────────────────────
 
   loadDisputes(): void {
     if (this.isLoading) {
@@ -184,7 +205,7 @@ export class Dispute implements OnInit, OnDestroy {
         next: (res) => {
           if (res.success && res.data) {
             this.disputes = res.data.items;
-            this.totalPages = res.data.totalPages;
+            this.totalCount = res.data.totalCount;
             const tab = this.tabs.find(t => t.id === this.activeTab);
             if (tab) tab.count = res.data.totalCount;
           } else {
@@ -200,10 +221,12 @@ export class Dispute implements OnInit, OnDestroy {
 
     this.disputeService.getMyAll(null, request)
       .pipe(takeUntil(this.destroy$))
-      .subscribe({ next: (res) => {
-        const tab = this.tabs.find(t => t.id === 'all');
-        if (tab && res.data) { tab.count = res.data.totalCount; this.cdr.markForCheck(); }
-      }});
+      .subscribe({
+        next: (res) => {
+          const tab = this.tabs.find(t => t.id === 'all');
+          if (tab && res.data) { tab.count = res.data.totalCount; this.cdr.markForCheck(); }
+        }
+      });
 
     const statusTabs: { id: TabId; status: DisputeStatus }[] = [
       { id: 'awaiting',  status: DisputeStatus.AwaitingResponse },
@@ -216,10 +239,12 @@ export class Dispute implements OnInit, OnDestroy {
     for (const { id, status } of statusTabs) {
       this.disputeService.getMyAll({ status }, request)
         .pipe(takeUntil(this.destroy$))
-        .subscribe({ next: (res) => {
-          const tab = this.tabs.find(t => t.id === id);
-          if (tab && res.data) { tab.count = res.data.totalCount; this.cdr.markForCheck(); }
-        }});
+        .subscribe({
+          next: (res) => {
+            const tab = this.tabs.find(t => t.id === id);
+            if (tab && res.data) { tab.count = res.data.totalCount; this.cdr.markForCheck(); }
+          }
+        });
     }
   }
 
@@ -239,7 +264,6 @@ export class Dispute implements OnInit, OnDestroy {
         next: (res) => {
           if (res.success && res.data) {
             this.selectedDispute = res.data;
-            console.log(this.selectedDispute);
             this.editDescription = res.data.description;
             this.disputeService.markViewed(id).pipe(takeUntil(this.destroy$)).subscribe();
           }
@@ -266,7 +290,7 @@ export class Dispute implements OnInit, OnDestroy {
     this.evidenceError = '';
   }
 
-  // ─── Tabs & filters ──────────────────────────────────────────────────────────
+  // ─── Tabs & filters ───────────────────────────────────────────────────────────
 
   switchTab(tab: TabId): void {
     this.activeTab = tab;
@@ -284,13 +308,14 @@ export class Dispute implements OnInit, OnDestroy {
   }
 
   goToPage(p: number): void {
+    if (p < 1 || p > this.totalPages) return;
     this.currentPage = p;
     this.loadDisputes();
   }
 
   trackById(_: number, d: DisputeListDto): number { return d.id; }
 
-  // ─── Permission checks — driven by backend flags ──────────────────────────────
+  // ─── Permission checks ────────────────────────────────────────────────────────
 
   canSubmitResponse(): boolean { return this.selectedDispute?.canRespond ?? false; }
   canAddEvidence(): boolean    { return this.selectedDispute?.canAddEvidence ?? false; }
@@ -298,27 +323,25 @@ export class Dispute implements OnInit, OnDestroy {
   canCancel(): boolean         { return this.selectedDispute?.canCancel ?? false; }
   canAddResponseEvidence(): boolean { return this.selectedDispute?.canAddResponseEvidence ?? false; }
 
-
-  // ─── Actions ─────────────────────────────────────────────────────────────────
-
+  // ─── Actions ──────────────────────────────────────────────────────────────────
 
   deleteFiledByPhoto(photoId: number): void {
-  if (!this.selectedDispute) return;
-  this.isDeletingPhoto[photoId] = true;
-  this.photoDeleteError = '';
+    if (!this.selectedDispute) return;
+    this.isDeletingPhoto[photoId] = true;
+    this.photoDeleteError = '';
 
-  this.disputeService.deleteFiledByPhoto(this.selectedDispute.id, photoId)
-    .pipe(takeUntil(this.destroy$), finalize(() => {
-      this.isDeletingPhoto[photoId] = false;
-      this.cdr.markForCheck();
-    }))
-    .subscribe({
-      next: () => this.reloadDispute(this.selectedDispute!.id),
-      error: (err) => {
-        this.photoDeleteError = err.error?.message ?? 'Failed to delete photo.';
+    this.disputeService.deleteFiledByPhoto(this.selectedDispute.id, photoId)
+      .pipe(takeUntil(this.destroy$), finalize(() => {
+        this.isDeletingPhoto[photoId] = false;
         this.cdr.markForCheck();
-      }
-    });
+      }))
+      .subscribe({
+        next: () => this.reloadDispute(this.selectedDispute!.id),
+        error: (err) => {
+          this.photoDeleteError = err.error?.message ?? 'Failed to delete photo.';
+          this.cdr.markForCheck();
+        }
+      });
   }
 
   onExtraEvidenceFileSelected(event: Event): void {
@@ -365,7 +388,6 @@ export class Dispute implements OnInit, OnDestroy {
       this.cdr.markForCheck();
     }
   }
-
 
   toggleEditMode(): void {
     this.editMode = !this.editMode;
@@ -462,7 +484,7 @@ export class Dispute implements OnInit, OnDestroy {
       this.responsePhotoFiles = [];
       this.responsePhotoPreviews = [];
       this.responsePhotoError = '';
-      this.reloadDispute(disputeId); // use new helper
+      this.reloadDispute(disputeId);
     } catch (err: any) {
       this.responsePhotoError = err?.error?.message ?? 'Failed to upload response photos.';
       this.cdr.markForCheck();
@@ -499,7 +521,6 @@ export class Dispute implements OnInit, OnDestroy {
       reader.readAsDataURL(file);
     });
   }
-
 
   removeResponsePhoto(i: number): void {
     this.responsePhotoFiles.splice(i, 1);
@@ -553,8 +574,6 @@ export class Dispute implements OnInit, OnDestroy {
     }
   }
 
-
-
   cancelDispute(): void {
     if (!this.selectedDispute) return;
     this.isCancelling = true;
@@ -583,10 +602,10 @@ export class Dispute implements OnInit, OnDestroy {
     }
   }
 
-  //UI Helpers
+  // ─── UI Helpers ───────────────────────────────────────────────────────────────
 
-  openPhoto(url: string, caption?: string | null): void { 
-    this.selectedPhoto = url; 
+  openPhoto(url: string, caption?: string | null): void {
+    this.selectedPhoto = url;
     this.selectedPhotoCaption = caption ?? null;
   }
 

@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
 import { AppealStatus, AppealType, FineStatus } from '../../dtos/enums';
 import { debounceTime, distinctUntilChanged, finalize, Subject, takeUntil } from 'rxjs';
 import { CommonModule } from '@angular/common';
@@ -10,6 +10,7 @@ import { PagedRequest } from '../../dtos/paginationDto';
 import { AppealFilter } from '../../dtos/filterDto';
 import { FineListDto } from '../../dtos/fineDto';
 import { FineService } from '../../services/fineService';
+import { getPageNumbers, getTotalPages } from '../../utils/pagination.utils';
 
 type TabId = 'all' | 'pending' | 'approved' | 'rejected' | 'cancelled';
 
@@ -27,11 +28,16 @@ interface Tab {
   templateUrl: './appeal.html',
   styleUrl: './appeal.css',
 })
-
-
 export class Appeal implements OnInit, OnDestroy {
+
+  @Input() openAppealId: number | null = null;
+
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
+  private resizeHandler = () => {
+    this.currentPage = 1;
+    this.loadAppeals();
+  };
 
   isLoading = true;
 
@@ -49,8 +55,7 @@ export class Appeal implements OnInit, OnDestroy {
   listLoading = false;
   listError: string | null = null;
   currentPage = 1;
-  pageSize = 10;
-  totalPages = 1;
+  totalCount = 0;
   searchQuery = '';
   sortFilter = 'newest';
 
@@ -79,11 +84,12 @@ export class Appeal implements OnInit, OnDestroy {
   showCancelConfirm = false;
   isCancelling = false;
 
-
-  //Fines
+  // Fines selector — paginated
   appealableFines: FineListDto[] = [];
   loadingFines = false;
-
+  finesPage = 1;
+  finesTotalCount = 0;
+  readonly FINES_PAGE_SIZE = 5;
 
   readonly AppealType = AppealType;
   readonly AppealStatus = AppealStatus;
@@ -94,6 +100,34 @@ export class Appeal implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     public router: Router,
   ) {}
+
+  // ─── Dynamic page size ────────────────────────────────────────────────────────
+  // Appeal cards are ~88px tall; subtract navbar + tabs/header + search bar + padding
+
+  get pageSize(): number {
+    const availableHeight = window.innerHeight - 64 - 52 - 48 - 80;
+    return Math.max(5, Math.floor(availableHeight / 90));
+  }
+
+  get totalPages(): number {
+    return getTotalPages(this.totalCount, this.pageSize);
+  }
+
+  get pageNumbers(): number[] {
+    return getPageNumbers(this.currentPage, this.totalPages);
+  }
+
+  // ─── Fine selector pagination ─────────────────────────────────────────────────
+
+  get finesTotalPages(): number {
+    return getTotalPages(this.finesTotalCount, this.FINES_PAGE_SIZE);
+  }
+
+  get finesPageNumbers(): number[] {
+    return getPageNumbers(this.finesPage, this.finesTotalPages);
+  }
+
+  // ─── Lifecycle ────────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
     this.loadAppeals();
@@ -108,12 +142,23 @@ export class Appeal implements OnInit, OnDestroy {
       this.currentPage = 1;
       this.loadAppeals();
     });
+
+    window.addEventListener('resize', this.resizeHandler);
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['openAppealId'] && this.openAppealId) {
+      this.openAppeal(this.openAppealId);
+    }
   }
 
   ngOnDestroy(): void {
+    window.removeEventListener('resize', this.resizeHandler);
     this.destroy$.next();
     this.destroy$.complete();
   }
+
+  // ─── Load appeals ─────────────────────────────────────────────────────────────
 
   loadAppeals(): void {
     if (this.isLoading) this.listLoading = true;
@@ -143,7 +188,7 @@ export class Appeal implements OnInit, OnDestroy {
         next: (res) => {
           if (res.success && res.data) {
             this.appeals = res.data.items;
-            this.totalPages = res.data.totalPages;
+            this.totalCount = res.data.totalCount;
             const tab = this.tabs.find(t => t.id === this.activeTab);
             if (tab) tab.count = res.data.totalCount;
           } else {
@@ -159,10 +204,12 @@ export class Appeal implements OnInit, OnDestroy {
 
     this.appealService.getMyAppeals(null, request)
       .pipe(takeUntil(this.destroy$))
-      .subscribe({ next: (res) => {
-        const tab = this.tabs.find(t => t.id === 'all');
-        if (tab && res.data) { tab.count = res.data.totalCount; this.cdr.markForCheck(); }
-      }});
+      .subscribe({
+        next: (res) => {
+          const tab = this.tabs.find(t => t.id === 'all');
+          if (tab && res.data) { tab.count = res.data.totalCount; this.cdr.markForCheck(); }
+        }
+      });
 
     const statusTabs: { id: TabId; status: AppealStatus }[] = [
       { id: 'pending',   status: AppealStatus.Pending },
@@ -174,47 +221,72 @@ export class Appeal implements OnInit, OnDestroy {
     for (const { id, status } of statusTabs) {
       this.appealService.getMyAppeals({ status }, request)
         .pipe(takeUntil(this.destroy$))
-        .subscribe({ next: (res) => {
-          const tab = this.tabs.find(t => t.id === id);
-          if (tab && res.data) { tab.count = res.data.totalCount; this.cdr.markForCheck(); }
-        }});
+        .subscribe({
+          next: (res) => {
+            const tab = this.tabs.find(t => t.id === id);
+            if (tab && res.data) { tab.count = res.data.totalCount; this.cdr.markForCheck(); }
+          }
+        });
     }
   }
 
-  private loadAppealableFines(): void {
-  this.loadingFines = true;
-  const request = { page: 1, pageSize: 100, sortBy: 'createdAt', sortDescending: true };
+  // ─── Load fine selector ───────────────────────────────────────────────────────
 
-  this.fineService.getMyFines({ status: FineStatus.Unpaid }, request)
-    .pipe(takeUntil(this.destroy$))
-    .subscribe({
-      next: (res) => {
-        const unpaid = res.data?.items ?? [];
-        // Also load rejected fines
-        this.fineService.getMyFines({ status: FineStatus.Rejected }, request)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: (res2) => {
-              const rejected = res2.data?.items ?? [];
-              // Combine and filter out fines that already have an appeal
-              this.appealableFines = [...unpaid, ...rejected]
-                .filter(f => !f.hasPendingAppeal);
-              this.loadingFines = false;
-              this.cdr.markForCheck();
-            },
-            error: () => {
-              this.appealableFines = unpaid.filter(f => !f.hasPendingAppeal);
-              this.loadingFines = false;
-              this.cdr.markForCheck();
-            }
-          });
-      },
-      error: () => {
-        this.loadingFines = false;
-        this.cdr.markForCheck();
-      }
-    });
+  loadAppealableFines(page = 1): void {
+    this.loadingFines = true;
+    this.finesPage = page;
+
+    // We fetch all unpaid+rejected together by loading both statuses,
+    // then paginate client-side across the combined set.
+    // To keep it simple we fetch enough to cover the page window.
+    const request: PagedRequest = {
+      page: 1,
+      pageSize: 200, // large enough to get all appealable fines
+      sortBy: 'createdAt',
+      sortDescending: true,
+    };
+
+    this.fineService.getMyFines({ status: FineStatus.Unpaid }, request)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          const unpaid = res.data?.items ?? [];
+          this.fineService.getMyFines({ status: FineStatus.Rejected }, request)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: (res2) => {
+                const rejected = res2.data?.items ?? [];
+                const all = [...unpaid, ...rejected].filter(f => !f.hasPendingAppeal);
+                this.finesTotalCount = all.length;
+                // Slice to current page
+                const start = (this.finesPage - 1) * this.FINES_PAGE_SIZE;
+                this.appealableFines = all.slice(start, start + this.FINES_PAGE_SIZE);
+                this.loadingFines = false;
+                this.cdr.markForCheck();
+              },
+              error: () => {
+                const all = unpaid.filter(f => !f.hasPendingAppeal);
+                this.finesTotalCount = all.length;
+                const start = (this.finesPage - 1) * this.FINES_PAGE_SIZE;
+                this.appealableFines = all.slice(start, start + this.FINES_PAGE_SIZE);
+                this.loadingFines = false;
+                this.cdr.markForCheck();
+              }
+            });
+        },
+        error: () => {
+          this.loadingFines = false;
+          this.cdr.markForCheck();
+        }
+      });
   }
+
+  goToFinesPage(p: number): void {
+    if (p < 1 || p > this.finesTotalPages) return;
+    this.loadAppealableFines(p);
+  }
+
+  // ─── Appeals actions ──────────────────────────────────────────────────────────
 
   openAppeal(id: number): void {
     if (this.selectedId === id) return;
@@ -256,7 +328,7 @@ export class Appeal implements OnInit, OnDestroy {
     }
 
     if (this.createType === AppealType.Fine && !this.createFineId) {
-      this.createError = 'Please enter a Fine ID.';
+      this.createError = 'Please select a fine.';
       return;
     }
 
@@ -279,6 +351,7 @@ export class Appeal implements OnInit, OnDestroy {
           this.createFineId = null;
           this.loadAppeals();
           this.loadTabCounts();
+          this.loadAppealableFines();
           setTimeout(() => { this.createSuccess = ''; this.cdr.markForCheck(); }, 4000);
         }
       },
@@ -323,8 +396,18 @@ export class Appeal implements OnInit, OnDestroy {
   }
 
   onSearch(): void { this.searchSubject.next(this.searchQuery); }
-  onFilterChange(): void { this.currentPage = 1; this.loadAppeals(); }
-  goToPage(p: number): void { this.currentPage = p; this.loadAppeals(); }
+
+  onFilterChange(): void {
+    this.currentPage = 1;
+    this.loadAppeals();
+  }
+
+  goToPage(p: number): void {
+    if (p < 1 || p > this.totalPages) return;
+    this.currentPage = p;
+    this.loadAppeals();
+  }
+
   trackById(_: number, a: AppealDto): number { return a.id; }
 
   getDefaultAvatar(name: string): string {

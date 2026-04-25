@@ -10,7 +10,9 @@ namespace backend.Interfaces
         Task<PagedResult<UserBlock>> GetAllAsync(UserBlockFilter? filter, PagedRequest request); //admin
         Task<bool> IsBlockedAsync(string blockerId, string blockedId);
         Task<bool> AreBlockedEitherWayAsync(string userId1, string userId2);
-        Task<HashSet<string>> GetBlockedUserIdsAsync(string userId); //all users blocked by or blocking userId
+        Task<HashSet<string>> GetBlockedUserIdsAsync(string userId); //all users blocked by or blocking userId for items filtering
+
+        Task<HashSet<string>> GetOutgoingBlockedUserIdsAsync(string userId); //for direct conversation filterign
         Task AddAsync(UserBlock block);
         Task DeleteAsync(UserBlock block);
         Task SaveChangesAsync();

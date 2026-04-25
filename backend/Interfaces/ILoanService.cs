@@ -26,6 +26,7 @@ namespace backend.Interfaces
         Task<List<AdminPendingLoanDto>> GetPendingAdminApprovalsAsync();
         Task<int> GetPendingAdminApprovalsCountAsync();
         Task<int> GetActiveLoansCountAsync();
+        Task ForceCancelLoanAsync(int loanId, string adminId, string reason);
 
         //Queries
         Task<LoanDto> GetByIdAsync(int loanId, string currentUserId);

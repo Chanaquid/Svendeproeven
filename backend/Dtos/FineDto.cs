@@ -129,6 +129,12 @@ namespace backend.Dtos
 
         public bool HasPendingAppeal { get; set; }
 
+
+        public string IssuedByAdminId { get; set; } = string.Empty;
+        public string IssuedByAdminName { get; set; } = string.Empty;
+        public string IssuedByAdminUsername { get; set; } = string.Empty;
+        public string? IssuedByAdminUserAvatarUrl { get; set; }
+
         public DateTime CreatedAt { get; set; }
         public DateTime? PaidAt { get; set; }
     }

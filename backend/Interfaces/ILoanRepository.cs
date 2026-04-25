@@ -6,6 +6,8 @@ namespace backend.Interfaces
 {
     public interface ILoanRepository
     {
+        Task<int> CountAsync(LoanFilter filter);
+
         Task<Loan?> GetByIdAsync(int loanId);
         Task<Loan?> GetByIdWithDetailsAsync(int loanId);
         Task<Loan?> GetActiveLoanByItemIdAsync(int itemId);

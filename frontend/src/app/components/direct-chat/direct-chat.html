@@ -1,0 +1,264 @@
+<app-navbar></app-navbar>
+
+<div class="chat-page">
+    <div class="chat-layout">
+
+        <!-- ── Sidebar ── -->
+        <aside class="conversation-list">
+            <div class="sidebar-header">
+                <h2>Messages</h2>
+            </div>
+
+            <!-- New chat search -->
+            <div class="new-chat-section">
+                <div class="new-chat-title">New chat</div>
+                <div class="user-search-wrapper">
+                    <div class="start-chat-box">
+                        <input type="text" [(ngModel)]="userSearch" placeholder="Search username"
+                            (input)="onUserSearchChange()" (focus)="userSearch.trim() && (showUserResults = true)"
+                            (blur)="clearUserResults()" />
+                    </div>
+
+                    <div *ngIf="showUserResults" class="user-search-results">
+                        <div *ngIf="isSearchingUsers" class="user-search-state">Searching...</div>
+                        <div *ngIf="!isSearchingUsers && foundUsers.length === 0 && userSearch.trim()"
+                            class="user-search-state">No users found.</div>
+
+                        <button *ngFor="let user of foundUsers; trackBy: trackUser" type="button"
+                            class="user-search-item" (mousedown)="selectFoundUser(user)">
+                            <div class="avatar small-avatar">
+                                <span *ngIf="!user.avatarUrl">{{ getInitials(user.username || user.fullName) }}</span>
+                                <img *ngIf="user.avatarUrl" [src]="user.avatarUrl" [alt]="user.username" />
+                            </div>
+                            <div class="user-search-content">
+                                <div class="user-search-name">{{ user.username }}</div>
+                                <div class="user-search-subtitle" *ngIf="user.fullName">{{ user.fullName }}</div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div *ngIf="isLoadingConversations" class="empty-state">Loading conversations...</div>
+            <div *ngIf="!isLoadingConversations && conversations.length === 0" class="empty-state">
+                No conversations yet.
+            </div>
+
+            <div *ngFor="let conversation of conversations; trackBy: trackConversation" class="conversation-item"
+                [class.active]="selectedConversation?.id === conversation.id">
+
+                <button type="button" class="conversation-main" (click)="selectConversation(conversation)">
+                    <div class="avatar">
+                        <span *ngIf="!conversation.otherUserAvatarUrl">{{ getInitials(conversation.otherUserName)
+                            }}</span>
+                        <img *ngIf="conversation.otherUserAvatarUrl" [src]="conversation.otherUserAvatarUrl"
+                            [alt]="conversation.otherUserName" />
+                    </div>
+                    <div class="conversation-content">
+                        <div class="conversation-name-row">
+                            <span class="name">{{ conversation.otherUserFullName || conversation.otherUserName }}</span>
+                        </div>
+                        
+                        <div class="conversation-bottom">
+                            <span class="preview" [class.blocked-preview]="conversation.isBlocked">
+                            {{ getConversationPreview(conversation) }}
+                            </span>
+                            <span *ngIf="conversation.unreadCount > 0" class="unread-badge">
+                            {{ conversation.unreadCount }}
+                            </span>
+                        </div>
+                        <div class="conversation-time-row">
+                            <span class="time">{{ formatConversationTime(conversation.lastMessageSentAt || '') }}</span>
+                        </div>
+                    </div>
+                </button>
+
+                <button type="button" class="delete-conversation-button" 
+                    (click)="confirmDeleteConversation(conversation.id)"
+                    title="Delete conversation">
+                    Delete
+                </button>
+            </div>
+
+            <div *ngIf="totalConversationPages > 1" class="conv-pagination">
+                <button (click)="goToConversationPage(conversationPage - 1)" 
+                    [disabled]="conversationPage === 1" class="conv-page-btn">←</button>
+
+                <ng-container *ngFor="let page of conversationPageNumbers">
+                    <span *ngIf="page === -1" class="conv-page-ellipsis">…</span>
+                    <button *ngIf="page !== -1" (click)="goToConversationPage(page)"
+                    class="conv-page-btn"
+                    [class.active]="page === conversationPage">
+                    {{ page }}
+                    </button>
+                </ng-container>
+
+                <button (click)="goToConversationPage(conversationPage + 1)" 
+                    [disabled]="conversationPage === totalConversationPages" class="conv-page-btn">→</button>
+                </div>
+
+            
+        </aside>
+
+        <!-- ── Chat panel ── -->
+        <section class="chat-panel">
+
+            <div *ngIf="!selectedConversation && !selectedConversationDetails" class="empty-chat">
+                <div class="empty-chat-card">
+                    <h3>No conversation selected</h3>
+                    <p>Choose a conversation from the left or start a new one.</p>
+                </div>
+            </div>
+
+            <ng-container *ngIf="selectedConversation || selectedConversationDetails">
+
+                <!-- Chat header -->
+                <div class="chat-header">
+                    <div class="chat-user" style="position: relative;">
+                        <div class="avatar clickable-avatar" (click)="openAvatarDialog('other')">
+                            <span *ngIf="!getCurrentConversationAvatar()">{{ getInitials(getCurrentConversationName())
+                                }}</span>
+                            <img *ngIf="getCurrentConversationAvatar()" [src]="getCurrentConversationAvatar()!"
+                                [alt]="getCurrentConversationName()" />
+                        </div>
+                        <div class="chat-name clickable-name" (click)="openAvatarDialog('other')">
+                            {{ getCurrentConversationName() }}
+                        </div>
+
+                        <div *ngIf="showAvatarDialog" class="popover-menu" (click)="$event.stopPropagation()">
+                            <button class="popover-item" (click)="viewAvatarFullscreen()">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path
+                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                        stroke-width="2" />
+                                </svg>
+                                View Avatar
+                            </button>
+                            <button class="popover-item" (click)="visitUserPage()">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                        stroke-width="2" />
+                                </svg>
+                                View Profile
+                            </button>
+                            <div class="popover-divider"></div>
+                            <button class="popover-item cancel" (click)="closeAvatarDialog()">Close</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages -->
+                <div class="messages-area" #messagesContainer (scroll)="onMessagesScroll($event)">
+                    <div *ngIf="isLoadingMessages" class="empty-state">Loading messages...</div>
+                    <div *ngIf="!isLoadingMessages && messages.length === 0" class="empty-state">
+                        No messages yet. Send the first one.
+                    </div>
+                    <!-- Load more indicator at top -->
+                    <div *ngIf="isLoadingMoreMessages" class="empty-state" style="padding: 8px; font-size:11px;">
+                        Loading earlier messages...
+                    </div>
+                    <div *ngIf="allMessagesLoaded && messages.length > 0" 
+                        class="empty-state" style="padding: 8px; font-size:11px; color: #52525b;">
+                        Beginning of conversation
+                    </div>
+
+                    <div *ngFor="let message of messages; trackBy: trackMessage" class="message-row"
+                        [class.own-message]="isOwnMessage(message)" [class.other-message]="!isOwnMessage(message)">
+
+                        <div class="message-avatar clickable-avatar"
+                            (click)="openAvatarDialog(isOwnMessage(message) ? 'mine' : 'other')">
+                            <span *ngIf="!getMessageAvatar(message)">{{ getMessageInitials(message) }}</span>
+                            <img *ngIf="getMessageAvatar(message)" [src]="getMessageAvatar(message)!"
+                                [alt]="getMessageSenderName(message)" />
+                        </div>
+
+                        <div class="message-content">
+                            <div class="message-sender">{{ getMessageSenderName(message) }}</div>
+                            <div class="message-bubble">
+                                <div class="message-text">{{ message.content }}</div>
+                                <div class="message-time">{{ formatMessageTime(message.sentAt) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- #1 Message input — full-width row -->
+                <div class="message-form">
+                    <input type="text" [(ngModel)]="newMessage" placeholder="Write a message..."
+                        (keyup.enter)="sendMessage()" />
+                    <button (click)="sendMessage()" [disabled]="isSending || !newMessage.trim()">
+                        {{ isSending ? '...' : 'Send' }}
+                    </button>
+                </div>
+
+            </ng-container>
+        </section>
+    </div>
+
+    <p *ngIf="errorMessage" class="error-message">{{ errorMessage }}</p>
+
+    <div *ngIf="showDeleteConfirmId !== null" class="dialog-overlay" (click)="cancelDelete()">
+  <div class="avatar-dialog" (click)="$event.stopPropagation()">
+    <div class="dialog-header">
+      <h3>Delete Conversation?</h3>
+    </div>
+    <div class="dialog-body" style="padding: 1rem; color: #a1a1aa; font-size: 0.875rem;">
+      This will permanently remove the conversation from your inbox. This cannot be undone.
+    </div>
+    <div class="dialog-footer" style="display:flex; gap: 0.5rem;">
+      <button class="dialog-cancel" (click)="cancelDelete()">Cancel</button>
+      <button class="dialog-cancel" 
+        style="background: rgba(239,68,68,0.1); color: #f87171; border-color: rgba(239,68,68,0.2);"
+        (click)="deleteConversation(showDeleteConfirmId!)">
+        Delete
+      </button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Avatar/profile dialog -->
+<div *ngIf="showAvatarDialog" class="dialog-overlay" (click)="closeAvatarDialog()">
+    <div class="avatar-dialog" (click)="$event.stopPropagation()">
+        <div class="dialog-header">
+            <h3>User Options</h3>
+        </div>
+        <div class="dialog-body">
+            <button class="dialog-option" (click)="viewAvatarFullscreen()">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>View profile picture</span>
+            </button>
+            <button class="dialog-option" (click)="visitUserPage()">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span>Visit profile page</span>
+            </button>
+        </div>
+        <div class="dialog-footer">
+            <button class="dialog-cancel" (click)="closeAvatarDialog()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div *ngIf="lightboxUrl" class="lightbox-overlay" (click)="closeLightbox()">
+    <div class="lightbox-inner" (click)="$event.stopPropagation()">
+        <button class="lightbox-close" (click)="closeLightbox()">✕</button>
+        <img [src]="lightboxUrl" class="lightbox-img" />
+    </div>
+</div>
+
+<!-- Avatar lightbox -->
+<div *ngIf="lightboxUrl" class="lightbox-overlay" (click)="closeLightbox()">
+    <div class="lightbox-inner" (click)="$event.stopPropagation()">
+        <button class="lightbox-close" (click)="closeLightbox()">✕</button>
+        <img [src]="lightboxUrl" class="lightbox-img" />
+    </div>
+</div>
+
+<!-- #2 Toast -->
+<div *ngIf="toastVisible" class="chat-toast">{{ toastMessage }}</div>

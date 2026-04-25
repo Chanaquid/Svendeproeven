@@ -19,7 +19,8 @@ namespace backend.Interfaces
         Task<Dictionary<int, int>> GetUnreadCountsForUserAsync(string userId);
 
         Task<bool> AreUsersBlockedAsync(string userId1, string userId2);
-
+        Task<HashSet<string>> GetOutgoingBlockedUserIdsAsync(string userId); //for dm 
+        Task<bool> IsBlockedByCurrentUserAsync(string blockerId, string blockedId);
         void Update(DirectConversation conversation);
         Task SaveChangesAsync();
     }

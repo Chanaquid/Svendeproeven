@@ -3,6 +3,7 @@ using backend.Dtos;
 using backend.Extensions;
 using backend.Interfaces;
 using backend.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Repositories
@@ -10,10 +11,13 @@ namespace backend.Repositories
     public class UserRepository : IUserRepository
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public UserRepository(ApplicationDbContext context)
+        public UserRepository(ApplicationDbContext context,
+            UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         public async Task<ApplicationUser?> GetByIdAsync(string userId)
@@ -76,12 +80,12 @@ namespace backend.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<PagedResult<ApplicationUser>> SearchByUsernameOrEmailAsync(UserFilter? filter, PagedRequest request,string? currentUserId = null)
+        public async Task<PagedResult<ApplicationUser>> SearchByUsernameOrEmailAsync(UserFilter? filter, PagedRequest request, string? currentUserId = null)
         {
             filter ??= new UserFilter();
             var query = _context.Users.AsQueryable();
 
-            //Exclude blocked users from search results
+            // Exclude blocked users
             if (!string.IsNullOrEmpty(currentUserId))
             {
                 query = query.Where(u => !_context.UserBlocks.Any(b =>
@@ -89,15 +93,26 @@ namespace backend.Repositories
                     (b.BlockerId == u.Id && b.BlockedId == currentUserId)));
             }
 
+            //exclude admins (for user-to-user DM search)
+            if (filter.ExcludeAdmins == true)
+            {
+                var adminIds = await _context.UserRoles
+                    .Join(_context.Roles,
+                        ur => ur.RoleId,
+                        r => r.Id,
+                        (ur, r) => new { ur.UserId, r.Name })
+                    .Where(x => x.Name == "Admin")
+                    .Select(x => x.UserId)
+                    .ToHashSetAsync();
+
+                query = query.Where(u => !adminIds.Contains(u.Id));
+            }
+
             if (filter != null)
             {
-                //Text Search (Username or Email)
                 if (!string.IsNullOrWhiteSpace(filter.Search))
-                {
                     query = query.Where(u => u.UserName.Contains(filter.Search) || u.Email.Contains(filter.Search));
-                }
 
-                //Status Filters
                 if (filter.IsBanned.HasValue)
                     query = query.Where(u => u.IsBanned == filter.IsBanned.Value);
 
@@ -107,23 +122,18 @@ namespace backend.Repositories
                 if (filter.IsVerified.HasValue)
                     query = query.Where(u => u.IsVerified == filter.IsVerified.Value);
 
-                //Score Range
                 if (filter.MinScore.HasValue)
                     query = query.Where(u => u.Score >= filter.MinScore.Value);
 
                 if (filter.MaxScore.HasValue)
                     query = query.Where(u => u.Score <= filter.MaxScore.Value);
 
-                //Unpaid Fines
                 if (filter.HasUnpaidFines == true)
-                {
-                    query = query.Where(u => u.Fines.Any(f => f.Status == FineStatus.Unpaid)); //Assuming FineStatus enum exists
-                }
+                    query = query.Where(u => u.Fines.Any(f => f.Status == FineStatus.Unpaid));
 
-                // Spatial/Location Filtering
                 if (filter.Latitude.HasValue && filter.Longitude.HasValue && filter.RadiusKm.HasValue)
                 {
-                    double latitudeRange = filter.RadiusKm.Value / 111.0; //1 degree lat is ~111km
+                    double latitudeRange = filter.RadiusKm.Value / 111.0;
                     double longitudeRange = filter.RadiusKm.Value / (111.0 * Math.Cos(filter.Latitude.Value * (Math.PI / 180.0)));
 
                     query = query.Where(u =>
@@ -134,9 +144,7 @@ namespace backend.Repositories
                 }
             }
 
-            //Apply Sorting
             query = query.ApplySorting(request.SortBy, request.SortDescending);
-
             return await query.ToPagedResultAsync(request);
         }
 
@@ -150,6 +158,13 @@ namespace backend.Repositories
             if (areBlocked)
                 return null;
 
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null) return null;
+
+            var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+
 
             //no need to load whole navs
             return await _context.Users
@@ -160,6 +175,7 @@ namespace backend.Repositories
                 FullName = u.FullName,
                 Username = u.UserName,
                 AvatarUrl = u.AvatarUrl,
+                IsAdmin = isAdmin,
                 Bio = u.Bio,
                 Gender = u.Gender,
                 GeneralAddress = u.Address,
@@ -178,6 +194,7 @@ namespace backend.Repositories
             })
             .FirstOrDefaultAsync();
             }
+
 
         //For landing page 
         public async Task<int> GetTotalUsersCountAsync()

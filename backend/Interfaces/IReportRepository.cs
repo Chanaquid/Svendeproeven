@@ -5,6 +5,8 @@ namespace backend.Interfaces
 {
     public interface IReportRepository
     {
+        Task<int> CountAsync(ReportFilter filter);
+
         Task<Report?> GetByIdAsync(int id);
         Task<Report?> GetByIdWithDetailsAsync(int id);
         Task<PagedResult<Report>> GetAllAsync(ReportFilter? filter, PagedRequest request);

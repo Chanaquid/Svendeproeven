@@ -7,6 +7,10 @@ namespace backend.Interfaces
     public interface IDisputeRepository
     {
 
+        Task<int> CountAsync(DisputeFilter filter);
+        Task<double> GetAverageResolutionDaysAsync();
+
+
         //Basic CRUD
         Task<Dispute?> GetByIdAsync(int disputeId);
         Task<Dispute?> GetByIdWithDetailsAsync(int disputeId); //Includes Loan, FiledBy, RespondedBy, Photos

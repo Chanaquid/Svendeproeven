@@ -7,7 +7,7 @@ namespace backend.Interfaces
     {
         //User actions
         Task<NotificationSummaryDto> GetSummaryAsync(string userId);
-        Task<List<NotificationDto>> GetAllAsync(string userId);
+        Task<PagedResult<NotificationDto>> GetAllAsync(string userId, NotificationFilter filter, PagedRequest request);
         Task MarkAsReadAsync(int notificationId, string userId);
         Task MarkAllAsReadAsync(string userId);
         Task DeleteAsync(int notificationId, string userId);

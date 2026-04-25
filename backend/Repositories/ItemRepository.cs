@@ -17,6 +17,16 @@ namespace backend.Repositories
             _context = context;
         }
 
+        public async Task<int> CountAsync(ItemFilter filter)
+        {
+            var query = _context.Items.AsQueryable();
+            if (filter.Status.HasValue)
+                query = query.Where(x => x.Status == filter.Status.Value);
+            if (filter.CreatedAfter.HasValue)
+                query = query.Where(x => x.CreatedAt >= filter.CreatedAfter.Value);
+            return await query.CountAsync();
+        }
+
         //single item lookups
         public async Task<Item?> GetByIdAsync(int itemId)
         {
@@ -86,7 +96,8 @@ namespace backend.Repositories
         //Public browse — only approved + active items
         public async Task<PagedResult<Item>> GetAllApprovedAsync(
             ItemFilter? filter,
-            PagedRequest request)
+            PagedRequest request,
+            IEnumerable<string>? excludeOwnerIds = null)
         {
             var query = _context.Items
                 .AsNoTracking()
@@ -99,12 +110,14 @@ namespace backend.Repositories
                          && i.Availability != ItemAvailability.Unavailable)
                 .AsQueryable();
 
+            // Exclude blocked owners BEFORE pagination so TotalCount is correct
+            query = ApplyOwnerExclusion(query, excludeOwnerIds);
+
             query = ApplyFilter(query, filter, publicOnly: true);
             query = ApplyDefaultSort(query, request);
 
             return await query.ToPagedResultAsync(request);
         }
-
 
         //Admin — sees everything
         public async Task<PagedResult<Item>> GetAllAsAdminAsync(
@@ -125,7 +138,6 @@ namespace backend.Repositories
             return await query.ToPagedResultAsync(request);
         }
 
-
         //Owner sees all their own items regardless of status
         public async Task<PagedResult<Item>> GetByOwnerIdAsync(
             string ownerId,
@@ -144,7 +156,6 @@ namespace backend.Repositories
 
             return await query.ToPagedResultAsync(request);
         }
-
 
         //Public view of someone else's items — only approved + active
         public async Task<PagedResult<Item>> GetPublicByOwnerAsync(
@@ -171,7 +182,8 @@ namespace backend.Repositories
         public async Task<PagedResult<Item>> GetByCategoryAsync(
             int categoryId,
             ItemFilter? filter,
-            PagedRequest request)
+            PagedRequest request,
+            IEnumerable<string>? excludeOwnerIds = null)
         {
             var query = _context.Items
                 .AsNoTracking()
@@ -182,6 +194,9 @@ namespace backend.Repositories
                          && i.Status == ItemStatus.Approved
                          && i.IsActive)
                 .AsQueryable();
+
+            // Exclude blocked owners BEFORE pagination so TotalCount is correct
+            query = ApplyOwnerExclusion(query, excludeOwnerIds);
 
             query = ApplyFilter(query, filter, publicOnly: true);
             query = ApplyDefaultSort(query, request);
@@ -211,11 +226,11 @@ namespace backend.Repositories
             return await query.ToPagedResultAsync(request);
         }
 
-
         //Approved + active + Available status — for loan request flow
         public async Task<PagedResult<Item>> GetAvailableItemsAsync(
             ItemFilter? filter,
-            PagedRequest request)
+            PagedRequest request,
+            IEnumerable<string>? excludeOwnerIds = null)
         {
             var query = _context.Items
                 .AsNoTracking()
@@ -227,12 +242,14 @@ namespace backend.Repositories
                          && i.Availability == ItemAvailability.Available)
                 .AsQueryable();
 
+            // Exclude blocked owners BEFORE pagination so TotalCount is correct
+            query = ApplyOwnerExclusion(query, excludeOwnerIds);
+
             query = ApplyFilter(query, filter, publicOnly: true);
             query = ApplyDefaultSort(query, request);
 
             return await query.ToPagedResultAsync(request);
         }
-
 
         //Radius-based search using Haversine approximation
         public async Task<PagedResult<Item>> GetNearbyItemsAsync(
@@ -240,7 +257,8 @@ namespace backend.Repositories
             double lon,
             double radiusKm,
             ItemFilter? filter,
-            PagedRequest request)
+            PagedRequest request,
+            IEnumerable<string>? excludeOwnerIds = null)
         {
             //Pull approved + active candidates first, then filter by distance
             var query = _context.Items
@@ -250,6 +268,9 @@ namespace backend.Repositories
                 .Include(i => i.Photos)
                 .Where(i => i.Status == ItemStatus.Approved && i.IsActive)
                 .AsQueryable();
+
+            // Exclude blocked owners BEFORE pulling candidates into memory
+            query = ApplyOwnerExclusion(query, excludeOwnerIds);
 
             query = ApplyFilter(query, filter, publicOnly: true);
 
@@ -284,7 +305,6 @@ namespace backend.Repositories
             };
         }
 
-
         //Items whose AvailableUntil has passed but are still active — for expiry job
         public async Task<PagedResult<Item>> GetActiveItemsExpiredBeforeAsync(
             DateTime date,
@@ -302,7 +322,6 @@ namespace backend.Repositories
 
             return await query.ToPagedResultAsync(request);
         }
-
 
         //Utility queries
         public async Task<List<Item>> GetByOwnerIdAsync(string ownerId)
@@ -326,7 +345,6 @@ namespace backend.Repositories
         {
             return await _context.Items.CountAsync(i => i.Status == ItemStatus.Pending);
         }
-
 
         //for landing page (frontend)
         public async Task<List<Item>> GetNewestListedAsync(int count = 4)
@@ -353,7 +371,6 @@ namespace backend.Repositories
                               && i.Availability == ItemAvailability.Available
                               && !i.IsDeleted);
         }
-
 
         //Item Photos
         public async Task AddPhotoAsync(ItemPhoto photo)
@@ -401,6 +418,18 @@ namespace backend.Repositories
         public async Task<bool> SlugExistsAsync(string slug)
         {
             return await _context.Items.AnyAsync(i => i.Slug == slug);
+        }
+
+        private static IQueryable<Item> ApplyOwnerExclusion(
+            IQueryable<Item> query,
+            IEnumerable<string>? excludeOwnerIds)
+        {
+            if (excludeOwnerIds is null) return query;
+
+            var excluded = excludeOwnerIds.ToHashSet();
+            if (excluded.Count == 0) return query;
+
+            return query.Where(i => !excluded.Contains(i.OwnerId));
         }
 
         private static IQueryable<Item> ApplyDefaultSort(IQueryable<Item> query, PagedRequest request)
@@ -455,7 +484,7 @@ namespace backend.Repositories
 
             if (filter.MaxRating.HasValue)
                 query = query.Where(i => i.AverageRating.HasValue && i.AverageRating <= filter.MaxRating.Value);
-            
+
             if (filter.Availability.HasValue)
                 query = query.Where(i => i.Availability == filter.Availability.Value);
 
@@ -494,16 +523,12 @@ namespace backend.Repositories
 
         private static double ToRad(double deg)
         {
-            return deg * Math.PI/180;
+            return deg * Math.PI / 180;
         }
-
 
         public async Task<IDbContextTransaction> BeginTransactionAsync()
         {
             return await _context.Database.BeginTransactionAsync();
         }
-
-
-
     }
 }

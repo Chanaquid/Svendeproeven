@@ -1,4 +1,3 @@
-<!-- Background -->
 <div class="bg-base"></div>
 <div class="bg-grid"></div>
 
@@ -6,7 +5,6 @@
 
 <main class="main-content">
 
-  <!-- Profile Header -->
   <div class="profile-header">
 
     <div *ngIf="isLoadingProfile" class="skeleton-row">
@@ -27,6 +25,7 @@
       <div class="profile-details">
         <div class="profile-name-row">
           <h1 class="profile-name">{{ profile.fullName }}</h1>
+          
           <span *ngIf="profile.isVerified" class="badge badge--verified">
             <svg class="badge__icon" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd"
@@ -36,13 +35,27 @@
             Verified
           </span>
           <span *ngIf="!profile.isVerified" class="badge badge--unverified">Not Verified</span>
-          <button *ngIf="currentUserId !== userId" (click)="openReportModal()" class="report-btn">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
-            </svg>
-            Report
-          </button>
+
+          <div class="header-actions" style="margin-left: auto; display: flex; gap: 0.5rem;">
+            <button *ngIf="currentUserId !== userId" (click)="openReportModal()" class="report-btn">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
+              </svg>
+              Report
+            </button>
+            
+            <button 
+              *ngIf="currentUserId !== userId && canBlockUser()"
+              (click)="openBlockModal()" 
+              class="block-btn">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M18.364 5.636l-12.728 12.728M6 6l12 12" />
+              </svg>
+              Block
+            </button>
+          </div>
         </div>
 
         <p class="profile-username">@{{ profile.username }}</p>
@@ -71,15 +84,10 @@
         </div>
       </div>
     </div>
-
-    <div *ngIf="!isLoadingProfile && !profile" class="not-found">
-      <p class="not-found__text">User not found.</p>
-    </div>
   </div>
 
-  <div class="page-body">
+  <div class="page-body" *ngIf="!isLoadingProfile && profile; else userNotFoundTemplate">
 
-    <!-- ── Items Section ── -->
     <div class="section">
       <div class="section-header">
         <button (click)="itemsCollapsed = !itemsCollapsed" class="section-toggle">
@@ -180,7 +188,6 @@
       <span class="section-divider__label">xxx</span>
     </div>
 
-    <!-- ── Reviews Section ── -->
     <div class="section">
       <div class="section-header section-header--simple">
         <h2 class="section-title">
@@ -196,7 +203,6 @@
             </div>
             <span class="rating-summary__value">{{ averageRating.toFixed(1) }}</span>
           </div>
-          <!-- Admin-only: leave a review without needing a loan -->
           <button
             *ngIf="isAdmin && currentUserId !== userId && !hasAlreadyReviewed"
             (click)="openAdminReviewModal()"
@@ -206,7 +212,6 @@
         </div>
       </div>
 
-      <!-- Loading -->
       <div *ngIf="isLoadingReviews" class="reviews-list">
         <div *ngFor="let _ of [1,2,3]" class="review-skeleton">
           <div class="review-skeleton__header">
@@ -214,27 +219,21 @@
             <div class="skeleton skeleton--line-md"></div>
           </div>
           <div class="skeleton skeleton--line-full"></div>
-          <div class="skeleton skeleton--line-md"></div>
         </div>
       </div>
 
-      <!-- No reviews -->
       <div *ngIf="!isLoadingReviews && reviews.length === 0" class="empty-state">
         <div class="empty-icon">⭐</div>
         <p class="empty-title">No reviews yet</p>
         <p class="empty-sub">This user hasn't received any reviews yet.</p>
       </div>
 
-      <!-- Reviews list -->
       <div *ngIf="!isLoadingReviews && reviews.length > 0" class="reviews-list">
-
         <div *ngFor="let review of displayedReviews; trackBy: trackByReviewId" class="review-card"
           [class.review-card--admin]="review.isAdminReview">
 
-          <!-- ── Delete confirm (admin only, replaces card content) ── -->
           <ng-container *ngIf="isAdmin && deletingReviewId === review.id">
             <p class="review-delete-msg">Delete this review? This cannot be undone.</p>
-            <p *ngIf="deleteReviewError" class="error-msg" style="font-size:11px; margin-top:4px;">{{ deleteReviewError }}</p>
             <div class="review-delete-actions">
               <button (click)="cancelDeleteReview()" class="btn-secondary btn--sm">Cancel</button>
               <button (click)="submitDeleteReview()" [disabled]="isDeletingReview" class="btn-danger btn--sm">
@@ -243,10 +242,7 @@
             </div>
           </ng-container>
 
-          <!-- ── Normal card content ── -->
           <ng-container *ngIf="deletingReviewId !== review.id">
-
-            <!-- Header row: reviewer info + stars + action buttons -->
             <div class="review-card__header">
               <div class="review-card__reviewer">
                 <div class="reviewer-avatar">
@@ -257,7 +253,7 @@
                   {{ review.reviewerName }}
                 </p>
                 <span *ngIf="review.isAdminReview" class="badge badge--admin">Admin</span>
-                <span *ngIf="review.isEdited" class="review-edited">(edited at {{ review.editedAt | date:'MMM d, yyyy' }})</span>
+                <span *ngIf="review.isEdited" class="review-edited">(edited)</span>
               </div>
 
               <div class="review-card__right">
@@ -271,29 +267,22 @@
                 </div>
 
                 <div class="review-actions">
-                  <!-- Edit: own review only, not while already editing -->
                   <button
                     *ngIf="review.reviewerId === currentUserId && editingReviewId !== review.id"
                     (click)="openEditReview(review)"
-                    class="review-action-btn"
-                    title="Edit">✏️</button>
-
-                  <!-- Delete: admin only, on any review (including own) -->
+                    class="review-action-btn" title="Edit">✏️</button>
                   <button
                     *ngIf="isAdmin && editingReviewId !== review.id"
                     (click)="confirmDeleteReview(review.id)"
-                    class="review-action-btn review-action-btn--delete"
-                    title="Delete">🗑️</button>
+                    class="review-action-btn review-action-btn--delete" title="Delete">🗑️</button>
                 </div>
               </div>
             </div>
 
-            <!-- Rented item context -->
             <p *ngIf="review.itemTitle" class="review-item-context">
               Rented Item: <span>{{ review.itemTitle }}</span>
             </p>
 
-            <!-- Inline edit form -->
             <div *ngIf="editingReviewId === review.id" class="review-edit-form">
               <div class="star-row">
                 <button *ngFor="let s of [1,2,3,4,5]" (click)="setEditReviewRating(s)"
@@ -301,123 +290,90 @@
                   [class.star-btn--on]="s <= editReviewRating"
                   [class.star-btn--off]="s > editReviewRating">★</button>
               </div>
-              <textarea [(ngModel)]="editReviewComment" rows="3" placeholder="Update your comment..."
-                class="form-input form-textarea" style="font-size:13px;"></textarea>
-              <p *ngIf="editReviewError" class="error-msg" style="font-size:11px;">{{ editReviewError }}</p>
+              <textarea [(ngModel)]="editReviewComment" rows="3" class="form-input form-textarea"></textarea>
               <div class="review-edit-actions">
                 <button (click)="cancelEditReview()" class="btn-secondary btn--sm">Cancel</button>
-                <button (click)="submitEditReview()"
-                  [disabled]="isSubmittingEditReview || editReviewRating === 0"
-                  class="btn-primary btn--sm">
-                  {{ isSubmittingEditReview ? 'Saving...' : 'Save' }}
-                </button>
+                <button (click)="submitEditReview()" [disabled]="isSubmittingEditReview" class="btn-primary btn--sm">Save</button>
               </div>
             </div>
 
-            <!-- Comment display (hidden while editing) -->
             <ng-container *ngIf="editingReviewId !== review.id">
-              <p *ngIf="review.comment" class="review-comment">{{ review.comment }}</p>
-              <p *ngIf="!review.comment" class="review-no-comment">No comment left.</p>
+              <p class="review-comment">{{ review.comment || 'No comment left.' }}</p>
             </ng-container>
-
           </ng-container>
         </div>
 
-        <!-- Reviews pagination -->
         <div *ngIf="reviewTotalPages > 1" class="pagination">
           <button (click)="goToReviewPage(reviewPage - 1)" [disabled]="reviewPage === 1" class="page-btn">← Prev</button>
-          <ng-container *ngFor="let page of reviewPageNumbers; trackBy: trackByIndex">
-            <span *ngIf="page === -1" class="page-ellipsis">…</span>
-            <button *ngIf="page !== -1" (click)="goToReviewPage(page)" class="page-btn"
-              [class.page-btn--active]="page === reviewPage">{{ page }}</button>
+          <ng-container *ngFor="let page of reviewPageNumbers">
+            <button (click)="goToReviewPage(page)" class="page-btn" [class.page-btn--active]="page === reviewPage">{{ page }}</button>
           </ng-container>
           <button (click)="goToReviewPage(reviewPage + 1)" [disabled]="reviewPage === reviewTotalPages" class="page-btn">Next →</button>
         </div>
       </div>
     </div>
-
   </div>
+
+  <ng-template #userNotFoundTemplate>
+    <div *ngIf="!isLoadingProfile" class="flex flex-col items-center justify-center py-32 text-center">
+      <p class="text-6xl mb-6">🚫</p>
+      <h2 class="font-black text-2xl text-white mb-2" style="font-family:'Syne',sans-serif">User Unavailable</h2>
+      <p class="text-zinc-500 max-w-xs">This profile is no longer available or you do not have permission to view it.</p>
+      <button routerLink="/" class="mt-8 px-6 py-2 bg-zinc-800 text-white
+        cursor-pointer rounded-xl font-bold hover:bg-zinc-700 transition-all">
+        Return Home
+      </button>
+    </div>
+  </ng-template>
 </main>
 
-<!-- ── PFP modal ── -->
 <div *ngIf="showPfpModal" class="modal-overlay" (click)="togglePfpModal()" style="z-index: 200;">
   <div class="modal-backdrop" style="background: rgba(0,0,0,0.9);"></div>
   <div class="pfp-expanded-container" (click)="$event.stopPropagation()">
     <button class="modal-close pfp-close-btn" (click)="togglePfpModal()">
-      <svg style="width:2rem; height:2rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-      </svg>
+      <svg style="width:2rem; height:2rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
     </button>
     <img [src]="profile?.avatarUrl" class="pfp-expanded-img" alt="Profile Picture" />
-    <div class="pfp-expanded-info">
-      <h2 class="modal-title" style="text-align:center; font-size:1.5rem;">{{ profile?.fullName }}</h2>
-      <p class="modal-sub" style="text-align:center;">@{{ profile?.username }}</p>
-    </div>
   </div>
 </div>
 
-<!-- ── Admin review modal ── -->
 <div *ngIf="showAdminReviewModal" class="modal-overlay">
   <div class="modal-backdrop" (click)="showAdminReviewModal = false"></div>
   <div class="modal">
     <div class="modal-header">
-      <div>
-        <h2 class="modal-title">Admin Review</h2>
-        <p class="modal-sub">Reviewing @{{ profile?.username }}</p>
-      </div>
-      <button (click)="showAdminReviewModal = false" class="modal-close">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+      <h2 class="modal-title">Admin Review</h2>
+      <button (click)="showAdminReviewModal = false" class="modal-close">✕</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label class="form-label">Rating <span class="required">*</span></label>
+        <label class="form-label">Rating *</label>
         <div class="star-row">
-          <button *ngFor="let s of [1,2,3,4,5]" (click)="setAdminReviewRating(s)"
-            class="star-btn"
-            [class.star-btn--on]="s <= adminReviewRating"
-            [class.star-btn--off]="s > adminReviewRating">★</button>
+          <button *ngFor="let s of [1,2,3,4,5]" (click)="setAdminReviewRating(s)" class="star-btn" [class.star-btn--on]="s <= adminReviewRating">★</button>
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Comment <span class="required">*</span></label>
-        <textarea [(ngModel)]="adminReviewComment" rows="3" placeholder="Leave a comment..."
-          class="form-input form-textarea"></textarea>
+        <label class="form-label">Comment *</label>
+        <textarea [(ngModel)]="adminReviewComment" rows="3" class="form-input form-textarea"></textarea>
       </div>
       <p *ngIf="adminReviewError" class="error-msg">{{ adminReviewError }}</p>
-      <p *ngIf="adminReviewSuccess" class="success-msg">{{ adminReviewSuccess }}</p>
     </div>
     <div class="modal-footer">
       <button (click)="showAdminReviewModal = false" class="btn-secondary">Cancel</button>
-      <button (click)="submitAdminReview()"
-        [disabled]="isSubmittingAdminReview || adminReviewRating === 0 || !adminReviewComment.trim()"
-        class="btn-primary">
-        {{ isSubmittingAdminReview ? 'Submitting...' : 'Submit Review' }}
-      </button>
+      <button (click)="submitAdminReview()" [disabled]="isSubmittingAdminReview" class="btn-primary">Submit Review</button>
     </div>
   </div>
 </div>
 
-<!-- ── Report Modal ── -->
 <div *ngIf="showReportModal" class="modal-overlay">
   <div class="modal-backdrop" (click)="showReportModal = false"></div>
   <div class="modal">
     <div class="modal-header">
-      <div>
-        <h2 class="modal-title">Report User</h2>
-        <p class="modal-sub">@{{ profile?.username }}</p>
-      </div>
-      <button (click)="showReportModal = false" class="modal-close">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+      <h2 class="modal-title">Report User</h2>
+      <button (click)="showReportModal = false" class="modal-close">✕</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label class="form-label">Reason <span class="required">*</span></label>
+        <label class="form-label">Reason *</label>
         <select [(ngModel)]="reportReason" class="form-input form-select">
           <option value="">Select a reason...</option>
           <option value="FakeIdentity">Fake Identity</option>
@@ -429,18 +385,33 @@
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Additional details</label>
-        <textarea [(ngModel)]="reportDetails" rows="3" placeholder="Describe the issue..."
-          class="form-input form-textarea"></textarea>
+        <label class="form-label">Details</label>
+        <textarea [(ngModel)]="reportDetails" rows="3" class="form-input form-textarea"></textarea>
       </div>
       <p *ngIf="reportError" class="error-msg">{{ reportError }}</p>
-      <p *ngIf="reportSuccess" class="success-msg">{{ reportSuccess }}</p>
     </div>
     <div class="modal-footer">
       <button (click)="showReportModal = false" class="btn-secondary">Cancel</button>
-      <button (click)="submitReport()" [disabled]="isSubmittingReport" class="btn-danger">
-        {{ isSubmittingReport ? 'Submitting...' : 'Submit Report' }}
-      </button>
+      <button (click)="submitReport()" [disabled]="isSubmittingReport" class="btn-danger">Submit Report</button>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showBlockModal" class="modal-overlay">
+  <div class="modal-backdrop" (click)="showBlockModal = false"></div>
+  <div class="modal">
+    <div class="modal-header" style="border-bottom: 1px solid #27272a; padding: 1.25rem;">
+      <h2 class="modal-title" style="font-family: 'Syne', sans-serif; font-weight: 800;">Block User</h2>
+      <button (click)="showBlockModal = false" class="modal-close">✕</button>
+    </div>
+    <div class="modal-body" style="padding: 1.5rem;">
+      <p style="color: #d4d4d8;">Are you sure you want to block <strong class="text-white">@{{ profile?.username }}</strong>?</p>
+      <p class="modal-sub" style="color: #71717a; font-size: 0.8rem; margin-top: 0.5rem;">This will hide their profile, items and disable all communication.</p>
+      <p *ngIf="blockError" class="error-msg">{{ blockError }}</p>
+    </div>
+    <div class="modal-footer" style="padding: 1.25rem; border-top: 1px solid #27272a; display: flex; gap: 0.75rem;">
+      <button (click)="showBlockModal = false" class="btn-secondary" style="flex: 1;">Cancel</button>
+      <button (click)="submitBlock()" [disabled]="isBlocking" class="btn-danger" style="flex: 1;">{{ isBlocking ? 'Blocking...' : 'Block User' }}</button>
     </div>
   </div>
 </div>

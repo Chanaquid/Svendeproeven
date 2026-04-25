@@ -8,33 +8,36 @@ namespace backend.Services
     {
         private readonly IReportRepository _reportRepository;
         private readonly IUserRepository _userRepository;
+        private readonly INotificationService _notificationService;
 
         private const int ReportCooldownMinutes = 60;
 
         public ReportService(
             IReportRepository reportRepository,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            INotificationService notificationService)
         {
             _reportRepository = reportRepository;
             _userRepository = userRepository;
+            _notificationService = notificationService;
         }
 
-        //User actions
+        // ── User actions ──────────────────────────────────────────────────────────
 
         public async Task<ReportDto> CreateReportAsync(string userId, CreateReportDto dto)
         {
             var user = await _userRepository.GetByIdAsync(userId)
                 ?? throw new KeyNotFoundException("User not found.");
 
-            //Single reason
+            // Single reason
             if (!IsSingleFlag(dto.Reasons))
                 throw new InvalidOperationException("Only one reason may be selected per report.");
 
-            //Prevent self-reporting
+            // Prevent self-reporting
             if (dto.Type == ReportType.User && dto.TargetId == userId)
                 throw new InvalidOperationException("You cannot report yourself.");
 
-            //1-hour cooldown to prevent spam report
+            // 1-hour cooldown to prevent spam
             var lastReport = await _reportRepository.GetLastReportTimeByUserAsync(userId);
             if (lastReport.HasValue && DateTime.UtcNow - lastReport.Value < TimeSpan.FromMinutes(ReportCooldownMinutes))
             {
@@ -42,7 +45,7 @@ namespace backend.Services
                 throw new InvalidOperationException($"You must wait {minutesLeft} minute(s) before submitting another report.");
             }
 
-            //Prevent duplicate report on the same target
+            // Prevent duplicate report on the same target
             if (await _reportRepository.HasReportedTargetAsync(userId, dto.TargetId, dto.Type))
                 throw new InvalidOperationException("You have already reported this.");
 
@@ -59,6 +62,21 @@ namespace backend.Services
 
             await _reportRepository.AddAsync(report);
             await _reportRepository.SaveChangesAsync();
+
+            // Notify reporter — confirmation their report was received
+            await _notificationService.SendAsync(
+                userId,
+                NotificationType.ReportSubmitted,
+                $"Your report has been received and is under review.",
+                report.Id,
+                NotificationReferenceType.Report);
+
+            // Notify admins — new report needs attention
+            await _notificationService.SendToAdminsAsync(
+                NotificationType.ReportSubmitted,
+                $"New {dto.Type} report filed by {user.FullName}: {dto.Reasons}.",
+                report.Id,
+                NotificationReferenceType.Report);
 
             var created = await _reportRepository.GetByIdWithDetailsAsync(report.Id);
             return MapToDto(created!, userId);
@@ -84,8 +102,8 @@ namespace backend.Services
             return MapToDto(report, userId);
         }
 
+        // ── Admin actions ─────────────────────────────────────────────────────────
 
-        //Admin actions
         public async Task<PagedResult<ReportDto>> GetAllAsync(ReportFilter? filter, PagedRequest request)
         {
             var paged = await _reportRepository.GetAllAsync(filter, request);
@@ -115,12 +133,27 @@ namespace backend.Services
             _reportRepository.Update(report);
             await _reportRepository.SaveChangesAsync();
 
+            // Notify reporter of the outcome
+            var outcomeMessage = dto.Status == ReportStatus.Resolved
+                ? $"Your report has been reviewed and action has been taken."
+                : $"Your report has been reviewed and was dismissed.";
+
+            if (!string.IsNullOrWhiteSpace(dto.AdminNote))
+                outcomeMessage += $" Note: {dto.AdminNote}";
+
+            await _notificationService.SendAsync(
+                report.ReportedById,
+                NotificationType.ReportResolved,
+                outcomeMessage,
+                report.Id,
+                NotificationReferenceType.Report);
+
             return MapToDto(report, adminView: true);
         }
 
-        //Helpers
+        // ── Helpers ───────────────────────────────────────────────────────────────
 
-        //Enforces single reason rule
+        // Enforces single reason rule
         private static bool IsSingleFlag(ReportReason reasons)
         {
             return Enum.IsDefined(typeof(ReportReason), reasons);
@@ -151,7 +184,10 @@ namespace backend.Services
             };
         }
 
-        private static PagedResult<ReportDto> MapPagedResult(PagedResult<Report> source, string? currentUserId = null, bool adminView = false)
+        private static PagedResult<ReportDto> MapPagedResult(
+            PagedResult<Report> source,
+            string? currentUserId = null,
+            bool adminView = false)
         {
             return new PagedResult<ReportDto>
             {

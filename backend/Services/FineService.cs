@@ -463,7 +463,12 @@ namespace backend.Services
                 Amount = fine.Amount,
                 HasPendingAppeal = fine.Appeal != null && fine.Appeal.Status == AppealStatus.Pending,
                 CreatedAt = fine.CreatedAt,
-                PaidAt = fine.PaidAt
+                PaidAt = fine.PaidAt,
+                IssuedByAdminId = fine.IssuedByAdminId ?? string.Empty,
+                IssuedByAdminName = fine.IssuedByAdmin?.FullName ?? string.Empty,
+                IssuedByAdminUsername = fine.IssuedByAdmin?.UserName ?? string.Empty,
+                IssuedByAdminUserAvatarUrl = fine.IssuedByAdmin?.AvatarUrl
+
             };
         }
 

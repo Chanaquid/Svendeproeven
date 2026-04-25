@@ -16,6 +16,12 @@ import { Loan } from './components/loan/loan';
 import { Favorite } from './components/favorite/favorite';
 import { LoanDetail } from './components/loan-detail/loan-detail';
 import { ResolutionCenter } from './components/resolution-center/resolution-center';
+import { BlockedUser } from './components/blocked-user/blocked-user';
+import { Notification } from './components/notification/notification';
+import { DirectChat } from './components/direct-chat/direct-chat';
+import { AdminUser } from './components/admin-user/admin-user';
+import { AdminGuardService } from './services/adminGuardService';
+import { AdminDashboard } from './components/admin-dashboard/admin-dashboard';
 
 
 export const authGuard : CanActivateFn = () => {
@@ -33,14 +39,18 @@ export const routes: Routes = [
     {path: 'items/:slug', component: ItemDetail, canActivate: [authGuard]},
     {path: 'users/:id', component: UserProfile, canActivate: [authGuard]},
     {path: 'my-dashboard', component: UserDashboard, canActivate: [authGuard]},
+    {path: 'blocked-user', component: BlockedUser, canActivate: [authGuard]},
     {path: 'my-items', component: Item, canActivate: [authGuard]},
+    {path: 'my-chats', component: DirectChat, canActivate: [authGuard]},
     {path: 'my-loans', component: Loan, canActivate: [authGuard]},
     {path: 'loans/:id', component: LoanDetail, canActivate: [authGuard]},
     {path: 'resolution-center', component: ResolutionCenter, canActivate: [authGuard]},
-
-
+    {path: 'notifications', component: Notification, canActivate: [authGuard]},
     {path: 'my-favorites', component: Favorite, canActivate: [authGuard]},
 
+
+    { path: 'admin-dashboard', component: AdminDashboard, canActivate: [AdminGuardService] },
+     { path: 'admin-users', component: AdminUser, canActivate: [AdminGuardService] },
 
 
     {path: 'test', component: TestUpload},

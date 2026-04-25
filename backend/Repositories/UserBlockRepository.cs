@@ -85,6 +85,17 @@ namespace backend.Repositories
             return ids.ToHashSet();
         }
 
+        //Outgoing only — used for DM display so the blocked person doesn't know they're blocked
+        public async Task<HashSet<string>> GetOutgoingBlockedUserIdsAsync(string userId)
+        {
+            var ids = await _context.UserBlocks
+                .Where(b => b.BlockerId == userId) //only blocks THIS user initiated
+                .Select(b => b.BlockedId)
+                .ToListAsync();
+
+            return ids.ToHashSet();
+        }
+
         public async Task AddAsync(UserBlock block)
         {
             await _context.UserBlocks.AddAsync(block);

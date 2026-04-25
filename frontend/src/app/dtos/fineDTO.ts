@@ -83,6 +83,10 @@ export interface FineListDto {
   hasPendingAppeal: boolean;
   createdAt: string;
   paidAt: string | null;
+  issuedByAdminId: string;
+  issuedByAdminName: string;
+  issuedByAdminUsername: string;
+  issuedByAdminUserAvatarUrl: string | null;
 }
 
 export interface FineStatsDto {

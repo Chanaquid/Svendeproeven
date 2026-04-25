@@ -1,0 +1,175 @@
+<div class="fixed inset-0 bg-zinc-950 -z-10"></div>
+<div class="fixed inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:52px_52px] -z-10"></div>
+
+<app-navbar></app-navbar>
+
+<main class="pt-16 min-h-screen">
+  <div class="max-w-3xl mx-auto px-6 py-10">
+
+    <!-- Page heading -->
+    <div class="mb-8">
+      <h1 class="font-black text-3xl text-white tracking-tight" style="font-family:'Syne',sans-serif">Blocked Users</h1>
+      <p class="text-zinc-500 text-sm mt-1">Users you've blocked can't see your items or contact you. You can unblock them at any time.</p>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="flex items-center justify-center py-32">
+      <div class="flex flex-col items-center gap-3">
+        <div class="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-zinc-500 text-sm">Loading blocked users...</p>
+      </div>
+    </div>
+
+    <div *ngIf="!isLoading">
+
+      <!-- Search + Sort toolbar -->
+      <div class="flex gap-2 mb-6">
+        <div class="relative flex-1">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" fill="none"
+            viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0" />
+          </svg>
+          <input type="text" [(ngModel)]="searchQuery" (input)="onSearch()" placeholder="Search blocked users..."
+            class="w-full bg-zinc-900 border border-zinc-800 focus:border-amber-400/50 text-white text-xs rounded-xl pl-8 pr-3 py-2.5 outline-none placeholder-zinc-600 transition-all duration-200" />
+        </div>
+        <select [(ngModel)]="sortFilter" (change)="onFilterChange()"
+          class="bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs rounded-xl px-3 py-2.5 outline-none cursor-pointer">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+        </select>
+      </div>
+
+      <!-- Error -->
+      <div *ngIf="listError"
+        class="flex items-center justify-between gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 mb-4">
+        <p class="text-red-400 text-xs">{{ listError }}</p>
+        <button (click)="loadBlockedUsers()" class="text-red-400 text-xs underline cursor-pointer">Retry</button>
+      </div>
+
+      <!-- List loading -->
+      <div *ngIf="listLoading" class="flex justify-center py-12">
+        <div class="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+
+      <!-- Empty state -->
+      <div *ngIf="!listLoading && blockedUsers.length === 0 && !listError"
+        class="flex flex-col items-center justify-center py-20 text-center bg-zinc-900 border border-zinc-800 rounded-2xl">
+        <p class="text-4xl mb-3">🚫</p>
+        <p class="text-white text-sm font-semibold" style="font-family:'Syne',sans-serif">No blocked users</p>
+        <p class="text-zinc-500 text-xs mt-1">
+          {{ searchQuery ? 'No results for your search.' : "You haven't blocked anyone yet." }}
+        </p>
+      </div>
+
+      <!-- Blocked user cards -->
+      <div *ngIf="!listLoading && blockedUsers.length > 0" class="space-y-3">
+        <div *ngFor="let user of blockedUsers; trackBy: trackById"
+          class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex items-center gap-4 hover:border-zinc-700 transition-all duration-200">
+
+          <!-- Avatar -->
+          <div class="shrink-0">
+            <img [src]="user.blockedAvatarUrl || getDefaultAvatar(user.blockedName)"
+              class="w-11 h-11 rounded-xl object-cover bg-zinc-800" />
+          </div>
+
+          <!-- Info -->
+          <div class="flex-1 min-w-0">
+            <p class="text-white text-sm font-semibold truncate" style="font-family:'Syne',sans-serif">
+              {{ user.blockedName }}
+            </p>
+            <p class="text-zinc-500 text-xs truncate">@{{ user.blockedUserName }}</p>
+            <p class="text-zinc-600 text-[10px] mt-0.5">Blocked {{ user.createdAt | date:'MMM d, yyyy' }}</p>
+          </div>
+
+          <!-- Unblock button -->
+          <button (click)="openUnblockConfirm(user)"
+            class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-red-500/10 border border-zinc-700 hover:border-red-500/30 text-zinc-400 hover:text-red-400 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer">
+            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+            Unblock
+          </button>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div *ngIf="totalPages > 1" class="flex items-center justify-center gap-1.5 pt-4 flex-wrap">
+        <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1"
+          class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer disabled:cursor-not-allowed">
+          ← Prev
+        </button>
+
+        <ng-container *ngFor="let page of pageNumbers">
+          <span *ngIf="page === -1" class="text-zinc-600 text-xs px-1">…</span>
+          <button *ngIf="page !== -1" (click)="goToPage(page)"
+            class="w-8 h-8 flex items-center justify-center text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer"
+            [class.bg-amber-400]="page === currentPage"
+            [class.text-zinc-900]="page === currentPage"
+            [class.bg-zinc-800]="page !== currentPage"
+            [class.text-zinc-300]="page !== currentPage"
+            [class.hover:bg-zinc-700]="page !== currentPage">
+            {{ page }}
+          </button>
+        </ng-container>
+
+        <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages"
+          class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer disabled:cursor-not-allowed">
+          Next →
+        </button>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- Unblock Confirm Modal -->
+<div *ngIf="userToUnblock" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" (click)="userToUnblock = null"></div>
+  <div class="relative z-10 w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl p-6 space-y-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-amber-400/10 flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+        </svg>
+      </div>
+      <div>
+        <h3 class="font-black text-white text-base" style="font-family:'Syne',sans-serif">Unblock User?</h3>
+        <p class="text-zinc-500 text-xs mt-0.5">They'll be able to see your profile and items again.</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3 bg-zinc-800 rounded-xl px-4 py-3">
+      <img [src]="userToUnblock?.blockedAvatarUrl || getDefaultAvatar(userToUnblock?.blockedName ?? '')"
+        class="w-9 h-9 rounded-lg object-cover bg-zinc-700 shrink-0" />
+      <div class="min-w-0">
+        <p class="text-white text-sm font-semibold truncate">{{ userToUnblock?.blockedName }}</p>
+        <p class="text-zinc-500 text-xs">@{{ userToUnblock?.blockedUserName }}</p>
+      </div>
+    </div>
+
+    <p class="text-zinc-400 text-sm">
+      Are you sure you want to unblock
+      <span class="text-white font-semibold">{{ userToUnblock?.blockedName }}</span>?
+    </p>
+
+    <div class="flex gap-3 pt-1">
+      <button (click)="userToUnblock = null"
+        class="flex-1 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-sm rounded-xl cursor-pointer transition-colors">
+        Keep Blocked
+      </button>
+      <button (click)="confirmUnblock()" [disabled]="isUnblocking"
+        class="flex-1 py-2.5 bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/20 text-amber-400 font-semibold text-sm rounded-xl disabled:opacity-50 cursor-pointer transition-colors">
+        {{ isUnblocking ? 'Unblocking...' : 'Yes, Unblock' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div *ngIf="toastVisible"
+  class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] px-4 py-2.5 bg-zinc-800 border border-zinc-700 text-white text-xs font-semibold rounded-xl shadow-2xl">
+  {{ toastMessage }}
+</div>

@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
 import { FineStatus, FineType, PaymentMethod } from '../../dtos/enums';
 import { debounceTime, distinctUntilChanged, finalize, Subject, takeUntil } from 'rxjs';
 import { CommonModule } from '@angular/common';
@@ -9,6 +9,7 @@ import { UploadImageService } from '../../services/uploadImageService';
 import { Router } from '@angular/router';
 import { PagedRequest } from '../../dtos/paginationDto';
 import { FineFilter } from '../../dtos/filterDto';
+import { getPageNumbers, getTotalPages } from '../../utils/pagination.utils';
 
 type TabId = 'all' | 'unpaid' | 'rejected' | 'pending' | 'paid' | 'voided';
 
@@ -27,8 +28,15 @@ interface Tab {
   styleUrl: './fine.css',
 })
 export class Fine implements OnInit, OnDestroy {
+
+  @Input() openFineId: number | null = null;
+
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
+  private resizeHandler = () => {
+    this.currentPage = 1;
+    this.loadFines();
+  };
 
   isLoading = true;
 
@@ -47,8 +55,7 @@ export class Fine implements OnInit, OnDestroy {
   listLoading = false;
   listError: string | null = null;
   currentPage = 1;
-  pageSize = 10;
-  totalPages = 1;
+  totalCount = 0;
   searchQuery = '';
   sortFilter = 'newest';
 
@@ -94,6 +101,26 @@ export class Fine implements OnInit, OnDestroy {
     public router: Router,
   ) {}
 
+  // ─── Dynamic page size ────────────────────────────────────────────────────────
+  // Height-driven: subtract navbar (64) + tabs (52) + search bar (48) + padding (80)
+  // Each fine card is ~100px tall including gap
+
+  get pageSize(): number {
+    const availableHeight = window.innerHeight - 64 - 52 - 48 - 80;
+    const cardHeight = 100;
+    return Math.max(5, Math.floor(availableHeight / cardHeight));
+  }
+
+  get totalPages(): number {
+    return getTotalPages(this.totalCount, this.pageSize);
+  }
+
+  get pageNumbers(): number[] {
+    return getPageNumbers(this.currentPage, this.totalPages);
+  }
+
+  // ─── Lifecycle ────────────────────────────────────────────────────────────────
+
   ngOnInit(): void {
     this.loadFines();
     this.loadTabCounts();
@@ -106,12 +133,23 @@ export class Fine implements OnInit, OnDestroy {
       this.currentPage = 1;
       this.loadFines();
     });
+
+    window.addEventListener('resize', this.resizeHandler);
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['openFineId'] && this.openFineId) {
+      this.openFine(this.openFineId);
+    }
   }
 
   ngOnDestroy(): void {
+    window.removeEventListener('resize', this.resizeHandler);
     this.destroy$.next();
     this.destroy$.complete();
   }
+
+  // ─── Load ─────────────────────────────────────────────────────────────────────
 
   loadFines(): void {
     if (this.isLoading) this.listLoading = true;
@@ -150,7 +188,8 @@ export class Fine implements OnInit, OnDestroy {
         next: (res) => {
           if (res.success && res.data) {
             this.fines = res.data.items;
-            this.totalPages = res.data.totalPages;
+            console.log('Loaded fines:', this.fines);
+            this.totalCount = res.data.totalCount;
             const tab = this.tabs.find(t => t.id === this.activeTab);
             if (tab) tab.count = res.data.totalCount;
           } else {
@@ -166,10 +205,12 @@ export class Fine implements OnInit, OnDestroy {
 
     this.fineService.getMyFines(null, request)
       .pipe(takeUntil(this.destroy$))
-      .subscribe({ next: (res) => {
-        const tab = this.tabs.find(t => t.id === 'all');
-        if (tab && res.data) { tab.count = res.data.totalCount; this.cdr.markForCheck(); }
-      }});
+      .subscribe({
+        next: (res) => {
+          const tab = this.tabs.find(t => t.id === 'all');
+          if (tab && res.data) { tab.count = res.data.totalCount; this.cdr.markForCheck(); }
+        }
+      });
 
     const statusTabs: { id: TabId; status: FineStatus }[] = [
       { id: 'unpaid',   status: FineStatus.Unpaid },
@@ -182,17 +223,18 @@ export class Fine implements OnInit, OnDestroy {
     for (const { id, status } of statusTabs) {
       this.fineService.getMyFines({ status }, request)
         .pipe(takeUntil(this.destroy$))
-        .subscribe({ next: (res) => {
-          const tab = this.tabs.find(t => t.id === id);
-          if (tab && res.data) { tab.count = res.data.totalCount; this.cdr.markForCheck(); }
-        }});
+        .subscribe({
+          next: (res) => {
+            const tab = this.tabs.find(t => t.id === id);
+            if (tab && res.data) { tab.count = res.data.totalCount; this.cdr.markForCheck(); }
+          }
+        });
     }
   }
 
   openFine(id: number): void {
     if (this.selectedId === id) return;
 
-    // Keep previous fine visible while new one loads — no nulling
     const isFirstOpen = this.selectedFine === null;
     this.selectedId = id;
     this.detailError = null;
@@ -314,6 +356,8 @@ export class Fine implements OnInit, OnDestroy {
            this.selectedFine?.status === FineStatus.Rejected;
   }
 
+  // ─── Tabs & filters ───────────────────────────────────────────────────────────
+
   switchTab(tab: TabId): void {
     this.activeTab = tab;
     this.currentPage = 1;
@@ -321,10 +365,22 @@ export class Fine implements OnInit, OnDestroy {
   }
 
   onSearch(): void { this.searchSubject.next(this.searchQuery); }
-  onFilterChange(): void { this.currentPage = 1; this.loadFines(); }
-  goToPage(p: number): void { this.currentPage = p; this.loadFines(); }
+
+  onFilterChange(): void {
+    this.currentPage = 1;
+    this.loadFines();
+  }
+
+  goToPage(p: number): void {
+    if (p < 1 || p > this.totalPages) return;
+    this.currentPage = p;
+    this.loadFines();
+  }
+
   trackById(_: number, f: FineListDto): number { return f.id; }
   openPhoto(url: string): void { this.selectedPhoto = url; }
+
+  // ─── UI Helpers ───────────────────────────────────────────────────────────────
 
   getDefaultAvatar(name: string): string {
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=27272a&color=a1a1aa&size=80`;

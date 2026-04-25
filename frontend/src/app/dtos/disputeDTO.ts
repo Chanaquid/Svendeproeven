@@ -33,6 +33,8 @@ export interface DisputePenaltySummaryDto {
   fullName: string;
   userName: string;
   avatarUrl: string | null;
+  isCurrentUser: boolean;
+  fineId? : number | null;
   fineAmount: number | null;
   fineStatus: string | null;
   scoreAdjustment: number | null;

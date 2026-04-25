@@ -76,12 +76,10 @@ namespace backend.Services
             var otherUser = isInitiator ? conversation.OtherUser : conversation.InitiatedBy;
             var userDeletedAt = isInitiator ? conversation.InitiatorDeletedAt : conversation.OtherDeletedAt;
 
-            var areBlocked = await _directConversationRepository.AreUsersBlockedAsync(currentUserId, otherUserId);
+            var iBlockedThem = await _directConversationRepository.IsBlockedByCurrentUserAsync(currentUserId, otherUserId);
 
             //No unread count if blocked — blocked users don't generate notifications
-            var unreadCount = areBlocked
-                ? 0
-                : await _directMessageRepository.GetUnreadCountForConversationAsync(conversationId, currentUserId, userDeletedAt);
+            var unreadCount = iBlockedThem ? 0 : await _directMessageRepository.GetUnreadCountForConversationAsync(conversationId, currentUserId, userDeletedAt);
 
             var messagesResult = await _directMessageRepository.GetConversationMessagesAsync(
                 conversationId,
@@ -107,8 +105,8 @@ namespace backend.Services
                 CreatedAt = conversation.CreatedAt,
                 LastMessageAt = conversation.LastMessageAt,
                 IsHiddenForCurrentUser = isInitiator ? conversation.HiddenForInitiator : conversation.HiddenForOther,
-                CanSendMessage = !areBlocked,
-                IsBlocked = areBlocked,
+                CanSendMessage = !iBlockedThem,
+                IsBlocked = iBlockedThem,
                 UnreadCount = unreadCount,
                 Messages = messagesResult.Items.Select(m => new DirectMessageDto
                 {
@@ -135,7 +133,7 @@ namespace backend.Services
             var conversations = await _directConversationRepository.GetUserConversationsAsync(currentUserId, filter, request);
 
             //Batch fetch — single query each, no N+1
-            var blockedUserIds = await _directConversationRepository.GetBlockedUserIdsAsync(currentUserId);
+            var blockedUserIds = await _directConversationRepository.GetOutgoingBlockedUserIdsAsync(currentUserId);
             var unreadCounts = await _directConversationRepository.GetUnreadCountsForUserAsync(currentUserId);
 
             var items = conversations.Items.Select(conversation =>
@@ -143,10 +141,14 @@ namespace backend.Services
                 var isInitiator = conversation.InitiatedById == currentUserId;
                 var otherUserId = isInitiator ? conversation.OtherUserId : conversation.InitiatedById;
                 var otherUser = isInitiator ? conversation.OtherUser : conversation.InitiatedBy;
-                var areBlocked = blockedUserIds.Contains(otherUserId);
 
-                //Blocked conversations stay in inbox but show no unread count and no message preview
-                var unreadCount = areBlocked ? 0 : unreadCounts.GetValueOrDefault(conversation.Id, 0);
+                //only mark as blocked if current user is the one who blocked
+                //BlockedUserIds contains Ids that currentUser has blocked (outgoing blocks)
+                var iBlockedThem = blockedUserIds.Contains(otherUserId);
+
+                //Don't reveal block status to the blocked person — they see normal preview
+                var unreadCount = iBlockedThem ? 0 : unreadCounts.GetValueOrDefault(conversation.Id, 0);
+
                 var lastMessageIsMe = conversation.LastMessage?.SenderId == currentUserId;
 
                 return new DirectConversationListDto
@@ -156,27 +158,25 @@ namespace backend.Services
                     OtherUserFullName = otherUser?.FullName ?? "Unknown",
                     OtherUserName = otherUser?.UserName ?? "Unknown",
                     OtherUserAvatarUrl = otherUser?.AvatarUrl,
-                    LastMessageContent = areBlocked
+
+                    //only hide preview for the blocker, not the blocked person
+                    LastMessageContent = iBlockedThem
                         ? "[Blocked User]"
                         : lastMessageIsMe
                             ? $"You: {conversation.LastMessage?.Content}"
                             : conversation.LastMessage?.Content,
+
                     LastMessageSentAt = conversation.LastMessage?.SentAt,
                     LastMessageSenderId = conversation.LastMessage?.SenderId,
-                    LastMessageSenderName = areBlocked
-                        ? null
-                        : lastMessageIsMe
-                            ? "You"
-                            : otherUser?.UserName,
-                    LastMessageAvatarUrl = areBlocked
-                        ? null
-                        : lastMessageIsMe
-                            ? null //frontend uses caller's own avatar
-                            : otherUser?.AvatarUrl,
+                    LastMessageSenderName = iBlockedThem ? null : (lastMessageIsMe ? "You" : otherUser?.UserName),
+                    LastMessageAvatarUrl = iBlockedThem ? null : (lastMessageIsMe ? null : otherUser?.AvatarUrl),
+
                     UnreadCount = unreadCount,
                     CreatedAt = conversation.CreatedAt,
                     IsInitiatedByMe = isInitiator,
-                    IsBlocked = areBlocked
+
+                    //IsBlocked is true ONLY for the person who did the blocking
+                    IsBlocked = iBlockedThem
                 };
             }).ToList();
 

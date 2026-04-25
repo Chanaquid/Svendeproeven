@@ -16,6 +16,27 @@ namespace backend.Repositories
             _context = context;
         }
 
+        public async Task<int> CountAsync(FineFilter filter)
+        {
+            var query = _context.Fines.AsQueryable();
+            if (filter.Status.HasValue)
+                query = query.Where(x => x.Status == filter.Status.Value);
+            return await query.CountAsync();
+        }
+
+        public async Task<decimal> SumAmountAsync(FineFilter filter)
+        {
+            var query = _context.Fines.AsQueryable();
+
+            if (filter.Status.HasValue)
+                query = query.Where(x => x.Status == filter.Status.Value);
+
+            if (filter.PaidAfter.HasValue)
+                query = query.Where(x => x.PaidAt >= filter.PaidAfter.Value);
+
+            return await query.SumAsync(x => x.Amount);
+        }
+
         public async Task<Fine?> GetByIdAsync(int fineId)
         {
             return await _context.Fines
@@ -59,6 +80,8 @@ namespace backend.Repositories
                 .AsNoTracking()
                 .Include(f => f.Loan)
                     .ThenInclude(l => l!.Item)
+                .Include(f => f.User)
+                .Include(f => f.IssuedByAdmin)
                 .Include(f => f.Dispute)
                 .Include(f => f.Appeal)
                 .Where(f => f.UserId == userId)
@@ -122,6 +145,7 @@ namespace backend.Repositories
             var query = _context.Fines
                 .AsNoTracking()
                 .Include(f => f.User)
+                .Include(f => f.IssuedByAdmin)
                 .Include(f => f.Loan)
                     .ThenInclude(l => l!.Item)
                 .Include(f => f.Dispute)
@@ -143,6 +167,7 @@ namespace backend.Repositories
             return await _context.Fines
                 .AsNoTracking()
                 .Include(f => f.User)
+                .Include(f => f.IssuedByAdmin)
                 .Include(f => f.Appeal)
                 .Where(f => f.LoanId == loanId)
                 .OrderBy(f => f.CreatedAt)
@@ -154,6 +179,7 @@ namespace backend.Repositories
             return await _context.Fines
                 .AsNoTracking()
                 .Include(f => f.User)
+                .Include(f => f.IssuedByAdmin)
                 .Include(f => f.Appeal)
                 .Where(f => f.DisputeId == disputeId)
                 .OrderBy(f => f.CreatedAt)

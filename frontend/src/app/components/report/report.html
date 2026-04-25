@@ -1,0 +1,245 @@
+<!-- Loading -->
+<div *ngIf="isLoading" class="flex items-center justify-center py-32">
+  <div class="flex flex-col items-center gap-3">
+    <div class="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+    <p class="text-zinc-500 text-sm">Loading reports...</p>
+  </div>
+</div>
+
+<div *ngIf="!isLoading">
+
+  <!-- Tabs -->
+  <div class="flex gap-1 mb-6 overflow-x-auto scrollbar-none">
+    <button *ngFor="let tab of tabs" (click)="switchTab(tab.id)"
+      class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer"
+      [class.bg-amber-400]="activeTab === tab.id" [class.text-zinc-900]="activeTab === tab.id"
+      [class.bg-zinc-800]="activeTab !== tab.id" [class.text-zinc-400]="activeTab !== tab.id">
+      <span>{{ tab.icon }}</span>
+      <span>{{ tab.label }}</span>
+      <span *ngIf="tab.count !== undefined && tab.count !== null"
+        class="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
+        [class.bg-zinc-800]="activeTab === tab.id" [class.text-zinc-600]="activeTab === tab.id"
+        [class.bg-zinc-700]="activeTab !== tab.id" [class.text-zinc-400]="activeTab !== tab.id">
+        {{ tab.count }}
+      </span>
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+    <!-- LEFT: List -->
+    <div class="lg:col-span-1 space-y-3">
+
+      <!-- Search + sort -->
+      <div class="flex gap-2">
+        <div class="relative flex-1">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" fill="none"
+            viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0" />
+          </svg>
+          <input type="text" [(ngModel)]="searchQuery" (input)="onSearch()" placeholder="Search reports..."
+            class="w-full bg-zinc-900 border border-zinc-800 focus:border-amber-400/50 text-white text-xs rounded-xl pl-8 pr-3 py-2.5 outline-none placeholder-zinc-600 transition-all duration-200" />
+        </div>
+        <select [(ngModel)]="sortFilter" (change)="onFilterChange()"
+          class="bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs rounded-xl px-3 py-2.5 outline-none cursor-pointer">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+        </select>
+      </div>
+
+      <!-- Error -->
+      <div *ngIf="listError"
+        class="flex items-center justify-between gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+        <p class="text-red-400 text-xs">{{ listError }}</p>
+        <button (click)="loadReports()" class="text-red-400 text-xs underline cursor-pointer">Retry</button>
+      </div>
+
+      <!-- List loading -->
+      <div *ngIf="listLoading" class="flex justify-center py-12">
+        <div class="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+
+      <!-- Empty -->
+      <div *ngIf="!listLoading && reports.length === 0 && !listError"
+        class="flex flex-col items-center justify-center py-16 text-center bg-zinc-900 border border-zinc-800 rounded-2xl">
+        <p class="text-4xl mb-3">🚩</p>
+        <p class="text-white text-sm font-semibold" style="font-family:'Syne',sans-serif">No reports found</p>
+        <p class="text-zinc-500 text-xs mt-1">Nothing here for this filter</p>
+      </div>
+
+      <!-- Report cards -->
+      <div *ngFor="let r of reports; trackBy: trackById" class="cursor-pointer" (click)="openReport(r.id)">
+        <div class="bg-zinc-900 border rounded-2xl p-4 transition-all duration-200 hover:border-zinc-700"
+          [class.border-amber-400]="selectedId === r.id" [class.bg-amber-400/5]="selectedId === r.id"
+          [class.border-zinc-800]="selectedId !== r.id">
+
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-amber-400 font-mono text-[10px] font-bold">#{{ r.id }}</span>
+                <span class="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-md"
+                  [ngClass]="getTypeBadgeClass(r.type)">
+                  {{ r.type }}
+                </span>
+              </div>
+              <p class="text-white text-sm font-semibold truncate" style="font-family:'Syne',sans-serif">
+                {{ getReasonLabel(r.reasons) }}
+              </p>
+            </div>
+            <span class="shrink-0 text-[10px] font-bold uppercase px-2 py-1 rounded-lg border"
+              [ngClass]="getStatusClass(r.status)">
+              {{ r.status }}
+            </span>
+          </div>
+
+          <p class="text-zinc-600 text-[10px] mt-1">{{ r.createdAt | date:'MMM d, yyyy' }}</p>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div *ngIf="totalPages > 1" class="flex items-center justify-center gap-1.5 pt-2 flex-wrap">
+        <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1"
+          class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer disabled:cursor-not-allowed">
+          ← Prev
+        </button>
+        <ng-container *ngFor="let page of pageNumbers">
+          <span *ngIf="page === -1" class="text-zinc-600 text-xs px-1">…</span>
+          <button *ngIf="page !== -1" (click)="goToPage(page)"
+            class="w-8 h-8 flex items-center justify-center text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer"
+            [class.bg-amber-400]="page === currentPage" [class.text-zinc-900]="page === currentPage"
+            [class.bg-zinc-800]="page !== currentPage" [class.text-zinc-300]="page !== currentPage"
+            [class.hover:bg-zinc-700]="page !== currentPage">
+            {{ page }}
+          </button>
+        </ng-container>
+        <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages"
+          class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer disabled:cursor-not-allowed">
+          Next →
+        </button>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: Detail -->
+    <div class="lg:col-span-2">
+
+      <!-- No selection -->
+      <div *ngIf="!selectedId && !detailLoading"
+        class="flex flex-col items-center justify-center h-96 bg-zinc-900 border border-zinc-800 rounded-2xl text-center">
+        <p class="text-5xl mb-4">🚩</p>
+        <p class="text-white font-semibold text-sm" style="font-family:'Syne',sans-serif">Select a report</p>
+        <p class="text-zinc-500 text-xs mt-1">Click on a report to view details</p>
+      </div>
+
+      <!-- Detail loading -->
+      <div *ngIf="detailLoading" class="flex justify-center py-32">
+        <div class="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+
+      <!-- Detail -->
+      <ng-container *ngIf="selectedReport && !detailLoading">
+        <div class="space-y-5">
+
+          <!-- Header -->
+          <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+            <div class="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-amber-400 font-mono text-xs font-bold">REPORT #{{ selectedReport.id }}</span>
+                  <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md"
+                    [ngClass]="getTypeBadgeClass(selectedReport.type)">
+                    {{ selectedReport.type }}
+                  </span>
+                </div>
+                <h2 class="font-black text-xl text-white tracking-tight" style="font-family:'Syne',sans-serif">
+                  {{ getReasonLabel(selectedReport.reasons) }}
+                </h2>
+                <p class="text-zinc-500 text-xs mt-1">
+                  Submitted {{ selectedReport.createdAt | date:'MMMM d, yyyy · HH:mm' }}
+                </p>
+              </div>
+              <span class="text-[10px] font-bold uppercase px-2.5 py-1 rounded-xl border"
+                [ngClass]="getStatusClass(selectedReport.status)">
+                {{ selectedReport.status }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Who was reported -->
+          <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+            <h3 class="font-bold text-white text-sm mb-4" style="font-family:'Syne',sans-serif">Report Details</h3>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-zinc-500 text-xs">Type</span>
+                <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md"
+                  [ngClass]="getTypeBadgeClass(selectedReport.type)">
+                  {{ selectedReport.type }}
+                </span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-zinc-500 text-xs">Reason</span>
+                <span class="text-white text-xs font-semibold">{{ getReasonLabel(selectedReport.reasons) }}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-zinc-500 text-xs">Target ID</span>
+                <span class="text-zinc-400 text-xs font-mono truncate max-w-[180px]">{{ selectedReport.targetId }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Additional details -->
+          <div *ngIf="selectedReport.additionalDetails" class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+            <h3 class="font-bold text-white text-sm mb-3" style="font-family:'Syne',sans-serif">Your Description</h3>
+            <p class="text-zinc-300 text-sm leading-relaxed">{{ selectedReport.additionalDetails }}</p>
+          </div>
+
+          <!-- Admin decision -->
+          <div *ngIf="selectedReport.adminNote || selectedReport.resolvedAt"
+            class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+            <h3 class="font-bold text-white text-sm mb-3" style="font-family:'Syne',sans-serif">Admin Decision</h3>
+
+            <div *ngIf="selectedReport.handledByAdminName" class="flex items-center gap-3 mb-4">
+              <img [src]="selectedReport.handledByAdminAvatarUrl || getDefaultAvatar(selectedReport.handledByAdminName)"
+                class="w-8 h-8 rounded-xl object-cover bg-zinc-700 shrink-0" />
+              <div class="min-w-0">
+                <p class="text-white text-sm font-semibold truncate">{{ selectedReport.handledByAdminName }}</p>
+                <p class="text-zinc-500 text-[10px]">@{{ selectedReport.handledByAdminUserName }}</p>
+              </div>
+              <span class="ml-auto text-zinc-500 text-[10px]">
+                {{ selectedReport.resolvedAt | date:'MMM d, yyyy' }}
+              </span>
+            </div>
+
+            <div class="mb-3">
+              <span class="text-[10px] font-bold uppercase px-2.5 py-1 rounded-xl border"
+                [ngClass]="getStatusClass(selectedReport.status)">
+                {{ selectedReport.status }}
+              </span>
+            </div>
+
+            <p *ngIf="selectedReport.adminNote"
+              class="text-zinc-400 text-sm leading-relaxed italic">
+              "{{ selectedReport.adminNote }}"
+            </p>
+          </div>
+
+          <!-- Pending notice -->
+          <div *ngIf="selectedReport.status === ReportStatus.Pending"
+            class="bg-amber-400/5 border border-amber-400/20 rounded-2xl p-5 flex items-start gap-3">
+            <span class="text-2xl shrink-0">⏳</span>
+            <div>
+              <p class="text-amber-400 text-sm font-semibold" style="font-family:'Syne',sans-serif">
+                Under Review
+              </p>
+              <p class="text-zinc-500 text-xs mt-1">
+                Our team has received your report and will review it shortly. You'll be notified when a decision is made.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</div>

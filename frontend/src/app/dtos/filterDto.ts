@@ -23,6 +23,7 @@ import {
 } from './enums';
 
 export interface UserFilter {
+  excludesAdmin?: boolean | null;
   includeDeleted?: boolean | null;
   isPermanentBan?: boolean | null;
   isBanned?: boolean | null;
