@@ -1,0 +1,504 @@
+<!-- Background -->
+<div class="fixed inset-0 bg-zinc-950 -z-10"></div>
+<div class="fixed inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:52px_52px] -z-10"></div>
+
+<app-navbar></app-navbar>
+
+<main class="pt-16 min-h-screen">
+
+  <!-- Header -->
+  <div class="px-6 md:px-10 pt-10 pb-8 border-b border-zinc-800/60">
+    <div class="flex items-center gap-3 mb-1">
+      <a routerLink="/admin-dashboard"
+        class="flex items-center gap-1.5 text-zinc-500 hover:text-white text-xs font-medium transition-colors no-underline">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Dashboard
+      </a>
+      <span class="text-zinc-700">/</span>
+      <span class="text-zinc-500 text-xs">Appeals</span>
+    </div>
+
+    <div class="flex items-center justify-between gap-4 flex-wrap mt-2">
+      <div>
+        <h1 class="font-black text-3xl md:text-4xl text-white tracking-tight" style="font-family:'Syne',sans-serif">
+          All Appeals
+        </h1>
+        <p class="text-zinc-500 text-sm mt-1">{{ totalCount }} appeals in current view</p>
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="flex items-center gap-5 mt-6 flex-wrap">
+      <ng-container *ngFor="let tab of tabs">
+        <div *ngIf="tab.key !== 'all'" class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full"
+            [class.bg-amber-400]="tab.key === 'pending'"
+            [class.bg-emerald-400]="tab.key === 'approved'"
+            [class.bg-rose-400]="tab.key === 'rejected'"
+            [class.bg-zinc-500]="tab.key === 'cancelled'"></span>
+          <span class="text-zinc-400 text-sm">
+            <span class="text-white font-semibold">{{ tab.count ?? '—' }}</span> {{ tab.label }}
+          </span>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+
+  <div class="px-6 md:px-10 py-8">
+
+    <!-- Tabs + Search -->
+    <div class="flex items-center justify-between gap-4 mb-6 flex-wrap">
+      <div class="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-xl p-1 overflow-x-auto">
+        <button *ngFor="let tab of tabs" (click)="switchTab(tab.key)"
+          class="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer whitespace-nowrap"
+          [class.bg-amber-400]="activeTab === tab.key"
+          [class.text-zinc-900]="activeTab === tab.key"
+          [class.text-zinc-400]="activeTab !== tab.key">
+          {{ tab.label }}
+          <span class="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+            [class.bg-zinc-900]="activeTab === tab.key"
+            [class.text-amber-400]="activeTab === tab.key"
+            [class.bg-zinc-800]="activeTab !== tab.key"
+            [class.text-zinc-500]="activeTab !== tab.key">
+            {{ tab.count ?? '—' }}
+          </span>
+        </button>
+      </div>
+      <div class="relative">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+        </svg>
+        <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearch()"
+          placeholder="Search user, message..."
+          class="bg-zinc-900 border border-zinc-800 text-white text-sm rounded-xl pl-9 pr-4 py-2 outline-none placeholder-zinc-600 focus:border-amber-400/50 transition-all duration-200 w-72" />
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="listError"
+      class="flex items-center justify-between gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 mb-4">
+      <p class="text-red-400 text-sm">{{ listError }}</p>
+      <button (click)="loadAppeals()" class="text-red-400 text-xs underline cursor-pointer">Retry</button>
+    </div>
+
+    <!-- Loading skeleton -->
+    <div *ngIf="isLoading" class="space-y-3">
+      <div *ngFor="let _ of [1,2,3,4,5]" class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 animate-pulse">
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 bg-zinc-800 rounded-xl shrink-0"></div>
+          <div class="flex-1 space-y-2">
+            <div class="h-4 bg-zinc-800 rounded w-40"></div>
+            <div class="h-3 bg-zinc-800 rounded w-56"></div>
+          </div>
+          <div class="w-24 h-6 bg-zinc-800 rounded-xl"></div>
+          <div class="w-20 h-6 bg-zinc-800 rounded-xl"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="!isLoading && appeals.length === 0 && !listError"
+      class="flex flex-col items-center justify-center py-24 text-center">
+      <div class="w-16 h-16 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-center text-3xl mb-4">🏛️</div>
+      <h3 class="font-bold text-white text-lg mb-2" style="font-family:'Syne',sans-serif">No appeals found</h3>
+      <p class="text-zinc-500 text-sm">Try a different tab or search term.</p>
+    </div>
+
+    <!-- Appeal list -->
+    <div *ngIf="!isLoading && appeals.length > 0" class="space-y-3">
+      <div *ngFor="let appeal of appeals" (click)="openModal(appeal)"
+        class="bg-zinc-900 border border-zinc-800 hover:border-zinc-600 rounded-2xl p-5 transition-all duration-200 cursor-pointer group hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/40">
+        <div class="flex items-center gap-4">
+
+          <!-- User avatar -->
+          <div class="w-10 h-10 rounded-xl bg-zinc-800 overflow-hidden shrink-0 flex items-center justify-center text-xs font-bold text-amber-400">
+            <img *ngIf="appeal.userAvatarUrl" [src]="appeal.userAvatarUrl" class="w-full h-full object-cover" />
+            <span *ngIf="!appeal.userAvatarUrl">{{ getInitials(appeal.fullName) }}</span>
+          </div>
+
+          <!-- Info -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-0.5 flex-wrap">
+              <p class="text-white text-sm font-semibold" style="font-family:'Syne',sans-serif">{{ appeal.fullName }}</p>
+              <span class="text-zinc-600 text-xs">@{{ appeal.userName }}</span>
+            </div>
+            <p class="text-zinc-500 text-xs truncate max-w-xs">
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md mr-1.5" [ngClass]="getTypeClass(appeal.appealType)">
+                {{ getTypeLabel(appeal.appealType) }}
+              </span>
+              {{ appeal.message }}
+            </p>
+          </div>
+
+          <!-- Date -->
+          <span class="hidden sm:block text-zinc-600 text-xs shrink-0">{{ appeal.createdAt | date:'MMM d, yyyy' }}</span>
+
+          <!-- Status + arrow -->
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="text-[10px] font-bold uppercase px-2.5 py-1 rounded-lg border"
+              [ngClass]="getStatusClass(appeal.status)">{{ appeal.status }}</span>
+            <svg class="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="totalPages > 1" class="flex items-center justify-center gap-1.5 pt-6 flex-wrap">
+      <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1"
+        class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer disabled:cursor-not-allowed">
+        ← Prev
+      </button>
+      <ng-container *ngFor="let page of pageNumbers">
+        <span *ngIf="page === -1" class="text-zinc-600 text-xs px-1">…</span>
+        <button *ngIf="page !== -1" (click)="goToPage(page)"
+          class="w-8 h-8 flex items-center justify-center text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer"
+          [class.bg-amber-400]="page === currentPage"
+          [class.text-zinc-900]="page === currentPage"
+          [class.bg-zinc-800]="page !== currentPage"
+          [class.text-zinc-300]="page !== currentPage">
+          {{ page }}
+        </button>
+      </ng-container>
+      <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages"
+        class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer disabled:cursor-not-allowed">
+        Next →
+      </button>
+    </div>
+
+  </div>
+</main>
+
+
+<!-- ══════════════ DETAIL MODAL ══════════════ -->
+<div *ngIf="showModal && selectedItem" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" (click)="closeModal()"></div>
+  <div class="relative z-10 w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+
+    <!-- Modal header -->
+    <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between sticky top-0 bg-zinc-900 z-10">
+      <div>
+        <div class="flex items-center gap-2 mb-0.5">
+          <h2 class="font-black text-lg text-white" style="font-family:'Syne',sans-serif">Appeal #{{ selectedItem.id }}</h2>
+          <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border"
+            [ngClass]="getStatusClass(selectedItem.status)">{{ selectedItem.status }}</span>
+        </div>
+        <p class="text-zinc-500 text-xs">
+          <span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold mr-1" [ngClass]="getTypeClass(selectedItem.appealType)">
+            {{ getTypeLabel(selectedItem.appealType) }}
+          </span>
+          {{ selectedItem.fullName }}
+        </p>
+      </div>
+      <button (click)="closeModal()"
+        class="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-white transition-colors rounded-lg hover:bg-zinc-800 cursor-pointer">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="isLoadingDetail" class="flex items-center justify-center py-16">
+      <div class="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+
+    <div *ngIf="!isLoadingDetail && detail" class="p-6 space-y-5">
+
+      <!-- User card with admin context info -->
+      <div class="bg-zinc-800 rounded-xl p-4">
+        <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium mb-3">User</p>
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-11 h-11 rounded-xl overflow-hidden bg-zinc-700 shrink-0 flex items-center justify-center text-sm font-bold text-amber-400 cursor-pointer"
+            (click)="router.navigate(['/users', detail.userId])">
+            <img *ngIf="detail.userAvatarUrl" [src]="detail.userAvatarUrl" class="w-full h-full object-cover" />
+            <span *ngIf="!detail.userAvatarUrl">{{ getInitials(detail.fullName) }}</span>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-white text-sm font-semibold cursor-pointer hover:text-amber-400 transition-colors"
+              style="font-family:'Syne',sans-serif" (click)="router.navigate(['/users', detail.userId])">
+              {{ detail.fullName }}
+            </p>
+            <p class="text-zinc-500 text-xs">@{{ detail.userName }}</p>
+            <p *ngIf="detail.userEmail" class="text-zinc-600 text-[10px]">{{ detail.userEmail }}</p>
+          </div>
+          <span *ngIf="detail.isVerified"
+            class="shrink-0 text-[10px] font-bold uppercase bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 px-2 py-0.5 rounded-lg">
+            ✓ Verified
+          </span>
+        </div>
+
+        <!-- User stats grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+          <div class="bg-zinc-700 rounded-lg px-2.5 py-2 text-center">
+            <p class="text-zinc-500 text-[10px] mb-0.5">Score</p>
+            <p class="text-white font-black" style="font-family:'Syne',sans-serif">{{ detail.userCurrentScore }}</p>
+          </div>
+          <div class="bg-zinc-700 rounded-lg px-2.5 py-2 text-center">
+            <p class="text-zinc-500 text-[10px] mb-0.5">Unpaid fines</p>
+            <p class="font-black" style="font-family:'Syne',sans-serif"
+              [class.text-red-400]="detail.unpaidFinesTotal > 0"
+              [class.text-zinc-400]="detail.unpaidFinesTotal === 0">
+              kr {{ detail.unpaidFinesTotal }}
+            </p>
+          </div>
+          <div class="bg-zinc-700 rounded-lg px-2.5 py-2 text-center">
+            <p class="text-zinc-500 text-[10px] mb-0.5">Borrows</p>
+            <p class="text-white font-black" style="font-family:'Syne',sans-serif">{{ detail.successfulBorrowCount }}</p>
+          </div>
+          <div class="bg-zinc-700 rounded-lg px-2.5 py-2 text-center">
+            <p class="text-zinc-500 text-[10px] mb-0.5">Lends</p>
+            <p class="text-white font-black" style="font-family:'Syne',sans-serif">{{ detail.successfulLendCount }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Meta -->
+      <div class="grid grid-cols-2 gap-3 text-xs">
+        <div class="bg-zinc-800 rounded-xl px-3 py-2.5">
+          <p class="text-zinc-500 mb-0.5">Submitted</p>
+          <p class="text-white font-medium">{{ detail.createdAt | date:'MMM d, yyyy · HH:mm' }}</p>
+        </div>
+        <div class="bg-zinc-800 rounded-xl px-3 py-2.5">
+          <p class="text-zinc-500 mb-0.5">{{ detail.resolvedAt ? 'Resolved' : 'Status' }}</p>
+          <p class="font-medium"
+            [class.text-emerald-400]="detail.status === AppealStatus.Approved"
+            [class.text-rose-400]="detail.status === AppealStatus.Rejected"
+            [class.text-zinc-400]="detail.status === AppealStatus.Pending"
+            [class.text-zinc-600]="detail.status === AppealStatus.Cancelled">
+            {{ detail.resolvedAt ? (detail.resolvedAt | date:'MMM d, yyyy · HH:mm') : detail.status }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Fine context (for fine appeals) -->
+      <div *ngIf="detail.fineId" class="bg-zinc-800 rounded-xl px-4 py-3 flex items-center justify-between">
+        <div>
+          <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium mb-0.5">Fine being appealed</p>
+          <p class="text-white text-sm font-semibold font-mono">#{{ detail.fineId }}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-zinc-500 text-[10px] mb-0.5">Fine amount</p>
+          <p class="text-red-400 font-black text-base" style="font-family:'Syne',sans-serif">kr {{ detail.fineAmount }}</p>
+        </div>
+      </div>
+
+      <!-- Score context (for score appeals) -->
+      <div *ngIf="detail.scoreHistoryId" class="bg-zinc-800 rounded-xl px-4 py-3 flex items-center justify-between">
+        <div>
+          <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium mb-0.5">Score change being appealed</p>
+          <p class="text-zinc-400 text-xs font-mono">History entry #{{ detail.scoreHistoryId }}</p>
+        </div>
+        <div *ngIf="detail.scoreAfterChange !== null" class="text-right">
+          <p class="text-zinc-500 text-[10px] mb-0.5">Score after change</p>
+          <p class="text-white font-black text-base" style="font-family:'Syne',sans-serif">{{ detail.scoreAfterChange }}</p>
+        </div>
+      </div>
+
+      <!-- Appeal message -->
+      <div class="bg-zinc-800 rounded-xl p-4">
+        <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium mb-2">User's Message</p>
+        <p class="text-zinc-300 text-sm leading-relaxed">{{ detail.message }}</p>
+      </div>
+
+      <!-- Outcome (if already resolved) -->
+      <div *ngIf="detail.status !== AppealStatus.Pending && detail.status !== AppealStatus.Cancelled" class="space-y-3">
+
+        <!-- Verdict pill -->
+        <div class="bg-zinc-800 rounded-xl px-4 py-3 flex items-center justify-between">
+          <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Verdict</p>
+          <span class="text-sm font-bold px-3 py-1 rounded-xl border"
+            [ngClass]="getStatusClass(detail.status)">
+            {{ detail.status }}
+          </span>
+        </div>
+
+        <!-- Fine resolution outcome -->
+        <div *ngIf="detail.fineResolution" class="bg-zinc-800 rounded-xl px-4 py-3 flex items-center justify-between">
+          <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Fine Resolution</p>
+          <div class="text-right">
+            <p class="text-white text-sm font-semibold">{{ detail.fineResolution }}</p>
+            <p *ngIf="detail.fineResolution === FineAppealResolution.Custom && detail.customFineAmount !== null"
+              class="text-amber-400 text-xs font-bold">New amount: kr {{ detail.customFineAmount }}</p>
+          </div>
+        </div>
+
+        <!-- Score restoration outcome -->
+        <div *ngIf="detail.restoredScore !== null" class="bg-zinc-800 rounded-xl px-4 py-3 flex items-center justify-between">
+          <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Score Restored</p>
+          <p class="text-emerald-400 font-black text-base" style="font-family:'Syne',sans-serif">
+            +{{ detail.restoredScore }}
+          </p>
+        </div>
+
+        <!-- Admin note -->
+        <div *ngIf="detail.adminNote" class="bg-zinc-800 rounded-xl px-4 py-3">
+          <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium mb-1">Admin Note</p>
+          <p class="text-zinc-300 text-sm italic">"{{ detail.adminNote }}"</p>
+        </div>
+
+        <!-- Resolved by admin -->
+        <div *ngIf="detail.resolvedByAdminName" class="bg-zinc-800 rounded-xl px-4 py-3">
+          <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium mb-3">Resolved by</p>
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-xl overflow-hidden bg-zinc-700 shrink-0 flex items-center justify-center text-xs font-bold text-indigo-400 cursor-pointer"
+              (click)="router.navigate(['/users', detail.resolvedByAdminId])">
+              <img *ngIf="detail.resolvedByAdminAvatarUrl" [src]="detail.resolvedByAdminAvatarUrl" class="w-full h-full object-cover" />
+              <span *ngIf="!detail.resolvedByAdminAvatarUrl">{{ getInitials(detail.resolvedByAdminName) }}</span>
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-white text-xs font-semibold cursor-pointer hover:text-indigo-400 transition-colors"
+                (click)="router.navigate(['/users', detail.resolvedByAdminId])">{{ detail.resolvedByAdminName }}</p>
+              <p class="text-zinc-600 text-[10px]">@{{ detail.resolvedByAdminUserName }}</p>
+            </div>
+            <span class="text-zinc-600 text-[10px] shrink-0">{{ detail.resolvedAt | date:'MMM d · HH:mm' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Decision section ── -->
+      <ng-container *ngIf="canDecide">
+
+        <!-- Entry buttons (shown when form is closed) -->
+        <div *ngIf="!showDecideForm" class="flex gap-3">
+          <button (click)="openDecideForm(false)"
+            class="flex-1 flex items-center justify-center gap-2 py-2.5 bg-zinc-800 hover:bg-rose-500/10 border border-zinc-700 hover:border-rose-500/30 text-zinc-300 hover:text-rose-400 font-semibold text-sm rounded-xl transition-all duration-200 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Reject
+          </button>
+          <button (click)="openDecideForm(true)"
+            class="flex-1 flex items-center justify-center gap-2 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 font-semibold text-sm rounded-xl transition-all duration-200 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            Approve
+          </button>
+        </div>
+
+        <!-- Decision form -->
+        <div *ngIf="showDecideForm"
+          class="rounded-xl p-5 space-y-4 border"
+          [class.bg-emerald-500/5]="decideIsApproved"
+          [class.border-emerald-500/20]="decideIsApproved"
+          [class.bg-rose-500/5]="!decideIsApproved"
+          [class.border-rose-500/20]="!decideIsApproved">
+
+          <!-- Form heading -->
+          <div>
+            <p class="text-sm font-semibold" style="font-family:'Syne',sans-serif"
+              [class.text-emerald-400]="decideIsApproved"
+              [class.text-rose-400]="!decideIsApproved">
+              {{ decideIsApproved ? '✓ Approving Appeal' : '✕ Rejecting Appeal' }}
+            </p>
+            <p class="text-zinc-500 text-xs mt-0.5">
+              {{ decideIsApproved
+                  ? (isFineAppeal ? 'Choose what happens to the fine.' : 'Optionally set a new score for the user.')
+                  : 'Add an optional note explaining the rejection.' }}
+            </p>
+          </div>
+
+          <!-- Fine appeal — resolution options (only when approving) -->
+          <div *ngIf="decideIsApproved && isFineAppeal" class="space-y-2">
+            <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">
+              Resolution <span class="text-red-400">*</span>
+            </label>
+            <div class="grid grid-cols-2 gap-2">
+              <button (click)="decideFineResolution = FineAppealResolution.Voided; decideCustomFineAmount = null"
+                class="text-left px-4 py-3 rounded-xl border transition-all duration-200 cursor-pointer"
+                [class.border-emerald-400]="decideFineResolution === FineAppealResolution.Voided"
+                [class.bg-emerald-400/10]="decideFineResolution === FineAppealResolution.Voided"
+                [class.border-zinc-700]="decideFineResolution !== FineAppealResolution.Voided"
+                [class.bg-zinc-800]="decideFineResolution !== FineAppealResolution.Voided">
+                <p class="text-white text-xs font-semibold">🗑 Void Fine</p>
+                <p class="text-zinc-500 text-[10px] mt-0.5">Cancel the fine entirely</p>
+              </button>
+              <button (click)="decideFineResolution = FineAppealResolution.Custom"
+                class="text-left px-4 py-3 rounded-xl border transition-all duration-200 cursor-pointer"
+                [class.border-amber-400]="decideFineResolution === FineAppealResolution.Custom"
+                [class.bg-amber-400/10]="decideFineResolution === FineAppealResolution.Custom"
+                [class.border-zinc-700]="decideFineResolution !== FineAppealResolution.Custom"
+                [class.bg-zinc-800]="decideFineResolution !== FineAppealResolution.Custom">
+                <p class="text-white text-xs font-semibold">✏️ Custom Amount</p>
+                <p class="text-zinc-500 text-[10px] mt-0.5">Reduce the fine amount</p>
+              </button>
+            </div>
+
+            <!-- Custom amount input -->
+            <div *ngIf="showCustomAmount" class="space-y-1.5 pt-1">
+              <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">
+                New Fine Amount (kr) <span class="text-red-400">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm font-medium">kr</span>
+                <input type="number" [(ngModel)]="decideCustomFineAmount" placeholder="0" min="1"
+                  class="w-full bg-zinc-800 border border-zinc-700 focus:border-amber-400/50 text-white text-sm rounded-xl pl-9 pr-4 py-2.5 outline-none placeholder-zinc-600 transition-all duration-200" />
+              </div>
+              <p *ngIf="detail.fineAmount" class="text-zinc-600 text-[10px]">Original: kr {{ detail.fineAmount }}</p>
+            </div>
+          </div>
+
+          <!-- Score appeal — new score input (only when approving) -->
+          <div *ngIf="showNewScore" class="space-y-1.5">
+            <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">
+              New Score <span class="text-zinc-600">(optional — leave blank to keep current)</span>
+            </label>
+            <input type="number" [(ngModel)]="decideNewScore" placeholder="{{ detail.userCurrentScore }}" min="0" max="100"
+              class="w-full bg-zinc-800 border border-zinc-700 focus:border-emerald-400/50 text-white text-sm rounded-xl px-4 py-2.5 outline-none placeholder-zinc-600 transition-all duration-200" />
+            <p class="text-zinc-600 text-[10px]">Current score: {{ detail.userCurrentScore }}</p>
+          </div>
+
+          <!-- Admin note -->
+          <div class="space-y-1.5">
+            <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-medium">Admin Note (optional)</label>
+            <textarea [(ngModel)]="decideAdminNote" rows="2" placeholder="Add a note visible to the user..."
+              class="w-full bg-zinc-800 border border-zinc-700 focus:border-zinc-500 text-white text-sm rounded-xl px-3 py-2.5 outline-none placeholder-zinc-600 resize-none transition-all duration-200"></textarea>
+          </div>
+
+          <!-- Errors / success -->
+          <p *ngIf="decideError" class="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+            {{ decideError }}
+          </p>
+          <p *ngIf="decideSuccess" class="text-emerald-400 text-xs bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
+            {{ decideSuccess }}
+          </p>
+
+          <!-- Action buttons -->
+          <div class="flex gap-3">
+            <button (click)="resetDecideForm()"
+              class="flex-1 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-sm rounded-xl cursor-pointer transition-all duration-200">
+              Cancel
+            </button>
+            <button (click)="submitDecision()" [disabled]="isDeciding || !decideFormValid"
+              class="flex-1 flex items-center justify-center gap-2 py-2.5 font-semibold text-sm rounded-xl disabled:opacity-50 cursor-pointer transition-all duration-200 border"
+              [class.bg-emerald-500/10]="decideIsApproved"
+              [class.hover:bg-emerald-500/20]="decideIsApproved"
+              [class.border-emerald-500/20]="decideIsApproved"
+              [class.text-emerald-400]="decideIsApproved"
+              [class.bg-rose-500/10]="!decideIsApproved"
+              [class.hover:bg-rose-500/20]="!decideIsApproved"
+              [class.border-rose-500/20]="!decideIsApproved"
+              [class.text-rose-400]="!decideIsApproved">
+              {{ isDeciding ? 'Processing...' : (decideIsApproved ? 'Confirm Approval' : 'Confirm Rejection') }}
+            </button>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Navigate to fine -->
+      <button *ngIf="detail.fineId" (click)="router.navigate(['/admin-fines'], { queryParams: { id: detail.fineId } })"
+        class="w-full flex items-center justify-center gap-2 py-2.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 hover:text-white font-semibold text-sm rounded-xl transition-all duration-200 cursor-pointer">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+        </svg>
+        View Fine #{{ detail.fineId }}
+      </button>
+
+    </div>
+  </div>
+</div>

@@ -1,0 +1,30 @@
+<app-navbar></app-navbar>
+
+<div class="map-container">
+  <div class="map-frame">
+    <div id="map"></div>
+
+    <!-- 👇 ITEM PANEL -->
+    <div class="item-panel" *ngIf="selectedItem as item">
+      <div class="item-card">
+        <h3>{{ item.title }}</h3>
+
+        <p>{{ item.description }}</p>
+
+        <div class="meta">
+          <span>{{ item.isFree ? 'Free' : item.pricePerDay + ' kr/day' }}</span>
+          <span>{{ item.categoryName }}</span>
+        </div>
+
+        <button (click)="goToItem(item.slug)">
+          View item
+        </button>
+
+        <button (click)="selectedItem = null">
+          Close
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

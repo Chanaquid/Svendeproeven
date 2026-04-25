@@ -180,7 +180,10 @@
         SupportThreadCreated = 33,
         SupportThreadClosed = 34,
         SupportThreadClaimed = 35,
-        DisputeExpired = 36
+        DisputeExpired = 36,
+        SystemAlert = 37,
+        AdminSent = 38,
+        Broadcast = 39
 
     }
 
@@ -199,7 +202,9 @@
         Report = 9,
         Review = 10,
         User = 11,
-        ItemFavorites = 12
+        ItemFavorites = 12,
+        SystemAlert = 13,
+        Broadcast = 14
 
     }
 

@@ -23,7 +23,7 @@ import {
 } from './enums';
 
 export interface UserFilter {
-  excludesAdmin?: boolean | null;
+  excludesAdmin?: boolean | null; //Its actually excludeAdmins but keeping it in case supportthread comp isnt ready on time
   includeDeleted?: boolean | null;
   isPermanentBan?: boolean | null;
   isBanned?: boolean | null;
@@ -60,6 +60,7 @@ export interface ItemFilter {
   availability?: ItemAvailability | null;
   minRating?: number | null;
   maxRating?: number | null;
+  createdAfter?: string | null;
 }
 
 export interface ItemReviewFilter {
@@ -73,6 +74,7 @@ export interface ItemReviewFilter {
 }
 
 export interface LoanFilter {
+  userId?: string | null;
   borrowerId?: string | null;
   lenderId?: string | null;
   itemId?: number | null;

@@ -30,44 +30,6 @@ namespace backend.Controllers
 
         //Users
 
-        // GET /api/admin/users
-        [HttpGet("users")]
-        public async Task<ActionResult<ApiResponse<PagedResult<UserProfileDto>>>> GetAllUsers(
-            [FromQuery] UserFilter filter,
-            [FromQuery] PagedRequest request)
-        {
-            var result = await _adminService.GetAllUsersAsync(filter, request);
-            return Ok(ApiResponse<PagedResult<UserProfileDto>>.Ok(result));
-        }
-
-        // GET /api/admin/users/{userId}
-        [HttpGet("users/{userId}")]
-        public async Task<ActionResult<ApiResponse<UserProfileDto>>> GetUserById(string userId)
-        {
-            var result = await _adminService.GetUserByIdAsync(userId);
-            return Ok(ApiResponse<UserProfileDto>.Ok(result));
-        }
-
-        // POST /api/admin/users/{userId}/ban
-        [HttpPost("users/{userId}/ban")]
-        public async Task<ActionResult<ApiResponse<string>>> BanUser(
-            string userId,
-            [FromBody] BanUserDto dto)
-        {
-            await _adminService.BanUserAsync(userId, Caller.UserId, dto);
-            return Ok(ApiResponse<string>.Ok(null, "User banned successfully."));
-        }
-
-        // POST /api/admin/users/{userId}/unban
-        [HttpPost("users/{userId}/unban")]
-        public async Task<ActionResult<ApiResponse<string>>> UnbanUser(
-            string userId,
-            [FromBody] UnbanUserDto dto)
-        {
-            await _adminService.UnbanUserAsync(userId, Caller.UserId, dto);
-            return Ok(ApiResponse<string>.Ok(null, "User unbanned successfully."));
-        }
-
         // GET /api/admin/users/{userId}/ban-history
         [HttpGet("users/{userId}/ban-history")]
         public async Task<ActionResult<ApiResponse<PagedResult<UserBanHistoryDto>>>> GetBanHistory(

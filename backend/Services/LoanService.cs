@@ -642,7 +642,7 @@ namespace backend.Services
                 throw new UnauthorizedAccessException("Admin access required.");
 
             filter ??= new LoanFilter();
-            filter.BorrowerId ??= userId;
+            filter.UserId = userId;
 
             var result = await _loanRepository.GetAllAsAdminAsync(filter, request);
             return MapToPagedLoanListDto(result, null);

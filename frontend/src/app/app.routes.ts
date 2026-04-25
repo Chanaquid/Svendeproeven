@@ -22,6 +22,15 @@ import { DirectChat } from './components/direct-chat/direct-chat';
 import { AdminUser } from './components/admin-user/admin-user';
 import { AdminGuardService } from './services/adminGuardService';
 import { AdminDashboard } from './components/admin-dashboard/admin-dashboard';
+import { AdminItem } from './components/admin-item/admin-item';
+import { AdminLoan } from './components/admin-loan/admin-loan';
+import { AdminVerification } from './components/admin-verification/admin-verification';
+import { AdminDispute } from './components/admin-dispute/admin-dispute';
+import { AdminFine } from './components/admin-fine/admin-fine';
+import { AdminAppeal } from './components/admin-appeal/admin-appeal';
+import { AdminReport } from './components/admin-report/admin-report';
+import { SupportChat } from './components/support-chat/support-chat';
+import { Map } from './components/map/map';
 
 
 export const authGuard : CanActivateFn = () => {
@@ -47,10 +56,19 @@ export const routes: Routes = [
     {path: 'resolution-center', component: ResolutionCenter, canActivate: [authGuard]},
     {path: 'notifications', component: Notification, canActivate: [authGuard]},
     {path: 'my-favorites', component: Favorite, canActivate: [authGuard]},
+    { path: 'supports', component: SupportChat, canActivate: [authGuard] },
+    { path: 'maps', component: Map, canActivate: [authGuard] },
 
 
     { path: 'admin-dashboard', component: AdminDashboard, canActivate: [AdminGuardService] },
      { path: 'admin-users', component: AdminUser, canActivate: [AdminGuardService] },
+     { path: 'admin-items', component: AdminItem, canActivate: [AdminGuardService] },
+     { path: 'admin-loans', component: AdminLoan, canActivate: [AdminGuardService] },
+     { path: 'admin-verifications', component: AdminVerification, canActivate: [AdminGuardService] },
+     { path: 'admin-disputes', component: AdminDispute, canActivate: [AdminGuardService] },
+     { path: 'admin-fines', component: AdminFine, canActivate: [AdminGuardService] },
+     { path: 'admin-appeals', component: AdminAppeal, canActivate: [AdminGuardService] },
+     { path: 'admin-reports', component: AdminReport, canActivate: [AdminGuardService] },
 
 
     {path: 'test', component: TestUpload},

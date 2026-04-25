@@ -1,6 +1,8 @@
-﻿using backend.Dtos;
+﻿using backend.Data;
+using backend.Dtos;
 using backend.Interfaces;
 using backend.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend.Services
 {
@@ -11,22 +13,25 @@ namespace backend.Services
         private readonly IFineRepository _fineRepository;
         private readonly IScoreHistoryRepository _scoreHistoryRepository;
         private readonly INotificationService _notificationService;
+        private readonly ApplicationDbContext _context;
 
         public AppealService(
             IAppealRepository appealRepository,
             IUserRepository userRepository,
             IFineRepository fineRepository,
             INotificationService notificationService,
-            IScoreHistoryRepository scoreHistoryRepository)
+            IScoreHistoryRepository scoreHistoryRepository,
+            ApplicationDbContext context)
         {
             _appealRepository = appealRepository;
             _userRepository = userRepository;
             _fineRepository = fineRepository;
             _notificationService = notificationService;
             _scoreHistoryRepository = scoreHistoryRepository;
+            _context = context;
         }
 
-        // Score restored on appeal approval — reset to just above the hard block threshold
+        //Score restored on appeal approval — reset to just above the hard block threshold
         private const int DefaultRestoredScore = 20;
 
         //User actions
@@ -68,7 +73,6 @@ namespace backend.Services
                 NotificationReferenceType.Appeal
             );
 
-            //Re-fetch with details so User navigation property is populated for mapping
             var created = await _appealRepository.GetByIdWithDetailsAsync(appeal.Id);
             return MapToAppealDto(created!);
         }
@@ -126,7 +130,8 @@ namespace backend.Services
             if (!isAdmin && appeal.UserId != userId)
                 throw new UnauthorizedAccessException("You cannot view this appeal.");
 
-            return MapToAppealDto(appeal);
+            // Return the richer AdminAppealDto when called from an admin context
+            return isAdmin ? await MapToAdminAppealDtoAsync(appeal) : MapToAppealDto(appeal);
         }
 
         public async Task<PagedResult<AppealDto>> GetMyAppealsAsync(
@@ -134,7 +139,6 @@ namespace backend.Services
             AppealFilter? filter,
             PagedRequest request)
         {
-
             var pagedAppeals = await _appealRepository
                 .GetAllByUserIdAsync(userId, filter, request);
 
@@ -168,8 +172,6 @@ namespace backend.Services
             if (appeal.Status != AppealStatus.Pending && appeal.Status != AppealStatus.Cancelled)
                 throw new InvalidOperationException("You can only delete pending or cancelled appeals.");
 
-
-
             appeal.IsDeleted = true;
             appeal.DeletedAt = DateTime.UtcNow;
             appeal.Status = AppealStatus.Deleted;
@@ -177,15 +179,13 @@ namespace backend.Services
             await _appealRepository.SaveChangesAsync();
         }
 
+        //Admin actions
 
-
-        //admin actions
         public async Task<PagedResult<AppealDto>> GetAllAppealsByUserIdAsync(
             string userId,
             AppealFilter? filter,
             PagedRequest request)
         {
-
             var pagedAppeals = await _appealRepository.GetAllByUserIdAsync(userId, filter, request);
             return MapPagedResult(pagedAppeals);
         }
@@ -195,7 +195,7 @@ namespace backend.Services
             var appeal = await _appealRepository.GetByIdWithDetailsAsync(appealId)
                 ?? throw new KeyNotFoundException($"Appeal {appealId} not found.");
 
-            return MapToAppealDto(appeal);
+            return await MapToAdminAppealDtoAsync(appeal);
         }
 
         public async Task<PagedResult<AppealDto>> GetAllAppealsAsync(AppealFilter? filter, PagedRequest request)
@@ -235,7 +235,7 @@ namespace backend.Services
 
             appeal.Status = dto.IsApproved ? AppealStatus.Approved : AppealStatus.Rejected;
             appeal.ResolvedByAdminId = adminId;
-            appeal.ResolvedByAdmin = admin; // Keep navigation property in sync for mapping
+            appeal.ResolvedByAdmin = admin;
             appeal.AdminNote = dto.AdminNote?.Trim();
             appeal.ResolvedAt = DateTime.UtcNow;
 
@@ -279,7 +279,7 @@ namespace backend.Services
                 NotificationReferenceType.Appeal
             );
 
-            return MapToAppealDto(appeal);
+            return await MapToAdminAppealDtoAsync(appeal);
         }
 
         public async Task<AppealDto> DecideFineAppealAsync(int appealId, string adminId, AdminDecidesFineAppealDto dto)
@@ -308,7 +308,7 @@ namespace backend.Services
 
             appeal.Status = dto.IsApproved ? AppealStatus.Approved : AppealStatus.Rejected;
             appeal.ResolvedByAdminId = adminId;
-            appeal.ResolvedByAdmin = admin; //Keep navigation property in sync for mapping
+            appeal.ResolvedByAdmin = admin;
             appeal.AdminNote = dto.AdminNote?.Trim();
             appeal.CustomFineAmount = dto.CustomFineAmount;
             appeal.FineResolution = dto.Resolution;
@@ -319,8 +319,6 @@ namespace backend.Services
                 var fine = await _fineRepository.GetByIdWithDetailsAsync(appeal.FineId.Value);
                 if (fine != null)
                 {
-                    var originalAmount = fine.Amount;
-
                     var newAmount = dto.Resolution switch
                     {
                         FineAppealResolution.Voided => 0m,
@@ -353,10 +351,10 @@ namespace backend.Services
                 NotificationReferenceType.Appeal
             );
 
-            return MapToAppealDto(appeal);
+            return await MapToAdminAppealDtoAsync(appeal);
         }
 
-         //Mappers
+        //Mappers
 
         private static AppealDto MapToAppealDto(Appeal appeal)
         {
@@ -371,20 +369,17 @@ namespace backend.Services
                 Message = appeal.Message,
                 Status = appeal.Status,
 
-                //Fine-related properties
                 FineId = appeal.FineId,
                 FineAmount = appeal.Fine?.Amount,
                 FineResolution = appeal.FineResolution,
                 CustomFineAmount = appeal.CustomFineAmount,
 
-                //Score-related properties 
                 ScoreHistoryId = appeal.ScoreHistoryId,
                 RestoredScore = appeal.RestoredScore,
                 ScoreAfterChange = appeal.AppealType == AppealType.Score
                     ? appeal.ScoreHistory?.ScoreAfterChange ?? appeal.RestoredScore ?? appeal.User?.Score
                     : null,
 
-                // Admin response properties
                 AdminNote = appeal.AdminNote,
                 ResolvedByAdminId = appeal.ResolvedByAdminId,
                 ResolvedByAdminName = appeal.ResolvedByAdmin?.FullName ?? string.Empty,
@@ -396,7 +391,72 @@ namespace backend.Services
             };
         }
 
-        //converts a paged Appeal result to a paged AppealDto result
+        //Loan counts are done inline using _context (same pattern as UserRepository.GetPublicProfileByIdAsync).
+        private async Task<AdminAppealDto> MapToAdminAppealDtoAsync(Appeal appeal)
+        {
+            var user = appeal.User;
+
+            var unpaidFinesTotal = user != null
+                ? await _fineRepository.GetOutstandingTotalByUserAsync(user.Id)
+                : 0m;
+
+            var borrowCount = user != null
+                ? await _context.Loans.CountAsync(l =>
+                    l.BorrowerId == user.Id && l.Status == LoanStatus.Completed)
+                : 0;
+
+            var lendCount = user != null
+                ? await _context.Loans.CountAsync(l =>
+                    l.LenderId == user.Id && l.Status == LoanStatus.Completed)
+                : 0;
+
+            var hoursToResolve = appeal.ResolvedAt.HasValue
+                ? (double?)(appeal.ResolvedAt.Value - appeal.CreatedAt).TotalHours
+                : null;
+
+            return new AdminAppealDto
+            {
+                Id = appeal.Id,
+                UserId = appeal.UserId,
+                FullName = user?.FullName ?? string.Empty,
+                UserName = user?.UserName ?? string.Empty,
+                UserAvatarUrl = user?.AvatarUrl,
+                AppealType = appeal.AppealType,
+                Message = appeal.Message,
+                Status = appeal.Status,
+
+                FineId = appeal.FineId,
+                FineAmount = appeal.Fine?.Amount,
+                FineResolution = appeal.FineResolution,
+                CustomFineAmount = appeal.CustomFineAmount,
+
+                ScoreHistoryId = appeal.ScoreHistoryId,
+                RestoredScore = appeal.RestoredScore,
+                ScoreAfterChange = appeal.AppealType == AppealType.Score
+                    ? appeal.ScoreHistory?.ScoreAfterChange ?? appeal.RestoredScore ?? user?.Score
+                    : null,
+
+                AdminNote = appeal.AdminNote,
+                ResolvedByAdminId = appeal.ResolvedByAdminId,
+                ResolvedByAdminName = appeal.ResolvedByAdmin?.FullName ?? string.Empty,
+                ResolvedByAdminUserName = appeal.ResolvedByAdmin?.UserName ?? string.Empty,
+                ResolvedByAdminAvatarUrl = appeal.ResolvedByAdmin?.AvatarUrl,
+
+                CreatedAt = appeal.CreatedAt,
+                ResolvedAt = appeal.ResolvedAt,
+
+ 
+                UserEmail = user?.Email ?? string.Empty,      
+                IsVerified = user?.IsVerified ?? false,          
+                UserCurrentScore = user?.Score ?? 0,                  
+                UnpaidFinesTotal = unpaidFinesTotal,                
+                MembershipDate = user?.MembershipDate ?? DateTime.MinValue, 
+                SuccessfulBorrowCount = borrowCount,                      
+                SuccessfulLendCount = lendCount,                       
+                HoursToResolve = hoursToResolve,                     
+            };
+        }
+
         private static PagedResult<AppealDto> MapPagedResult(PagedResult<Appeal> source)
         {
             return new PagedResult<AppealDto>

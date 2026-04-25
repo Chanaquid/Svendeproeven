@@ -37,6 +37,8 @@ export class Navbar implements OnInit, OnDestroy {
   isAdmin = false;
   currentUserId = '';
 
+  showBanToast = false;
+
   // Tracks item notifications with in-flight slug lookups
   navigatingIds = new Set<number>();
 
@@ -79,20 +81,31 @@ export class Navbar implements OnInit, OnDestroy {
 
   private connectHub(): void {
     this.notificationHubService.onReceiveNotification((notification: NotificationDto) => {
+      console.log('Hub notification received:', notification);
       const exists = this.notifications.some(n => n.id === notification.id);
       if (!exists) {
-        this.notifications.unshift({
-          id: notification.id,
-          message: notification.message,
-          type: notification.type,
-          referenceId: notification.referenceId,
-          referenceType: notification.referenceType,
-          isRead: false,
-          createdAt: notification.createdAt
-        });
+        this.notifications.unshift({ ...notification, isRead: false });
         this.unreadCount++;
         this.cdr.detectChanges();
       }
+
+      const isSystemAlert =
+        notification.type === NotificationType.SystemAlert ||
+        (notification.referenceType as any) === NotificationReferenceType.SystemAlert ||
+        (notification.referenceType as any) === 'SystemAlert';
+
+      if (isSystemAlert) {
+          // Trust the notification — if backend sent a SystemAlert, user is banned
+          // Don't rely on getMyProfile() which may still return 200 with valid JWT
+          this.showBanToast = true;
+          this.cdr.detectChanges();
+          setTimeout(() => {
+            this.showBanToast = false;
+            this.logout();
+          }, 5000);
+        }
+
+
     });
 
     this.notificationHubService.onUnreadCountUpdated((count: number) => {
@@ -158,6 +171,35 @@ export class Navbar implements OnInit, OnDestroy {
     }
 
     this.showNotifications = false;
+
+     // Handle ban check before navigate
+    if (n.referenceType === NotificationReferenceType.SystemAlert) {
+      this.userService.getMyProfile().subscribe({
+        next: (res) => {
+          if (res.data?.isBanned) {
+            this.showBanToast = true;
+            this.cdr.detectChanges();
+            setTimeout(() => {
+              this.showBanToast = false;
+              this.logout();
+            }, 5000);
+          }
+        },
+        error: (err) => {
+          if (err.status === 403 || err.status === 401) {
+            this.showBanToast = true;
+            this.cdr.detectChanges();
+            setTimeout(() => {
+              this.showBanToast = false;
+              this.logout();
+            }, 5000);
+          }
+        }
+      });
+      return;
+    }
+
+
     this.navigate(n);
   }
 
@@ -249,6 +291,8 @@ export class Navbar implements OnInit, OnDestroy {
       return;
 
     }
+
+
     if (type === NotificationReferenceType.SupportThread)      return;
   }
 

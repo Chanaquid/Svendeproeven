@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { AdminEditUserDto } from '../dtos/adminUserDto';
+import { AppealFilter, DisputeFilter, FineFilter, ItemFilter, LoanFilter, ReportFilter, SupportThreadFilter, VerificationRequestFilter } from '../dtos/filterDto';
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
@@ -17,22 +19,6 @@ export class AdminService {
 
   // ── Users ─────────────────────────────────────────────────────────────────
 
-  getAllUsers(filter?: any, request?: any): Observable<any> {
-    const params = this.buildParams({ ...filter, ...request });
-    return this.http.get<any>(`${this.baseUrl}/users`, { params }).pipe(map(r => r.data));
-  }
-
-  getUserById(userId: string): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/users/${userId}`).pipe(map(r => r.data));
-  }
-
-  banUser(userId: string, dto: { reason: string; banExpiresAt?: string }): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/users/${userId}/ban`, dto);
-  }
-
-  unbanUser(userId: string, dto: { reason?: string }): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/users/${userId}/unban`, dto);
-  }
 
   getBanHistory(userId: string, filter?: any, request?: any): Observable<any> {
     const params = this.buildParams({ ...filter, ...request });
@@ -50,7 +36,7 @@ export class AdminService {
 
   // ── Items ─────────────────────────────────────────────────────────────────
 
-  getAllItems(filter?: any, request?: any): Observable<any> {
+  getAllItems(filter?: ItemFilter, request?: any): Observable<any> {
     const params = this.buildParams({ ...filter, ...request });
     return this.http.get<any>(`${this.baseUrl}/items`, { params }).pipe(map(r => r.data));
   }
@@ -73,7 +59,7 @@ export class AdminService {
 
   // ── Loans ─────────────────────────────────────────────────────────────────
 
-  getAllLoans(filter?: any, request?: any): Observable<any> {
+  getAllLoans(filter?: LoanFilter, request?: any): Observable<any> {
     const params = this.buildParams({ ...filter, ...request });
     return this.http.get<any>(`${this.baseUrl}/loans`, { params }).pipe(map(r => r.data));
   }
@@ -88,12 +74,12 @@ export class AdminService {
 
   // ── Disputes ──────────────────────────────────────────────────────────────
 
-  getAllDisputes(filter?: any, request?: any): Observable<any> {
+  getAllDisputes(filter?: DisputeFilter, request?: any): Observable<any> {
     const params = this.buildParams({ ...filter, ...request });
     return this.http.get<any>(`${this.baseUrl}/disputes`, { params }).pipe(map(r => r.data));
   }
 
-  getOpenDisputes(filter?: any, request?: any): Observable<any> {
+  getOpenDisputes(filter?: DisputeFilter, request?: any): Observable<any> {
     const params = this.buildParams({ ...filter, ...request });
     return this.http.get<any>(`${this.baseUrl}/disputes/open`, { params }).pipe(map(r => r.data));
   }
@@ -112,7 +98,7 @@ export class AdminService {
 
   // ── Fines ─────────────────────────────────────────────────────────────────
 
-  getAllFines(filter?: any, request?: any): Observable<any> {
+  getAllFines(filter?: FineFilter, request?: any): Observable<any> {
     const params = this.buildParams({ ...filter, ...request });
     return this.http.get<any>(`${this.baseUrl}/fines`, { params }).pipe(map(r => r.data));
   }
@@ -135,7 +121,7 @@ export class AdminService {
 
   // ── Appeals ───────────────────────────────────────────────────────────────
 
-  getAllAppeals(filter?: any, request?: any): Observable<any> {
+  getAllAppeals(filter?: AppealFilter, request?: any): Observable<any> {
     const params = this.buildParams({ ...filter, ...request });
     return this.http.get<any>(`${this.baseUrl}/appeals`, { params }).pipe(map(r => r.data));
   }
@@ -154,7 +140,7 @@ export class AdminService {
 
   // ── Verifications ─────────────────────────────────────────────────────────
 
-  getAllVerifications(filter?: any, request?: any): Observable<any> {
+  getAllVerifications(filter?: VerificationRequestFilter, request?: any): Observable<any> {
     const params = this.buildParams({ ...filter, ...request });
     return this.http.get<any>(`${this.baseUrl}/verifications`, { params }).pipe(map(r => r.data));
   }
@@ -173,7 +159,7 @@ export class AdminService {
 
   // ── Reports ───────────────────────────────────────────────────────────────
 
-  getAllReports(filter?: any, request?: any): Observable<any> {
+  getAllReports(filter?: ReportFilter, request?: any): Observable<any> {
     const params = this.buildParams({ ...filter, ...request });
     return this.http.get<any>(`${this.baseUrl}/reports`, { params }).pipe(map(r => r.data));
   }
@@ -192,7 +178,7 @@ export class AdminService {
 
   // ── Support ───────────────────────────────────────────────────────────────
 
-  getAllSupportThreads(filter?: any, request?: any): Observable<any> {
+  getAllSupportThreads(filter?: SupportThreadFilter, request?: any): Observable<any> {
     const params = this.buildParams({ ...filter, ...request });
     return this.http.get<any>(`${this.baseUrl}/support`, { params }).pipe(map(r => r.data));
   }

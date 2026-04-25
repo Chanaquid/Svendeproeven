@@ -111,6 +111,8 @@ export interface ItemListDto {
   categorySlug: string;
   categoryIcon: string | null;
   pickupAddress: string;
+  pickupLatitude: number;
+  pickupLongitude: number;
   ownerId: string;
   ownerName: string;
   ownerUsername: string;

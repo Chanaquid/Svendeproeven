@@ -32,9 +32,23 @@ export class Login {
     },
     error: (err) => {
       this.isLoading = false;
-      console.log(err)
-      this.errorMessage = err.error?.message || 'Invalid email or password';
-      this.cdr.detectChanges(); //Manually tell Angular to update the UI NOW
+      const msg: string = err.error?.message ?? '';
+
+      if (msg.startsWith('TEMP_BAN|')) {
+        const [, utcDate, reason] = msg.split('|');
+        const local = new Date(utcDate).toLocaleString(undefined, {
+          dateStyle: 'medium',
+          timeStyle: 'short'
+        });
+        this.errorMessage = `Your account is temporarily banned until ${local}. Reason: ${reason}`;
+      } else if (msg.startsWith('PERM_BAN|')) {
+        const reason = msg.replace('PERM_BAN|', '');
+        this.errorMessage = `Your account has been permanently banned. Reason: ${reason}`;
+      } else {
+        this.errorMessage = msg || 'Invalid email or password';
+      }
+
+      this.cdr.detectChanges();
     }
   });
   }

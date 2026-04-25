@@ -64,8 +64,8 @@ namespace backend.Services
             if (review.ReviewerId != reviewerId)
                 throw new UnauthorizedAccessException("You can only edit your own reviews.");
 
-            if (review.IsAdminReview)
-                throw new InvalidOperationException("Admin reviews cannot be edited this way.");
+            //if (review.IsAdminReview)
+            //    throw new InvalidOperationException("Admin reviews cannot be edited this way.");
 
             review.Rating = dto.Rating;
             review.Comment = dto.Comment?.Trim();

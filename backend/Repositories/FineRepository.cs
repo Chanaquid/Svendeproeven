@@ -53,7 +53,7 @@ namespace backend.Repositories
                 .Include(f => f.Dispute)
                 .Include(f => f.IssuedByAdmin)
                 .Include(f => f.VerifiedByAdmin)
-                .Include(f => f.Appeal) //For hasPendingAppeal and activeAppealId
+                .Include(f => f.Appeal)
                 .FirstOrDefaultAsync(f => f.Id == fineId);
         }
 
@@ -72,7 +72,7 @@ namespace backend.Repositories
             await _context.SaveChangesAsync();
         }
 
-        //User 
+        //User
         public async Task<PagedResult<Fine>> GetByUserIdAsync(
             string userId, FineFilter? filter, PagedRequest request)
         {
@@ -95,7 +95,7 @@ namespace backend.Repositories
             return await query.ToPagedResultAsync(request);
         }
 
-        //Admin 
+        //Admin
         public async Task<PagedResult<Fine>> GetAllAsync(
             FineFilter? filter, PagedRequest request)
         {
@@ -154,7 +154,7 @@ namespace backend.Repositories
                 .AsQueryable();
 
             query = ApplyFilter(query, filter);
-            //Oldest proof first so nothing sits unreviewed
+            // Oldest proof first so nothing sits unreviewed
             query = string.IsNullOrWhiteSpace(request.SortBy)
                 ? query.OrderBy(f => f.ProofSubmittedAt)
                 : query.ApplySorting(request.SortBy, request.SortDescending);
@@ -324,6 +324,8 @@ namespace backend.Repositories
             {
                 var term = filter.Search.Trim().ToLower();
                 query = query.Where(f =>
+                    (f.User != null && f.User.FullName.ToLower().Contains(term)) ||
+                    (f.User != null && f.User.UserName != null && f.User.UserName.ToLower().Contains(term)) ||
                     (f.AdminNote != null && f.AdminNote.ToLower().Contains(term)) ||
                     (f.PaymentDescription != null && f.PaymentDescription.ToLower().Contains(term)) ||
                     (f.Loan != null && f.Loan.Item != null && f.Loan.Item.Title.ToLower().Contains(term)));

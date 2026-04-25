@@ -46,7 +46,15 @@ namespace backend.Services
             var item = await _itemRepository.GetByIdWithDetailsAsync(itemId)
                 ?? throw new KeyNotFoundException($"Item {itemId} not found");
 
-            //Check if the item is in the specific user's wishlist
+            bool isAdmin = currentUserId != null &&
+                await _userManager.IsInRoleAsync(await _userManager.FindByIdAsync(currentUserId), "Admin");
+
+            if (item.OwnerId != currentUserId && !isAdmin)
+            {
+                if (item.Status != ItemStatus.Approved || !item.IsActive)
+                    throw new KeyNotFoundException($"Item {itemId} not found");
+            }
+
             bool isFavorited = currentUserId != null &&
                 await _userFavoriteRepository.ExistsAsync(currentUserId, itemId);
 
@@ -60,8 +68,15 @@ namespace backend.Services
             var item = await _itemRepository.GetBySlugAsync(slug)
                 ?? throw new KeyNotFoundException($"Item not found");
 
+            bool isAdmin = currentUserId != null &&
+                await _userManager.IsInRoleAsync(await _userManager.FindByIdAsync(currentUserId), "Admin");
 
-            //Check if the item is in the specific user's wishlist
+            if (item.OwnerId != currentUserId && !isAdmin)
+            {
+                if (item.Status != ItemStatus.Approved || !item.IsActive)
+                    throw new KeyNotFoundException($"Item not found");
+            }
+
             bool isFavorited = currentUserId != null &&
                 await _userFavoriteRepository.ExistsAsync(currentUserId, item.Id);
 
@@ -150,6 +165,10 @@ namespace backend.Services
             if (dto.CurrentValue < 0)
                 throw new ArgumentException("Current value cant be negative");
 
+            //Normalize loan constraints: treat 0 as "not set"
+            var minLoanDays = dto.MinLoanDays == 0 ? null : dto.MinLoanDays;
+            var maxLoanDays = dto.MaxLoanDays == 0 ? null : dto.MaxLoanDays;
+
             //Normalize dates early
             var availableFrom = dto.AvailableFrom.Date;
             var availableUntil = dto.AvailableUntil.Date;
@@ -161,8 +180,8 @@ namespace backend.Services
                 throw new ArgumentException("AvailableFrom must be before AvailableUntil.");
 
             //Loan constraints consistency
-            if (dto.MinLoanDays.HasValue && dto.MaxLoanDays.HasValue &&
-                dto.MinLoanDays > dto.MaxLoanDays)
+            if (minLoanDays.HasValue && maxLoanDays.HasValue &&
+                minLoanDays > maxLoanDays)
                 throw new ArgumentException("MinLoanDays cannot exceed MaxLoanDays.");
 
             var availableDays = (availableUntil - availableFrom).TotalDays;
@@ -171,13 +190,13 @@ namespace backend.Services
             if (availableDays <= 0)
                 throw new ArgumentException("Availability window must be at least 1 day.");
 
-            if (dto.MinLoanDays.HasValue && availableDays < dto.MinLoanDays.Value)
+            if (minLoanDays.HasValue && availableDays < minLoanDays.Value)
                 throw new ArgumentException(
-                    $"Availability window ({availableDays:0} days) must be at least equal to MinLoanDays ({dto.MinLoanDays}).");
+                    $"Availability window ({availableDays:0} days) must be at least equal to MinLoanDays ({minLoanDays}).");
 
-            if (dto.MaxLoanDays.HasValue && availableDays < dto.MaxLoanDays.Value)
+            if (maxLoanDays.HasValue && availableDays < maxLoanDays.Value)
                 throw new ArgumentException(
-                    $"Availability window ({availableDays:0} days) must allow MaxLoanDays ({dto.MaxLoanDays}).");
+                    $"Availability window ({availableDays:0} days) must allow MaxLoanDays ({maxLoanDays}).");
 
             //Fall back to user's location if pickup details are not provided
             var pickupAddress = !string.IsNullOrWhiteSpace(dto.PickupAddress)
@@ -203,8 +222,8 @@ namespace backend.Services
                 IsFree = dto.IsFree,
                 Condition = dto.Condition,
                 QrCode = await GenerateUniqueQrCodeAsync(),//Unique string for physical item tracking
-                MinLoanDays = dto.MinLoanDays,
-                MaxLoanDays = dto.MaxLoanDays,
+                MinLoanDays = minLoanDays,
+                MaxLoanDays = maxLoanDays,
                 RequiresVerification = dto.RequiresVerification,
                 PickupAddress = pickupAddress,
                 PickupLatitude = pickupLat,
@@ -566,6 +585,31 @@ namespace backend.Services
             _itemRepository.Update(item);
             await _itemRepository.SaveChangesAsync();
 
+            // Send notification to owner
+            var (notifType, message) = dto.Status switch
+            {
+                ItemStatus.Approved => (
+                    NotificationType.ItemApproved,
+                    $"Your item '{item.Title}' has been approved and is now live."),
+                ItemStatus.Rejected => (
+                    NotificationType.ItemRejected,
+                    $"Your item '{item.Title}' was rejected.{(!string.IsNullOrWhiteSpace(dto.AdminNote) ? $" Reason: {dto.AdminNote}" : "")}"),
+                ItemStatus.Pending => (
+                    NotificationType.ItemPendingReview,
+                    $"Your item '{item.Title}' has been moved back to pending review."),
+                _ => ((NotificationType?)null, (string?)null)
+            };
+
+            if (notifType.HasValue && message != null)
+            {
+                await _notificationService.SendAsync(
+                    item.OwnerId,
+                    notifType.Value,
+                    message,
+                    item.Id,
+                    NotificationReferenceType.Item);
+            }
+
             return await AdminGetByIdAsync(itemId);
         }
 
@@ -723,8 +767,9 @@ namespace backend.Services
                 CategorySlug = item.Category?.Slug ?? "",
                 Condition = item.Condition,
                 Availability = item.Availability,
-                
                 PickupAddress = item.PickupAddress,
+                PickupLatitude = item.PickupLatitude,
+                PickupLongitude = item.PickupLongitude,
                 IsActive = item.IsActive,
                 AverageRating = item.Reviews?.Any() == true
                             ? Math.Round(item.Reviews.Average(r => r.Rating), 1)

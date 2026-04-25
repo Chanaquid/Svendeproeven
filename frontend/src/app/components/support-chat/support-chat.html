@@ -1,0 +1,215 @@
+<app-navbar></app-navbar>
+
+<div class="chat-page">
+  <div class="chat-layout">
+    <aside class="conversation-list">
+      <div class="sidebar-header">
+        <h2>Support</h2>
+      </div>
+
+      <div class="new-chat-section" *ngIf="!isAdmin">
+        <button
+          type="button"
+          class="primary-action-button"
+          (click)="showCreateForm = !showCreateForm"
+          [disabled]="hasActiveThread() && !showCreateForm"
+        >
+          {{ showCreateForm ? 'Cancel' : 'Open support thread' }}
+        </button>
+
+        <div *ngIf="showCreateForm && !hasActiveThread()" class="support-create-form">
+          <input
+            type="text"
+            [(ngModel)]="createSubject"
+            placeholder="Subject"
+          />
+
+          <textarea
+            [(ngModel)]="createInitialMessage"
+            placeholder="Describe your issue..."
+            rows="4"
+          ></textarea>
+
+          <button
+            type="button"
+            (click)="createThread()"
+            [disabled]="isCreatingThread || !createSubject.trim() || !createInitialMessage.trim()"
+          >
+            {{ isCreatingThread ? 'Creating...' : 'Create thread' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="new-chat-section" *ngIf="isAdmin">
+        <div class="admin-filters">
+          <button type="button" (click)="changeFilter('unclaimed')">Unclaimed</button>
+          <button type="button" (click)="changeFilter('claimed')">Claimed</button>
+          <button type="button" (click)="changeFilter('closed')">Closed</button>
+          <button type="button" (click)="changeFilter('all')">All</button>
+        </div>
+      </div>
+
+      <div *ngIf="isLoadingThreads" class="empty-state">
+        Loading threads...
+      </div>
+
+      <div *ngIf="!isLoadingThreads && threads.length === 0" class="empty-state">
+        No support threads found.
+      </div>
+
+      <button
+        *ngFor="let thread of threads; trackBy: trackThread"
+        class="conversation-item"
+        [class.active]="selectedThread?.id === thread.id"
+        (click)="selectThread(thread)"
+      >
+        <div class="avatar">
+          <span *ngIf="!thread.userAvatarUrl">
+            {{ getInitials(thread.userName || thread.fullName) }}
+          </span>
+
+          <img
+            *ngIf="thread.userAvatarUrl"
+            [src]="thread.userAvatarUrl"
+            [alt]="thread.userName"
+          />
+        </div>
+
+        <div class="conversation-content">
+          <div class="conversation-top">
+            <span class="name">{{ getThreadDisplayTitle(thread) }}</span>
+            <span class="time">{{ formatMessageTime(thread.lastMessageAt || '') }}</span>
+          </div>
+
+          <div class="conversation-bottom">
+            <span class="preview">
+              {{ thread.lastMessagePreview || 'No messages yet' }}
+            </span>
+
+            <span *ngIf="thread.unreadCount > 0" class="unread-badge">
+              {{ thread.unreadCount }}
+            </span>
+          </div>
+
+          <div class="thread-status-line">
+            {{ getStatusLabel(thread.status) }}
+            <span *ngIf="thread.claimedByAdminName">· {{ thread.claimedByAdminName }}</span>
+          </div>
+        </div>
+      </button>
+    </aside>
+
+    <section class="chat-panel">
+      <div *ngIf="!selectedThread" class="empty-chat">
+        <div class="empty-chat-card">
+          <h3>No support thread selected</h3>
+          <p>Select a thread from the left.</p>
+        </div>
+      </div>
+
+      <ng-container *ngIf="selectedThread">
+        <div class="chat-header">
+          <div class="thread-header-layout">
+            <div class="chat-user">
+              <div class="avatar">
+                <span *ngIf="!selectedThread?.userAvatarUrl">
+                  {{ getInitials(selectedThread?.userName || selectedThread?.fullName || '') }}
+                </span>
+
+                <img
+                  *ngIf="selectedThread?.userAvatarUrl"
+                  [src]="selectedThread?.userAvatarUrl"
+                  [alt]="selectedThread?.userName"
+                />
+              </div>
+
+              <div class="thread-meta">
+                <div class="chat-name">{{ getSelectedThreadTitle() }}</div>
+                <div class="thread-status-line">
+                  {{ getStatusLabel(selectedThread!.status) }}
+                </div>
+              </div>
+            </div>
+
+            <div class="thread-actions">
+              <button
+                *ngIf="canClaimSelectedThread()"
+                type="button"
+                class="thread-action-btn"
+                (click)="claimThread()"
+              >
+                Claim
+              </button>
+
+              <button
+                *ngIf="canCloseSelectedThread()"
+                type="button"
+                class="thread-action-btn"
+                (click)="closeThread()"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="messages-area" #messagesContainer>
+          <div *ngIf="isLoadingThread" class="empty-state">
+            Loading thread...
+          </div>
+
+          <div
+            *ngFor="let message of messages; trackBy: trackMessage"
+            class="message-row"
+            [class.own-message]="message.isMine"
+            [class.other-message]="!message.isMine"
+          >
+            <div class="message-avatar">
+              <span *ngIf="!message.senderAvatarUrl">
+                {{ getInitials(message.senderFullName || message.senderName) }}
+              </span>
+
+              <img
+                *ngIf="message.senderAvatarUrl"
+                [src]="message.senderAvatarUrl"
+                [alt]="message.senderName"
+              />
+            </div>
+
+            <div class="message-content">
+              <div class="message-sender">
+                {{ message.isMine ? 'You' : (message.senderFullName || message.senderName) }}
+              </div>
+
+              <div class="message-bubble">
+                <div class="message-text">{{ message.content }}</div>
+                <div class="message-time">{{ formatMessageTime(message.sentAt) }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="message-form">
+          <input
+            type="text"
+            [(ngModel)]="newMessage"
+            placeholder="Write a message..."
+            (keyup.enter)="sendMessage()"
+            [disabled]="!canSendMessage()"
+          />
+
+          <button
+            (click)="sendMessage()"
+            [disabled]="isSending || !newMessage.trim() || !canSendMessage()"
+          >
+            {{ isSending ? 'Sending...' : 'Send' }}
+          </button>
+        </div>
+      </ng-container>
+    </section>
+  </div>
+
+  <p *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </p>
+</div>

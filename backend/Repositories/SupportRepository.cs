@@ -174,6 +174,15 @@ namespace backend.Repositories
             await _context.SaveChangesAsync();
         }
 
+        public async Task<int> CountAsync(SupportThreadFilter filter)
+        {
+            var query = _context.SupportThreads.AsQueryable();
+            if (filter.Status.HasValue)
+                query = query.Where(x => x.Status == filter.Status.Value);
+            return await query.CountAsync();
+
+        }
+
         //Helpers
 
         private static IQueryable<SupportThread> ApplyFilter(

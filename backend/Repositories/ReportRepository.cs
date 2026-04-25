@@ -103,6 +103,8 @@ namespace backend.Repositories
         //Dynamic filtering and sorting
         private static IQueryable<Report> ApplyFilter(IQueryable<Report> query, ReportFilter? filter)
         {
+            query = query.Where(r => r.ReportedBy != null && !r.ReportedBy.IsDeleted);
+
             if (filter == null) return query;
 
             if (!string.IsNullOrWhiteSpace(filter.ReportedById))
@@ -123,7 +125,6 @@ namespace backend.Repositories
             if (filter.Status.HasValue)
                 query = query.Where(r => r.Status == filter.Status.Value);
 
-            //IsResolved only applies when Status is not already filtered
             if (filter.IsResolved.HasValue && !filter.Status.HasValue)
             {
                 query = filter.IsResolved.Value
@@ -149,8 +150,8 @@ namespace backend.Repositories
                 query = query.Where(r =>
                     (r.AdditionalDetails != null && r.AdditionalDetails.ToLower().Contains(search)) ||
                     (r.AdminNote != null && r.AdminNote.ToLower().Contains(search)) ||
-                    r.Type.ToString().ToLower().Contains(search) ||   
-                    r.Reasons.ToString().ToLower().Contains(search));  
+                    r.Type.ToString().ToLower().Contains(search) ||
+                    r.Reasons.ToString().ToLower().Contains(search));
             }
 
             return query;

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { ApiResponse } from '../dtos/apiResponseDto';
 import { PagedRequest, PagedResult } from '../dtos/paginationDto';
 import {
+  AdminAppealDto,
   AdminDecidesFineAppealDto,
   AdminDecidesScoreAppealDto,
   AppealDto,
@@ -45,6 +46,8 @@ export class AppealService {
     return params;
   }
 
+  // ── User endpoints ────────────────────────────────────────────────────────
+
   getMyAppeals(filter: AppealFilter | null, request: PagedRequest): Observable<ApiResponse<PagedResult<AppealDto>>> {
     return this.http.get<ApiResponse<PagedResult<AppealDto>>>(
       `${this.baseUrl}/my`,
@@ -52,6 +55,7 @@ export class AppealService {
     );
   }
 
+  // Regular user view — returns base AppealDto
   getById(id: number): Observable<ApiResponse<AppealDto>> {
     return this.http.get<ApiResponse<AppealDto>>(`${this.baseUrl}/${id}`);
   }
@@ -72,6 +76,8 @@ export class AppealService {
     return this.http.delete<ApiResponse<string>>(`${this.baseUrl}/${id}`);
   }
 
+  // ── Admin endpoints ───────────────────────────────────────────────────────
+
   adminGetAll(filter: AppealFilter | null, request: PagedRequest): Observable<ApiResponse<PagedResult<AppealDto>>> {
     return this.http.get<ApiResponse<PagedResult<AppealDto>>>(
       this.baseUrl,
@@ -84,6 +90,11 @@ export class AppealService {
       `${this.baseUrl}/pending`,
       { params: this.buildParams(filter, request) }
     );
+  }
+
+  // Admin detail view — returns AdminAppealDto with user stats (score, fines, borrows, etc.)
+  adminGetById(id: number): Observable<ApiResponse<AdminAppealDto>> {
+    return this.http.get<ApiResponse<AdminAppealDto>>(`${this.baseUrl}/admin/${id}`);
   }
 
   adminGetByUserId(userId: string, filter: AppealFilter | null, request: PagedRequest): Observable<ApiResponse<PagedResult<AppealDto>>> {
@@ -100,11 +111,11 @@ export class AppealService {
     );
   }
 
-  adminDecideScore(id: number, dto: AdminDecidesScoreAppealDto): Observable<ApiResponse<AppealDto>> {
-    return this.http.post<ApiResponse<AppealDto>>(`${this.baseUrl}/${id}/decide/score`, dto);
+  adminDecideScore(id: number, dto: AdminDecidesScoreAppealDto): Observable<ApiResponse<AdminAppealDto>> {
+    return this.http.post<ApiResponse<AdminAppealDto>>(`${this.baseUrl}/${id}/decide/score`, dto);
   }
 
-  adminDecideFine(id: number, dto: AdminDecidesFineAppealDto): Observable<ApiResponse<AppealDto>> {
-    return this.http.post<ApiResponse<AppealDto>>(`${this.baseUrl}/${id}/decide/fine`, dto);
+  adminDecideFine(id: number, dto: AdminDecidesFineAppealDto): Observable<ApiResponse<AdminAppealDto>> {
+    return this.http.post<ApiResponse<AdminAppealDto>>(`${this.baseUrl}/${id}/decide/fine`, dto);
   }
 }

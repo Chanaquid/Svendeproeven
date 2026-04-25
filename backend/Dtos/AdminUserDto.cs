@@ -25,7 +25,6 @@ namespace backend.Dtos
         [EmailAddress]
         public string? Email { get; set; }
 
-        [MinLength(8)]
         public string? NewPassword { get; set; }
 
         [MaxLength(255)]

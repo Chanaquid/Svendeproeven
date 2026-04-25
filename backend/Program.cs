@@ -92,7 +92,8 @@ builder.Services.AddAuthentication(options =>
             if (!string.IsNullOrEmpty(accessToken) &&
                 (path.StartsWithSegments("/hubs/direct-chat") ||
                  path.StartsWithSegments("/hubs/loan-chat") ||
-                 path.StartsWithSegments("/hubs/notifications")))
+                 path.StartsWithSegments("/hubs/notifications") ||
+                 path.StartsWithSegments("/hubs/support-chat")))
             {
                 context.Token = accessToken;
             }
@@ -208,7 +209,11 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         options.JsonSerializerOptions.Converters.Add(new DateTimeUtcConverter());
     });
-builder.Services.AddSignalR();
+builder.Services.AddSignalR()
+    .AddJsonProtocol(options =>
+    {
+        options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 var app = builder.Build();
 
@@ -311,4 +316,5 @@ app.MapControllers();
 app.MapHub<DirectChatHub>("/hubs/direct-chat");
 app.MapHub<LoanChatHub>("/hubs/loan-chat");
 app.MapHub<NotificationHub>("/hubs/notifications");
+app.MapHub<SupportChatHub>("/hubs/support-chat");
 app.Run();

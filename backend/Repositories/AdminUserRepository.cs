@@ -22,7 +22,8 @@ namespace backend.Repositories
         public async Task<ApplicationUser?> GetUserByIdAsync(string userId)
         {
             return await _context.Users
-                .FindAsync(userId);
+                .Where(u => !u.IsDeleted)
+                .FirstOrDefaultAsync(u => u.Id == userId);
         }
 
         //Includes deleted/banned users + includes related counts
@@ -81,6 +82,7 @@ namespace backend.Repositories
             filter ??= new UserFilter();
 
             var baseQuery = _context.Users
+                .IgnoreQueryFilters()
                 .Where(u => u.IsBanned)
                 .AsQueryable();
 
@@ -156,6 +158,7 @@ namespace backend.Repositories
         public async Task<List<ApplicationUser>> GetExpiredBannedUsersAsync()
         {
             return await _context.Users
+                .IgnoreQueryFilters()
                 .Where(u => u.IsBanned &&
                             u.BanExpiresAt != null &&
                             u.BanExpiresAt <= DateTime.UtcNow)

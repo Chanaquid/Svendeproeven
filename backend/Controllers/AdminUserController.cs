@@ -1,6 +1,7 @@
 ﻿using backend.Common;
 using backend.Dtos;
 using backend.Interfaces;
+using backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,6 +21,8 @@ namespace backend.Controllers
         private readonly IVerificationRequestService _verificationRequestService;
         private readonly ISupportService _supportService;
         private readonly IFineService _fineService;
+        private readonly IReportService _reportService;
+
 
         public AdminUserController(
             IAdminUserService adminUserService,
@@ -30,7 +33,8 @@ namespace backend.Controllers
             IScoreHistoryService scoreHistoryService,
             IVerificationRequestService verificationService,
             ISupportService supportService,
-            IFineService fineService)
+            IFineService fineService,
+            IReportService reportService)
         {
             _adminUserService = adminUserService;
             _itemService = itemService;
@@ -41,6 +45,7 @@ namespace backend.Controllers
             _verificationRequestService = verificationService;
             _supportService = supportService;
             _fineService = fineService;
+            _reportService = reportService;
         }
 
         // GET /api/admin/users
@@ -161,6 +166,19 @@ namespace backend.Controllers
             return Ok(ApiResponse<PagedResult<VerificationRequestDto>>.Ok(result));
         }
 
+        // GET /api/admin/users/{userId}/reports
+        [HttpGet("{userId}/reports")]
+        public async Task<ActionResult<ApiResponse<PagedResult<ReportDto>>>> GetUserReports(
+            string userId,
+            [FromQuery] ReportFilter? filter,
+            [FromQuery] PagedRequest request)
+        {
+            filter ??= new ReportFilter();
+            filter.ReportedById = userId;
+            var result = await _reportService.GetAllAsync(filter, request);
+            return Ok(ApiResponse<PagedResult<ReportDto>>.Ok(result));
+        }
+
         // GET /api/admin/users/{userId}/support-threads
         [HttpGet("{userId}/support-threads")]
         public async Task<ActionResult<ApiResponse<PagedResult<SupportThreadListDto>>>> GetUserSupportThreads(
@@ -168,6 +186,8 @@ namespace backend.Controllers
             [FromQuery] SupportThreadFilter? filter,
             [FromQuery] PagedRequest request)
         {
+            filter ??= new SupportThreadFilter();
+            filter.UserId = userId;
             var result = await _supportService.GetAllThreadsAsync(filter, request);
             return Ok(ApiResponse<PagedResult<SupportThreadListDto>>.Ok(result));
         }

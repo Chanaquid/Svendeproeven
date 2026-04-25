@@ -38,6 +38,7 @@ export class AdminDashboard implements OnInit {
     this.adminService.getDashboard().subscribe({
       next: (data: AdminDashboardDto) => {
         this.dashboard = data;
+        console.log(this.dashboard);
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -55,9 +56,12 @@ export class AdminDashboard implements OnInit {
       this.dashboard.pendingItemApprovals === 0 &&
       this.dashboard.pendingLoanApprovals === 0 &&
       this.dashboard.openDisputes === 0 &&
+      this.dashboard.overdueDisputeResponses === 0 &&
       this.dashboard.pendingAppeals === 0 &&
       this.dashboard.pendingUserVerifications === 0 &&
-      this.dashboard.pendingPaymentVerifications === 0
+      this.dashboard.pendingFines === 0 &&
+      this.dashboard.pendingReports === 0 &&
+      this.dashboard.pendingSupports === 0
     );
   }
 

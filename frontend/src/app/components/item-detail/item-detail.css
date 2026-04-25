@@ -703,18 +703,60 @@
   gap: 8px;
   margin-bottom: 4px;
 }
-
 .history-status-tag {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid transparent;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid transparent;
 }
 
-.history-status-tag--pending  { background: rgba(251,191,36,0.1); color: #fbbf24; border-color: rgba(251,191,36,0.2); }
-.history-status-tag--resolved { background: rgba(52,211,153,0.1); color: #34d399; border-color: rgba(52,211,153,0.2); }
+/* Specific Status Colors */
+.history-status-tag--active { 
+    background: rgba(52, 211, 153, 0.1); 
+    color: #34d399; 
+    border-color: rgba(52, 211, 153, 0.2); 
+}
+
+.history-status-tag--approved { 
+    background: rgba(59, 130, 246, 0.1); 
+    color: #60a5fa; 
+    border-color: rgba(59, 130, 246, 0.2); 
+}
+
+.history-status-tag--completed { 
+    background: rgba(161, 161, 170, 0.1); 
+    color: #a1a1aa; 
+    border-color: rgba(161, 161, 170, 0.2); 
+}
+
+.history-status-tag--late { 
+    background: rgba(248, 113, 113, 0.1); 
+    color: #f87171; 
+    border-color: rgba(248, 113, 113, 0.2); 
+}
+
+.history-status-tag--pending { 
+    background: rgba(251, 191, 36, 0.1); 
+    color: #fbbf24; 
+    border-color: rgba(251, 191, 36, 0.2); 
+}
+
+.history-status-tag--adminpending { 
+    background: rgba(139, 92, 246, 0.1); 
+    color: #a78bfa; 
+    border-color: rgba(139, 92, 246, 0.2); 
+}
+
+.history-status-tag--rejected,
+.history-status-tag--cancelled { 
+    background: rgba(113, 113, 122, 0.1); 
+    color: #71717a; 
+    border-color: rgba(113, 113, 122, 0.2); 
+}
+
+
 
 .history-date { color: #71717a; font-size: 10px; }
 

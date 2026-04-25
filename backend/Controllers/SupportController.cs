@@ -54,6 +54,16 @@ namespace backend.Controllers
             return Ok(ApiResponse<SupportMessageDto>.Ok(result));
         }
 
+        // GET /api/support/{id}/messages
+        [HttpGet("{id}/messages")]
+        public async Task<ActionResult<ApiResponse<PagedResult<SupportMessageDto>>>> GetMessages(
+            int id,
+            [FromQuery] PagedRequest request)
+        {
+            var result = await _supportService.GetMessagesAsync(id, Caller.UserId, Caller.IsAdmin, request);
+            return Ok(ApiResponse<PagedResult<SupportMessageDto>>.Ok(result));
+        }
+
         // PATCH /api/support/{id}/close
         [HttpPatch("{id}/close")]
         public async Task<ActionResult<ApiResponse<string>>> CloseThread(int id)

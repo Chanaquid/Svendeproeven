@@ -6,8 +6,10 @@ export interface AdminDashboardDto {
   overdueDisputeResponses: number;
   pendingAppeals: number;
   pendingUserVerifications: number;
-  pendingPaymentVerifications: number;
   pendingReports: number;
+  pendingFines: number;
+  pendingSupports: number;
+
 
   // Users
   totalUsers: number;
@@ -54,7 +56,11 @@ export interface LoanHistoryEntryDto {
   actualReturnDate: string | null;
   status: string;
   snapshotCondition: string;
+  snapshotPhotos?: { photoUrl: string; displayOrder: number }[];
+  fines?: { type: string; status: string; amount: number; createdAt: string }[];
+  disputes?: { filedAs: string; filedByName: string; status: string; createdAt: string }[];
 }
+
 
 export interface ItemHistoryDto {
   itemId: number;

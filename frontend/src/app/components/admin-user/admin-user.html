@@ -6,8 +6,9 @@
 <app-navbar></app-navbar>
 
 <main class="pt-16 min-h-screen">
-    <div class="px-6 md:px-10 pt-10 pb-8 border-b border-zinc-800/60">
-        <div class="flex items-center gap-3 mb-1">
+
+    <div class="px-6 md:px-10 pt-10 pb-6 border-b border-zinc-800/60">
+        <div class="flex items-center gap-3 mb-2">
             <a routerLink="/admin-dashboard"
                 class="flex items-center gap-1.5 text-zinc-500 hover:text-white text-xs font-medium transition-colors no-underline">
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -18,273 +19,1020 @@
             <span class="text-zinc-700">/</span>
             <span class="text-zinc-500 text-xs">Users</span>
         </div>
-        <div class="flex items-center justify-between gap-4 flex-wrap mt-2">
-            <div>
-                <h1 class="font-black text-3xl md:text-4xl text-white tracking-tight"
-                    style="font-family:'Syne',sans-serif">
-                    User Management
-                </h1>
-                <p class="text-zinc-500 text-sm mt-1">{{ totalCount }} total users found</p>
-            </div>
-        </div>
+        <h1 class="font-black text-3xl text-white tracking-tight" style="font-family:'Syne',sans-serif">User Management
+        </h1>
+        <p class="text-zinc-500 text-sm mt-1">{{ totalCount }} users found</p>
+    </div>
 
-        <div class="flex items-center gap-6 mt-6 flex-wrap">
-            <div class="flex items-center gap-2">
-                <span class="w-2 h-2 bg-emerald-400 rounded-full"></span>
-                <span class="text-zinc-300 text-sm"><span class="text-white font-semibold">{{ verifiedCount }}</span>
-                    Verified</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="w-2 h-2 bg-amber-400 rounded-full"></span>
-                <span class="text-zinc-300 text-sm"><span class="text-white font-semibold">{{ unverifiedCount }}</span>
-                    Unverified</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="w-2 h-2 bg-indigo-400 rounded-full"></span>
-                <span class="text-zinc-300 text-sm"><span class="text-white font-semibold">{{ adminCount }}</span>
-                    Admins</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="w-2 h-2 bg-zinc-500 rounded-full"></span>
-                <span class="text-zinc-300 text-sm"><span class="text-white font-semibold">{{ deletedCount }}</span>
-                    Deleted</span>
-            </div>
+    <div *ngIf="isLoading" class="flex items-center justify-center py-32">
+        <div class="flex flex-col items-center gap-3">
+            <div class="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-zinc-500 text-sm">Loading users...</p>
         </div>
     </div>
 
-    <div class="px-6 md:px-10 py-8">
-        <div class="flex items-center justify-between gap-4 mb-6 flex-wrap">
-            <div class="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-xl p-1 overflow-x-auto">
-                <button *ngFor="let tab of tabs" (click)="setTab(tab.key)"
-                    class="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer whitespace-nowrap"
-                    [class.bg-amber-400]="activeTab === tab.key" [class.text-zinc-900]="activeTab === tab.key"
-                    [class.text-zinc-200]="activeTab !== tab.key">
-                    {{ tab.label }}
-                    <span class="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                        [class.bg-zinc-900]="activeTab === tab.key" [class.text-amber-400]="activeTab === tab.key"
-                        [class.bg-zinc-800]="activeTab !== tab.key" [class.text-zinc-300]="activeTab !== tab.key">
-                        {{ getTabCount(tab.key) }}
-                    </span>
-                </button>
-            </div>
-            <div class="relative">
-                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" fill="none"
-                    viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-                </svg>
-                <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="loadUsers()"
-                    placeholder="Search name, username or email..."
-                    class="bg-zinc-900 border border-zinc-800 text-white text-sm rounded-xl pl-9 pr-4 py-2 outline-none placeholder-zinc-500 focus:border-amber-400/50 transition-all duration-200 w-72" />
-            </div>
+    <div *ngIf="!isLoading" class="px-6 md:px-10 py-6">
+
+        <!-- Tabs -->
+        <div class="flex gap-1 mb-5 overflow-x-auto scrollbar-none">
+            <button *ngFor="let tab of tabs" (click)="setTab(tab.key)"
+                class="px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer"
+                [class.bg-amber-400]="activeTab === tab.key" [class.text-zinc-900]="activeTab === tab.key"
+                [class.bg-zinc-800]="activeTab !== tab.key" [class.text-zinc-400]="activeTab !== tab.key">
+                {{ tab.label }}
+            </button>
         </div>
 
-        <div *ngIf="isLoading" class="space-y-3">
-            <div *ngFor="let _ of [1,2,3,4,5]" class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 animate-pulse">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-zinc-800 rounded-xl shrink-0"></div>
-                    <div class="flex-1 space-y-2">
-                        <div class="h-4 bg-zinc-800 rounded w-48"></div>
-                        <div class="h-3 bg-zinc-800 rounded w-64"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <div *ngIf="!isLoading && filteredUsers.length === 0"
-            class="flex flex-col items-center justify-center py-24 text-center">
-            <div
-                class="w-16 h-16 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-center text-3xl mb-4">
-                👤</div>
-            <h3 class="font-bold text-white text-lg mb-2" style="font-family:'Syne',sans-serif">No users found</h3>
-            <p class="text-zinc-500 text-sm">Try a different filter or search term.</p>
-        </div>
+            <!-- LEFT -->
+            <div class="lg:col-span-1 space-y-3">
 
-        <div *ngIf="!isLoading && filteredUsers.length > 0" class="space-y-3">
-            <div *ngFor="let user of filteredUsers" (click)="openUserModal(user)"
-                class="bg-zinc-900 border border-zinc-800 hover:border-zinc-600 rounded-2xl p-5 transition-all duration-200 cursor-pointer group hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/40"
-                [class.opacity-50]="user.isDeleted">
-                <div class="flex items-center gap-4">
-                    <div
-                        class="w-12 h-12 rounded-xl overflow-hidden bg-zinc-700 shrink-0 flex items-center justify-center text-sm font-bold text-amber-400">
-                        <img *ngIf="user.avatarUrl" [src]="user.avatarUrl" class="w-full h-full object-cover" />
-                        <span *ngIf="!user.avatarUrl">{{ getInitials(user.fullName) }}</span>
-                    </div>
-
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2 mb-0.5 flex-wrap">
-                            <p class="text-white text-sm font-semibold" style="font-family:'Syne',sans-serif">{{
-                                user.fullName }}</p>
-                            <span *ngIf="user.isVerified"
-                                class="badge-verified flex items-center gap-0.5 text-[9px] font-bold uppercase bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 px-1.5 py-0.5 rounded-md">
-                                Verified
-                            </span>
-                            <span *ngIf="user.role === 'Admin'"
-                                class="text-[9px] font-bold uppercase bg-indigo-600/10 text-indigo-400 border border-indigo-400/20 px-1.5 py-0.5 rounded-md">Admin</span>
-                            <span *ngIf="user.isDeleted"
-                                class="text-[9px] font-bold uppercase bg-zinc-700 text-zinc-400 border border-zinc-600 px-1.5 py-0.5 rounded-md">Deleted</span>
-                        </div>
-                        <p class="text-zinc-400 text-xs">@{{ user.username }} · {{ user.email }}</p>
-                    </div>
-
-                    <div class="flex items-center gap-4 shrink-0">
-                        <div class="text-right">
-                            <p class="text-[10px] text-zinc-400 uppercase tracking-widest">Score</p>
-                            <p class="font-black text-lg leading-none" [ngClass]="getScoreClass(user.score)"
-                                style="font-family:'Syne',sans-serif">{{ user.score }}</p>
-                        </div>
-                        <svg class="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                <div class="flex gap-2">
+                    <div class="relative flex-1">
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0" />
                         </svg>
+                        <input type="text" [(ngModel)]="searchQuery" (input)="onSearch()" placeholder="Search users..."
+                            class="w-full bg-zinc-900 border border-zinc-800 focus:border-amber-400/50 text-white text-xs rounded-xl pl-8 pr-3 py-2.5 outline-none placeholder-zinc-600 transition-all" />
+                    </div>
+                    <select [(ngModel)]="sortFilter" (change)="onFilterChange()"
+                        class="bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs rounded-xl px-3 py-2.5 outline-none cursor-pointer">
+                        <option value="newest">Newest</option>
+                        <option value="oldest">Oldest</option>
+                    </select>
+                </div>
+
+                <div *ngIf="listError"
+                    class="flex items-center justify-between gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+                    <p class="text-red-400 text-xs">{{ listError }}</p>
+                    <button (click)="loadUsers()" class="text-red-400 text-xs underline cursor-pointer">Retry</button>
+                </div>
+
+                <!-- Skeleton only on first empty load -->
+                <div *ngIf="listLoading && users.length === 0" class="space-y-2">
+                    <div *ngFor="let _ of [1,2,3,4,5,6]"
+                        class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 animate-pulse">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-zinc-800 rounded-xl shrink-0"></div>
+                            <div class="flex-1 space-y-2">
+                                <div class="h-3 bg-zinc-800 rounded w-28"></div>
+                                <div class="h-2.5 bg-zinc-800 rounded w-40"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                <div *ngIf="!listLoading && users.length === 0 && !listError"
+                    class="flex flex-col items-center justify-center py-16 text-center bg-zinc-900 border border-zinc-800 rounded-2xl">
+                    <p class="text-3xl mb-3">👤</p>
+                    <p class="text-white text-sm font-semibold" style="font-family:'Syne',sans-serif">No users found</p>
+                </div>
+
+                <div *ngFor="let user of users; trackBy: trackById" (click)="openUser(user)" class="cursor-pointer">
+                    <div class="bg-zinc-900 border rounded-2xl p-4 transition-all duration-200 hover:border-zinc-700"
+                        [class.border-amber-400]="selectedId === user.id"
+                        [class.bg-amber-400/5]="selectedId === user.id" [class.border-zinc-800]="selectedId !== user.id"
+                        [class.opacity-50]="user.isDeleted">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-10 h-10 rounded-xl overflow-hidden bg-zinc-700 shrink-0 flex items-center justify-center text-xs font-bold text-amber-400">
+                                <img *ngIf="user.avatarUrl" [src]="user.avatarUrl" class="w-full h-full object-cover" />
+                                <span *ngIf="!user.avatarUrl">{{ getInitials(user.fullName) }}</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                                    <p class="text-white text-xs font-semibold truncate"
+                                        style="font-family:'Syne',sans-serif">{{ user.fullName }}</p>
+                                    <span *ngIf="user.isVerified"
+                                        class="text-[8px] font-bold uppercase bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 px-1 py-0.5 rounded-md">✓</span>
+                                    <!-- Issue #2: unverified badge -->
+                                    <span *ngIf="!user.isVerified && !user.isDeleted"
+                                        class="text-[8px] font-bold uppercase bg-zinc-700 text-zinc-400 border border-zinc-600 px-1 py-0.5 rounded-md">Unverified</span>
+                                    <span *ngIf="user.role === 'Admin'"
+                                        class="text-[8px] font-bold uppercase bg-indigo-600/10 text-indigo-400 border border-indigo-400/20 px-1 py-0.5 rounded-md">Admin</span>
+                                    <span *ngIf="user.isBanned"
+                                        class="text-[8px] font-bold uppercase bg-red-500/10 text-red-400 border border-red-500/20 px-1 py-0.5 rounded-md">Banned</span>
+                                    <span *ngIf="user.isDeleted"
+                                        class="text-[8px] font-bold uppercase bg-zinc-700 text-zinc-400 border border-zinc-600 px-1 py-0.5 rounded-md">Deleted</span>
+                                </div>
+                                <p class="text-zinc-500 text-[10px] truncate">@{{ user.username }}</p>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <p class="font-black text-sm leading-none" [ngClass]="getScoreClass(user.score)"
+                                    style="font-family:'Syne',sans-serif">{{ user.score }}</p>
+                                <p class="text-zinc-600 text-[9px] mt-0.5">score</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div *ngIf="totalPages > 1" class="flex items-center justify-center gap-1.5 pt-2 flex-wrap">
+                    <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1"
+                        class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-xs font-semibold rounded-xl cursor-pointer disabled:cursor-not-allowed">←
+                        Prev</button>
+                    <ng-container *ngFor="let page of pageNumbers">
+                        <span *ngIf="page === -1" class="text-zinc-600 text-xs px-1">…</span>
+                        <button *ngIf="page !== -1" (click)="goToPage(page)"
+                            class="w-8 h-8 flex items-center justify-center text-xs font-semibold rounded-xl cursor-pointer"
+                            [class.bg-amber-400]="page === currentPage" [class.text-zinc-900]="page === currentPage"
+                            [class.bg-zinc-800]="page !== currentPage" [class.text-zinc-300]="page !== currentPage">{{
+                            page }}</button>
+                    </ng-container>
+                    <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages"
+                        class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-xs font-semibold rounded-xl cursor-pointer disabled:cursor-not-allowed">Next
+                        →</button>
+                </div>
+
+            </div>
+
+            <!-- RIGHT -->
+            <div class="lg:col-span-2">
+
+                <div *ngIf="!selectedId && !detailLoading"
+                    class="flex flex-col items-center justify-center h-96 bg-zinc-900 border border-zinc-800 rounded-2xl text-center">
+                    <p class="text-5xl mb-4">👤</p>
+                    <p class="text-white font-semibold text-sm" style="font-family:'Syne',sans-serif">Select a user</p>
+                    <p class="text-zinc-500 text-xs mt-1">Click a user to view details</p>
+                </div>
+
+                <div *ngIf="detailLoading" class="flex justify-center py-32">
+                    <div class="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+
+                <ng-container *ngIf="userDetail && !detailLoading">
+                    <div class="space-y-5">
+
+                        <!-- Profile header -->
+                        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+                            <div class="flex items-start gap-4">
+
+                                <div class="w-16 h-16 rounded-xl overflow-hidden bg-zinc-700 shrink-0 flex items-center justify-center font-bold text-amber-400 cursor-pointer hover:opacity-80 transition-opacity"
+                                    (click)="userDetail.avatarUrl && (expandedPhoto = userDetail.avatarUrl)">
+                                    <img *ngIf="userDetail.avatarUrl" [src]="userDetail.avatarUrl"
+                                        class="w-full h-full object-cover" />
+                                    <span *ngIf="!userDetail.avatarUrl" class="text-lg">{{
+                                        getInitials(userDetail.fullName) }}</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 flex-wrap mb-0.5">
+                                        <h2 class="font-black text-xl text-white" style="font-family:'Syne',sans-serif">
+                                            {{ userDetail.fullName }}</h2>
+                                        <span *ngIf="userDetail.isVerified"
+                                            class="text-[9px] font-bold uppercase bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 px-1.5 py-0.5 rounded-md">Verified</span>
+                                        <!-- Issue #2: unverified badge in detail too -->
+                                        <span *ngIf="!userDetail.isVerified"
+                                            class="text-[9px] font-bold uppercase bg-zinc-700 text-zinc-400 border border-zinc-600 px-1.5 py-0.5 rounded-md">Unverified</span>
+                                        <span *ngIf="userDetail.role === 'Admin'"
+                                            class="text-[9px] font-bold uppercase bg-indigo-600/10 text-indigo-400 border border-indigo-400/20 px-1.5 py-0.5 rounded-md">Admin</span>
+                                        <span *ngIf="userDetail.isBanned"
+                                            class="text-[9px] font-bold uppercase bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded-md">Banned</span>
+                                        <span *ngIf="userDetail.isDeleted"
+                                            class="text-[9px] font-bold uppercase bg-zinc-700 text-zinc-400 border border-zinc-600 px-1.5 py-0.5 rounded-md">Deleted</span>
+                                    </div>
+                                    <p class="text-zinc-400 text-xs">@{{ userDetail.username }} · {{ userDetail.email }}
+                                    </p>
+                                    <p class="text-zinc-600 text-xs mt-0.5">Joined {{ userDetail.createdAt | date:'MMM
+                                        d, yyyy' }}</p>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <p class="font-black text-3xl leading-none"
+                                        [ngClass]="getScoreClass(userDetail.score)"
+                                        style="font-family:'Syne',sans-serif">{{ userDetail.score }}</p>
+                                    <p class="text-zinc-500 text-[10px] mt-0.5">score</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stats grid -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+                                <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-bold mb-1">Items</p>
+                                <p class="text-white font-black text-xl" style="font-family:'Syne',sans-serif">{{
+                                    userDetail.totalOwnedItems ?? '—' }}</p>
+                            </div>
+                            <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+                                <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-bold mb-1">Loans</p>
+                                <p class="text-white font-black text-xl" style="font-family:'Syne',sans-serif">{{
+                                    userDetail.totalBorrowedLoans ?? '—' }}</p>
+                            </div>
+                            <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+                                <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-bold mb-1">Fines</p>
+                                <p class="font-black text-xl" style="font-family:'Syne',sans-serif"
+                                    [class.text-red-400]="(userDetail.totalFines ?? 0) > 0"
+                                    [class.text-white]="(userDetail.totalFines ?? 0) === 0">
+                                    {{ userDetail.totalFines ?? '—' }}
+                                </p>
+                            </div>
+                            <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+                                <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-bold mb-1">Disputes
+                                </p>
+                                <p class="text-white font-black text-xl" style="font-family:'Syne',sans-serif">{{
+                                    (userDetail.totalInitiatedDisputes ?? 0) + (userDetail.totalReceivedDisputes ?? 0)
+                                    }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Info -->
+                        <div
+                            class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-bold mb-1">Address
+                                </p>
+                                <p class="text-zinc-200 text-xs">{{ userDetail.address || '—' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-bold mb-1">Gender /
+                                    Age</p>
+                                <p class="text-zinc-200 text-xs">{{ userDetail.gender || '—' }} / {{ userDetail.age ??
+                                    '—' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-bold mb-1">Email
+                                    Confirmed</p>
+                                <p class="text-xs" [class.text-emerald-400]="userDetail.emailConfirmed"
+                                    [class.text-red-400]="!userDetail.emailConfirmed">
+                                    {{ userDetail.emailConfirmed ? 'Yes' : 'No' }}
+                                </p>
+                            </div>
+                            <div>
+                                <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-bold mb-1">Unpaid
+                                    Fines</p>
+                                <p class="text-xs" [class.text-red-400]="(userDetail.unpaidFinesTotal ?? 0) > 0"
+                                    [class.text-zinc-400]="(userDetail.unpaidFinesTotal ?? 0) === 0">
+                                    kr {{ userDetail.unpaidFinesTotal ?? 0 }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Ban info -->
+                        <div *ngIf="userDetail.isBanned"
+                            class="bg-red-500/5 border border-red-500/20 rounded-2xl p-4 space-y-1">
+                            <p class="text-red-400 text-xs font-black uppercase tracking-widest">Currently Banned</p>
+                            <p class="text-zinc-300 text-xs">Reason: <span class="text-white font-semibold">{{
+                                    userDetail.banReason || '—' }}</span></p>
+                            <p class="text-zinc-300 text-xs">Banned at: {{ userDetail.bannedAt | date:'MMM d, y, h:mm a'
+                                }}</p>
+                            <ng-container *ngIf="userDetail.banExpiresAt; else permanentBan">
+                                <p class="text-zinc-300 text-xs">Expires: <span class="text-amber-400 font-semibold">{{
+                                        userDetail.banExpiresAt | date:'MMM d, y, h:mm a' }}</span></p>
+                            </ng-container>
+                            <ng-template #permanentBan>
+                                <p class="text-zinc-300 text-xs">Duration: <span
+                                        class="text-red-400 font-semibold">Permanent</span></p>
+                            </ng-template>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-3">
+                            <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-black">Management Actions
+                            </p>
+                            <div class="flex flex-wrap gap-4">
+                                <button (click)="router.navigate(['/users', userDetail.id])"
+                                    class="text-zinc-400 hover:text-white text-xs font-bold transition-colors cursor-pointer">View
+                                    Public Profile</button>
+                                <button (click)="toggleVerified()"
+                                    class="text-zinc-400 hover:text-emerald-400 text-xs font-bold transition-colors cursor-pointer">
+                                    {{ userDetail.isVerified ? 'Unverify' : 'Verify' }}
+                                </button>
+                                <button (click)="openEdit()"
+                                    class="text-zinc-400 hover:text-amber-400 text-xs font-bold transition-colors cursor-pointer">Edit
+                                    Details</button>
+                                <button *ngIf="!userDetail.isBanned" (click)="openBanForm()"
+                                    class="text-zinc-400 hover:text-red-400 text-xs font-bold transition-colors cursor-pointer">Ban
+                                    User</button>
+                                <button *ngIf="userDetail.isBanned" (click)="openUnbanConfirm()"
+                                    class="text-zinc-400 hover:text-emerald-400 text-xs font-bold transition-colors cursor-pointer">Unban
+                                    User</button>
+                                <button (click)="openFineForm()"
+                                    class="text-zinc-400 hover:text-red-400 text-xs font-bold transition-colors cursor-pointer">
+                                    Fine User
+                                </button>
+                                <button *ngIf="!userDetail.isDeleted" (click)="showDeleteConfirm = true"
+                                    class="text-zinc-400 hover:text-red-400 text-xs font-bold transition-colors cursor-pointer">Delete
+                                    Account</button>
+                            </div>
+                            <p *ngIf="actionSuccess" class="text-emerald-400 text-xs font-semibold">{{ actionSuccess }}
+                            </p>
+                            <p *ngIf="actionError" class="text-red-400   text-xs font-semibold">{{ actionError }}</p>
+                        </div>
+
+                        <!-- Edit form — Issue #3: no isVerified checkbox, Issue #4: geo address -->
+                        <div *ngIf="showEditForm && editForm"
+                            class="bg-zinc-900 border border-zinc-700 rounded-2xl p-5 space-y-4">
+                            <p class="text-zinc-400 text-[10px] uppercase tracking-widest font-black">Edit User Details
+                            </p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label
+                                        class="text-zinc-500 text-[10px] uppercase tracking-widest font-bold block mb-1">Full
+                                        Name</label>
+                                    <input type="text" [(ngModel)]="editForm.fullName" class="admin-input w-full" />
+                                </div>
+                                <div>
+                                    <label
+                                        class="text-zinc-500 text-[10px] uppercase tracking-widest font-bold block mb-1">Username</label>
+                                    <input type="text" [(ngModel)]="editForm.username" class="admin-input w-full" />
+                                </div>
+                                <div>
+                                    <label
+                                        class="text-zinc-500 text-[10px] uppercase tracking-widest font-bold block mb-1">Email</label>
+                                    <input type="email" [(ngModel)]="editForm.email" class="admin-input w-full" />
+                                </div>
+                                <div>
+                                    <label
+                                        class="text-zinc-500 text-[10px] uppercase tracking-widest font-bold block mb-1">Gender</label>
+                                    <select [(ngModel)]="editForm.gender" class="admin-input w-full">
+                                        <option value="">Select</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Other</option>
+                                        <option value="PreferNotToSay">Prefer not to say</option>
+                                    </select>
+                                </div>
+                                <!-- Issue #4: address with geo autocomplete -->
+                                <div class="sm:col-span-2 relative">
+                                    <label
+                                        class="text-zinc-500 text-[10px] uppercase tracking-widest font-bold block mb-1">Address</label>
+                                    <input type="text" [(ngModel)]="editForm.address"
+                                        (ngModelChange)="onAddressInput($event)" autocomplete="off"
+                                        placeholder="Start typing an address..." class="admin-input w-full" />
+                                    <ul *ngIf="showAddressSuggestions && addressSuggestions.length"
+                                        class="absolute z-50 left-0 right-0 mt-1 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden shadow-xl">
+                                        <li *ngFor="let place of addressSuggestions"
+                                            (mousedown)="selectAddressSuggestion(place)"
+                                            class="px-4 py-2.5 text-xs text-zinc-200 hover:bg-zinc-700 cursor-pointer transition-colors">
+                                            {{ place.properties.formatted }}
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <label
+                                        class="text-zinc-500 text-[10px] uppercase tracking-widest font-bold block mb-1">Role</label>
+                                    <select [(ngModel)]="editForm.role" class="admin-input w-full">
+                                        <option value="User">User</option>
+                                        <option value="Admin">Admin</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label
+                                        class="text-zinc-500 text-[10px] uppercase tracking-widest font-bold block mb-1">New
+                                        Password</label>
+                                    <input type="password" [(ngModel)]="editForm.newPassword"
+                                        placeholder="Leave blank to keep" class="admin-input w-full" />
+                                </div>
+                            </div>
+                            <p *ngIf="editError" class="text-red-400 text-xs font-semibold">{{ editError }}</p>
+                            <p *ngIf="editSuccess" class="text-emerald-400 text-xs font-semibold">{{ editSuccess }}</p>
+                            <div class="flex gap-3">
+                                <button (click)="showEditForm = false"
+                                    class="flex-1 py-2.5 bg-zinc-800 text-zinc-300 rounded-xl font-bold text-sm cursor-pointer">Cancel</button>
+                                <button (click)="saveEdit()" [disabled]="isSavingEdit"
+                                    class="flex-1 py-2.5 bg-amber-400 text-zinc-900 rounded-xl font-black text-sm cursor-pointer disabled:opacity-50">
+                                    {{ isSavingEdit ? 'Saving...' : 'Save Changes' }}
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Ban form -->
+                        <div *ngIf="showBanForm"
+                            class="bg-red-500/5 border border-red-500/20 rounded-2xl p-5 space-y-4">
+                            <p class="text-red-400 text-[10px] uppercase tracking-widest font-black">Ban User</p>
+                            <div>
+                                <label
+                                    class="text-zinc-500 text-[10px] uppercase tracking-widest font-bold block mb-1">Reason
+                                    *</label>
+                                <input type="text" [(ngModel)]="banReason" placeholder="Reason for ban..."
+                                    class="admin-input w-full" />
+                            </div>
+                            <div>
+                                <label
+                                    class="text-zinc-500 text-[10px] uppercase tracking-widest font-bold block mb-1">Expires
+                                    At <span class="text-zinc-600 normal-case">(leave blank for
+                                        permanent)</span></label>
+                                <input type="datetime-local" [(ngModel)]="banExpiresAt" class="admin-input w-full" />
+                            </div>
+                            <p *ngIf="banError" class="text-red-400 text-xs font-semibold">{{ banError }}</p>
+                            <div class="flex gap-3">
+                                <button (click)="showBanForm = false"
+                                    class="flex-1 py-2.5 bg-zinc-800 text-zinc-300 rounded-xl font-bold text-sm cursor-pointer">Cancel</button>
+                                <button (click)="banUser()" [disabled]="isBanning"
+                                    class="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-black text-sm cursor-pointer disabled:opacity-50">
+                                    {{ isBanning ? 'Banning...' : 'Confirm Ban' }}
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Unban form -->
+                        <div *ngIf="showUnbanConfirm"
+                            class="bg-zinc-900 border border-zinc-700 rounded-2xl p-5 space-y-4">
+                            <p class="text-zinc-400 text-[10px] uppercase tracking-widest font-black">Unban User</p>
+                            <input type="text" [(ngModel)]="unbanReason" placeholder="Reason (optional)..."
+                                class="admin-input w-full" />
+                            <p *ngIf="unbanError" class="text-red-400 text-xs font-semibold">{{ unbanError }}</p>
+                            <div class="flex gap-3">
+                                <button (click)="showUnbanConfirm = false"
+                                    class="flex-1 py-2.5 bg-zinc-800 text-zinc-300 rounded-xl font-bold text-sm cursor-pointer">Cancel</button>
+                                <button (click)="unbanUser()" [disabled]="isUnbanning"
+                                    class="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl font-black text-sm cursor-pointer disabled:opacity-50">
+                                    {{ isUnbanning ? 'Unbanning...' : 'Confirm Unban' }}
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Fine form -->
+                        <div *ngIf="showFineForm"
+                            class="bg-red-500/5 border border-red-500/20 rounded-2xl p-5 space-y-4">
+                            <p class="text-red-400 text-[10px] uppercase tracking-widest font-black">Issue Fine</p>
+                            <div>
+                                <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-bold block mb-1">
+                                    Amount (kr) <span class="text-red-400">*</span>
+                                </label>
+                                <input type="number" [(ngModel)]="fineAmount" placeholder="e.g. 150"
+                                    class="admin-input w-full" min="1" />
+                            </div>
+                            <div>
+                                <label class="text-zinc-500 text-[10px] uppercase tracking-widest font-bold block mb-1">
+                                    Reason <span class="text-red-400">*</span>
+                                </label>
+                                <input type="text" [(ngModel)]="fineReason" placeholder="Reason for fine..."
+                                    class="admin-input w-full" />
+                            </div>
+                            <p *ngIf="fineError" class="text-red-400 text-xs font-semibold">{{ fineError }}</p>
+                            <div class="flex gap-3">
+                                <button (click)="showFineForm = false"
+                                    class="flex-1 py-2.5 bg-zinc-800 text-zinc-300 rounded-xl font-bold text-sm cursor-pointer">Cancel</button>
+                                <button (click)="issueFine()" [disabled]="issuingFine"
+                                    class="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-black text-sm cursor-pointer disabled:opacity-50">
+                                    {{ issuingFine ? 'Issuing...' : 'Issue Fine' }}
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Score adjust -->
+                        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
+                            <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-black">Adjust Score</p>
+                            <div class="flex gap-3">
+                                <input type="number" [(ngModel)]="scoreAdjustment" placeholder="+/- pts"
+                                    class="admin-input w-24">
+                                <input type="text" [(ngModel)]="scoreNote" placeholder="Administrative note..."
+                                    class="admin-input flex-1">
+                            </div>
+                            <p *ngIf="scoreError" class="text-red-400 text-xs font-semibold">{{ scoreError }}</p>
+                            <p *ngIf="scoreSuccess" class="text-emerald-400 text-xs font-semibold">{{ scoreSuccess }}
+                            </p>
+                            <button (click)="adjustScore()" [disabled]="isAdjustingScore || scoreAdjustment === null"
+                                class="w-full py-3 bg-[#a17a1a] hover:bg-[#b88c1e] text-black font-black text-xs uppercase tracking-widest rounded-xl transition-all disabled:opacity-50 cursor-pointer">
+                                {{ isAdjustingScore ? 'Applying...' : 'Apply Score Adjustment' }}
+                            </button>
+                        </div>
+
+                        <!-- ─── Items ──────────────────────────────────────────────────────── -->
+                        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+                            <div class="px-5 py-4 border-b border-zinc-800 flex items-center justify-between cursor-pointer"
+                                (click)="toggleItems()">
+                                <h3 class="text-zinc-400 text-xs font-black uppercase tracking-widest">Items ({{
+                                    userDetail.totalOwnedItems ?? 0 }})</h3>
+                                <svg class="w-4 h-4 text-zinc-600 transition-transform"
+                                    [class.rotate-180]="!itemsCollapsed" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path d="M5 15l7-7 7 7" stroke-width="3" />
+                                </svg>
+                            </div>
+                            <div *ngIf="!itemsCollapsed">
+                                <div *ngIf="itemsPage.loading" class="flex justify-center py-8">
+                                    <div
+                                        class="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin">
+                                    </div>
+                                </div>
+                                <div *ngIf="!itemsPage.loading && userItems.length === 0"
+                                    class="px-5 py-4 text-zinc-600 text-xs">No items found.</div>
+                                <div *ngIf="!itemsPage.loading && userItems.length > 0"
+                                    class="divide-y divide-zinc-800/50">
+                                    <div *ngFor="let item of userItems"
+                                        class="px-5 py-3 flex items-center gap-3 cursor-pointer hover:bg-zinc-800/40 transition-colors"
+                                        (click)="router.navigate(['/items', item.slug])">
+                                        <div class="w-10 h-10 rounded-lg overflow-hidden bg-zinc-800 shrink-0">
+                                            <img *ngIf="item.mainPhotoUrl" [src]="item.mainPhotoUrl"
+                                                class="w-full h-full object-cover" />
+                                            <div *ngIf="!item.mainPhotoUrl"
+                                                class="w-full h-full flex items-center justify-center text-zinc-600 text-lg">
+                                                📦</div>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-white text-xs font-semibold truncate">{{ item.title }}</p>
+                                            <p class="text-zinc-500 text-[10px]">{{ item.categoryName }} · {{
+                                                item.isFree ? 'Free' : 'kr ' + item.pricePerDay + '/day' }}</p>
+                                        </div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <span *ngIf="!item.isActive"
+                                                class="text-[10px] font-bold uppercase px-2 py-1 rounded-lg border bg-zinc-700 text-zinc-400 border-zinc-600">Inactive</span>
+                                            <span class="text-[10px] font-bold uppercase px-2 py-1 rounded-lg border"
+                                                [ngClass]="getItemStatusClass(item.status)">{{ item.status }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div *ngIf="subPages(itemsPage.total, itemsPage.pageSize) > 1"
+                                    class="px-5 py-3 flex items-center justify-center gap-2 border-t border-zinc-800">
+                                    <button (click)="loadItems(itemsPage.page - 1)" [disabled]="itemsPage.page === 1"
+                                        class="px-2.5 py-1 bg-zinc-800 text-zinc-300 text-[10px] rounded-lg disabled:opacity-40 cursor-pointer">←
+                                        Prev</button>
+                                    <span class="text-zinc-500 text-[10px]">{{ itemsPage.page }} / {{
+                                        subPages(itemsPage.total, itemsPage.pageSize) }}</span>
+                                    <button (click)="loadItems(itemsPage.page + 1)"
+                                        [disabled]="itemsPage.page >= subPages(itemsPage.total, itemsPage.pageSize)"
+                                        class="px-2.5 py-1 bg-zinc-800 text-zinc-300 text-[10px] rounded-lg disabled:opacity-40 cursor-pointer">Next
+                                        →</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ─── Loans ──────────────────────────────────────────────────────── -->
+                        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+                            <div class="px-5 py-4 border-b border-zinc-800 flex items-center justify-between cursor-pointer"
+                                (click)="toggleLoans()">
+                                <h3 class="text-zinc-400 text-xs font-black uppercase tracking-widest">
+                                    Loans ({{ loansPage.total || (userDetail.totalBorrowedLoans ?? 0) +
+                                    (userDetail.totalGivenLoans ?? 0) }})
+                                </h3>
+                                <svg class="w-4 h-4 text-zinc-600 transition-transform"
+                                    [class.rotate-180]="!loansCollapsed" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path d="M5 15l7-7 7 7" stroke-width="3" />
+                                </svg>
+                            </div>
+                            <div *ngIf="!loansCollapsed">
+                                <div *ngIf="loansPage.loading" class="flex justify-center py-8">
+                                    <div
+                                        class="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin">
+                                    </div>
+                                </div>
+                                <div *ngIf="!loansPage.loading && userLoans.length === 0"
+                                    class="px-5 py-4 text-zinc-600 text-xs">No loans found.</div>
+                                <div *ngIf="!loansPage.loading && userLoans.length > 0"
+                                    class="divide-y divide-zinc-800/50">
+                                    <div *ngFor="let loan of userLoans"
+                                        class="px-5 py-3 flex items-center gap-3 cursor-pointer hover:bg-zinc-800/40 transition-colors"
+                                        (click)="router.navigate(['/loans', loan.id])">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center gap-2 mb-0.5">
+                                                <p class="text-white text-xs font-semibold truncate">{{ loan.itemTitle
+                                                    }}</p>
+                                                <span class="text-zinc-600 text-[10px] shrink-0">#{{ loan.id }}</span>
+                                            </div>
+                                            <p class="text-zinc-500 text-[10px]">
+                                                {{ loan.startDate | date:'MMM d' }} → {{ loan.endDate | date:'MMM d,
+                                                yyyy' }}
+                                                <span *ngIf="loan.actualReturnDate"> · Returned {{ loan.actualReturnDate
+                                                    | date:'MMM d' }}</span>
+                                            </p>
+                                            <p class="text-zinc-600 text-[10px]">
+                                                {{ loan.isBorrower ? 'Borrower' : 'Lender' }} · {{ loan.totalPrice === 0
+                                                ? 'Free' : 'kr ' + loan.totalPrice }}
+                                            </p>
+                                        </div>
+                                        <span
+                                            class="text-[10px] font-bold uppercase px-2 py-1 rounded-lg border shrink-0"
+                                            [ngClass]="getLoanStatusClass(loan.status)">{{ loan.status }}</span>
+                                    </div>
+                                </div>
+                                <div *ngIf="subPages(loansPage.total, loansPage.pageSize) > 1"
+                                    class="px-5 py-3 flex items-center justify-center gap-2 border-t border-zinc-800">
+                                    <button (click)="loadLoans(loansPage.page - 1)" [disabled]="loansPage.page === 1"
+                                        class="px-2.5 py-1 bg-zinc-800 text-zinc-300 text-[10px] rounded-lg disabled:opacity-40 cursor-pointer">←
+                                        Prev</button>
+                                    <span class="text-zinc-500 text-[10px]">{{ loansPage.page }} / {{
+                                        subPages(loansPage.total, loansPage.pageSize) }}</span>
+                                    <button (click)="loadLoans(loansPage.page + 1)"
+                                        [disabled]="loansPage.page >= subPages(loansPage.total, loansPage.pageSize)"
+                                        class="px-2.5 py-1 bg-zinc-800 text-zinc-300 text-[10px] rounded-lg disabled:opacity-40 cursor-pointer">Next
+                                        →</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ─── Fines ────────────────────────────────────────────────────────── -->
+                        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+                            <div class="px-5 py-4 border-b border-zinc-800 flex items-center justify-between cursor-pointer"
+                                (click)="toggleFines()">
+                                <h3 class="text-zinc-400 text-xs font-black uppercase tracking-widest">Fines ({{
+                                    userDetail.totalFines ?? 0 }})</h3>
+                                <svg class="w-4 h-4 text-zinc-600 transition-transform"
+                                    [class.rotate-180]="!finesCollapsed" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path d="M5 15l7-7 7 7" stroke-width="3" />
+                                </svg>
+                            </div>
+                            <div *ngIf="!finesCollapsed">
+                                <div *ngIf="finesPage.loading" class="flex justify-center py-8">
+                                    <div
+                                        class="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin">
+                                    </div>
+                                </div>
+                                <div *ngIf="!finesPage.loading && userFines.length === 0"
+                                    class="px-5 py-4 text-zinc-600 text-xs">No fines found.</div>
+                                <div *ngIf="!finesPage.loading && userFines.length > 0"
+                                    class="divide-y divide-zinc-800/50">
+                                    <div *ngFor="let fine of userFines"
+                                        class="px-5 py-3 flex items-center justify-between gap-3">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-white text-xs font-semibold">kr {{ fine.amount }} <span
+                                                    class="text-zinc-600 font-normal text-[10px]">#{{ fine.id }}</span>
+                                            </p>
+                                            <p class="text-zinc-500 text-[10px]">{{ fine.createdAt | date:'MMM d, yyyy'
+                                                }} · {{ fine.itemTitle || '—' }}</p>
+                                        </div>
+                                        <span class="text-xs font-bold shrink-0"
+                                            [ngClass]="getFineStatusClass(fine.status)">{{ fine.status }}</span>
+                                    </div>
+                                </div>
+                                <div *ngIf="subPages(finesPage.total, finesPage.pageSize) > 1"
+                                    class="px-5 py-3 flex items-center justify-center gap-2 border-t border-zinc-800">
+                                    <button (click)="loadFines(finesPage.page - 1)" [disabled]="finesPage.page === 1"
+                                        class="px-2.5 py-1 bg-zinc-800 text-zinc-300 text-[10px] rounded-lg disabled:opacity-40 cursor-pointer">←
+                                        Prev</button>
+                                    <span class="text-zinc-500 text-[10px]">{{ finesPage.page }} / {{
+                                        subPages(finesPage.total, finesPage.pageSize) }}</span>
+                                    <button (click)="loadFines(finesPage.page + 1)"
+                                        [disabled]="finesPage.page >= subPages(finesPage.total, finesPage.pageSize)"
+                                        class="px-2.5 py-1 bg-zinc-800 text-zinc-300 text-[10px] rounded-lg disabled:opacity-40 cursor-pointer">Next
+                                        →</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ─── Disputes ──────────────────────────────────────────────────────── -->
+                        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+                            <div class="px-5 py-4 border-b border-zinc-800 flex items-center justify-between cursor-pointer"
+                                (click)="toggleDisputes()">
+                                <h3 class="text-zinc-400 text-xs font-black uppercase tracking-widest">Disputes ({{
+                                    (userDetail.totalInitiatedDisputes ?? 0) + (userDetail.totalReceivedDisputes ?? 0)
+                                    }})</h3>
+                                <svg class="w-4 h-4 text-zinc-600 transition-transform"
+                                    [class.rotate-180]="!disputesCollapsed" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path d="M5 15l7-7 7 7" stroke-width="3" />
+                                </svg>
+                            </div>
+                            <div *ngIf="!disputesCollapsed">
+                                <div *ngIf="disputesPage.loading" class="flex justify-center py-8">
+                                    <div
+                                        class="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin">
+                                    </div>
+                                </div>
+                                <div *ngIf="!disputesPage.loading && userDisputes.length === 0"
+                                    class="px-5 py-4 text-zinc-600 text-xs">No disputes found.</div>
+                                <div *ngIf="!disputesPage.loading && userDisputes.length > 0"
+                                    class="divide-y divide-zinc-800/50">
+                                    <div *ngFor="let dispute of userDisputes"
+                                        class="px-5 py-3 flex items-center gap-3 cursor-pointer hover:bg-zinc-800/40 transition-colors"
+                                        (click)="router.navigate(['/resolution-center'], { queryParams: { tab: 'disputes', disputeId: dispute.id } })">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-white text-xs font-semibold truncate">{{ dispute.itemTitle }}
+                                                <span class="text-zinc-600 font-normal text-[10px]">#{{ dispute.id
+                                                    }}</span>
+                                            </p>
+                                            <p class="text-zinc-500 text-[10px]">{{ dispute.createdAt | date:'MMM d,
+                                                yyyy' }} · Filed as {{ dispute.filedAs }}</p>
+                                        </div>
+                                        <span
+                                            class="text-[10px] font-bold uppercase px-2 py-1 rounded-lg border shrink-0"
+                                            [ngClass]="getDisputeStatusClass(dispute.status)">{{ dispute.status
+                                            }}</span>
+                                    </div>
+                                </div>
+                                <div *ngIf="subPages(disputesPage.total, disputesPage.pageSize) > 1"
+                                    class="px-5 py-3 flex items-center justify-center gap-2 border-t border-zinc-800">
+                                    <button (click)="loadDisputes(disputesPage.page - 1)"
+                                        [disabled]="disputesPage.page === 1"
+                                        class="px-2.5 py-1 bg-zinc-800 text-zinc-300 text-[10px] rounded-lg disabled:opacity-40 cursor-pointer">←
+                                        Prev</button>
+                                    <span class="text-zinc-500 text-[10px]">{{ disputesPage.page }} / {{
+                                        subPages(disputesPage.total, disputesPage.pageSize) }}</span>
+                                    <button (click)="loadDisputes(disputesPage.page + 1)"
+                                        [disabled]="disputesPage.page >= subPages(disputesPage.total, disputesPage.pageSize)"
+                                        class="px-2.5 py-1 bg-zinc-800 text-zinc-300 text-[10px] rounded-lg disabled:opacity-40 cursor-pointer">Next
+                                        →</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ─── Appeals ────────────────────────────────────────────────────────── -->
+                        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+                            <div class="px-5 py-4 border-b border-zinc-800 flex items-center justify-between cursor-pointer"
+                                (click)="toggleAppeals()">
+                                <h3 class="text-zinc-400 text-xs font-black uppercase tracking-widest">Appeals ({{
+                                    userDetail.totalAppeals ?? 0 }})</h3>
+                                <svg class="w-4 h-4 text-zinc-600 transition-transform"
+                                    [class.rotate-180]="!appealsCollapsed" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path d="M5 15l7-7 7 7" stroke-width="3" />
+                                </svg>
+                            </div>
+                            <div *ngIf="!appealsCollapsed">
+                                <div *ngIf="appealsPage.loading" class="flex justify-center py-8">
+                                    <div
+                                        class="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin">
+                                    </div>
+                                </div>
+                                <div *ngIf="!appealsPage.loading && userAppeals.length === 0"
+                                    class="px-5 py-4 text-zinc-600 text-xs">No appeals found.</div>
+                                <div *ngIf="!appealsPage.loading && userAppeals.length > 0"
+                                    class="divide-y divide-zinc-800/50">
+                                    <div *ngFor="let appeal of userAppeals"
+                                        class="px-5 py-3 flex items-center gap-3 cursor-pointer hover:bg-zinc-800/40 transition-colors"
+                                        (click)="router.navigate(['/resolution-center'], { queryParams: { tab: 'appeals', appealId: appeal.id } })">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-white text-xs font-semibold">{{ appeal.appealType }} Appeal
+                                                <span class="text-zinc-600 font-normal text-[10px]">#{{ appeal.id
+                                                    }}</span>
+                                            </p>
+                                            <p class="text-zinc-500 text-[10px]">{{ appeal.createdAt | date:'MMM d,
+                                                yyyy' }}</p>
+                                        </div>
+                                        <span
+                                            class="text-[10px] font-bold uppercase px-2 py-1 rounded-lg border shrink-0"
+                                            [ngClass]="getAppealStatusClass(appeal.status)">{{ appeal.status }}</span>
+                                    </div>
+                                </div>
+                                <div *ngIf="subPages(appealsPage.total, appealsPage.pageSize) > 1"
+                                    class="px-5 py-3 flex items-center justify-center gap-2 border-t border-zinc-800">
+                                    <button (click)="loadAppeals(appealsPage.page - 1)"
+                                        [disabled]="appealsPage.page === 1"
+                                        class="px-2.5 py-1 bg-zinc-800 text-zinc-300 text-[10px] rounded-lg disabled:opacity-40 cursor-pointer">←
+                                        Prev</button>
+                                    <span class="text-zinc-500 text-[10px]">{{ appealsPage.page }} / {{
+                                        subPages(appealsPage.total, appealsPage.pageSize) }}</span>
+                                    <button (click)="loadAppeals(appealsPage.page + 1)"
+                                        [disabled]="appealsPage.page >= subPages(appealsPage.total, appealsPage.pageSize)"
+                                        class="px-2.5 py-1 bg-zinc-800 text-zinc-300 text-[10px] rounded-lg disabled:opacity-40 cursor-pointer">Next
+                                        →</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ─── Ban History ────────────────────────────────────────────────────── -->
+                        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+                            <div class="px-5 py-4 border-b border-zinc-800 flex items-center justify-between cursor-pointer"
+                                (click)="toggleBanHistory()">
+                                <h3 class="text-zinc-400 text-xs font-black uppercase tracking-widest">Ban History ({{
+                                    userDetail.totalBanHistory ?? 0 }})</h3>
+                                <svg class="w-4 h-4 text-zinc-600 transition-transform"
+                                    [class.rotate-180]="!banHistoryCollapsed" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path d="M5 15l7-7 7 7" stroke-width="3" />
+                                </svg>
+                            </div>
+                            <div *ngIf="!banHistoryCollapsed">
+                                <div *ngIf="banHistoryPage.loading" class="flex justify-center py-8">
+                                    <div
+                                        class="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin">
+                                    </div>
+                                </div>
+                                <div *ngIf="!banHistoryPage.loading && userBanHistory.length === 0"
+                                    class="px-5 py-4 text-zinc-600 text-xs">No ban history.</div>
+                                <div *ngIf="!banHistoryPage.loading && userBanHistory.length > 0"
+                                    class="divide-y divide-zinc-800/50">
+                                    <div *ngFor="let entry of userBanHistory" class="px-5 py-3">
+                                        <div class="flex items-center justify-between gap-3 mb-0.5">
+                                            <p class="text-xs font-bold" [class.text-red-400]="entry.isBanned"
+                                                [class.text-emerald-400]="!entry.isBanned">
+                                                {{ entry.isBanned ? '🔨 Banned' : '✓ Unbanned' }}
+                                            </p>
+                                            <p class="text-zinc-600 text-[10px]">{{ entry.bannedAt | date:'MMM d, yyyy,
+                                                h:mm a' }}</p>
+                                        </div>
+                                        <p class="text-zinc-400 text-[10px]">{{ entry.reason }}</p>
+                                        <p class="text-zinc-600 text-[10px]">By {{ entry.adminName }} ·
+                                            <span *ngIf="entry.banExpiresAt">Until {{ entry.banExpiresAt | date:'MMM d,
+                                                yyyy' }}</span>
+                                            <span *ngIf="!entry.banExpiresAt && entry.isBanned">Permanent</span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div *ngIf="subPages(banHistoryPage.total, banHistoryPage.pageSize) > 1"
+                                    class="px-5 py-3 flex items-center justify-center gap-2 border-t border-zinc-800">
+                                    <button (click)="loadBanHistory(banHistoryPage.page - 1)"
+                                        [disabled]="banHistoryPage.page === 1"
+                                        class="px-2.5 py-1 bg-zinc-800 text-zinc-300 text-[10px] rounded-lg disabled:opacity-40 cursor-pointer">←
+                                        Prev</button>
+                                    <span class="text-zinc-500 text-[10px]">{{ banHistoryPage.page }} / {{
+                                        subPages(banHistoryPage.total, banHistoryPage.pageSize) }}</span>
+                                    <button (click)="loadBanHistory(banHistoryPage.page + 1)"
+                                        [disabled]="banHistoryPage.page >= subPages(banHistoryPage.total, banHistoryPage.pageSize)"
+                                        class="px-2.5 py-1 bg-zinc-800 text-zinc-300 text-[10px] rounded-lg disabled:opacity-40 cursor-pointer">Next
+                                        →</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ─── Reports ────────────────────────────────────────────────────────── -->
+                        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+                            <div class="px-5 py-4 border-b border-zinc-800 flex items-center justify-between cursor-pointer"
+                                (click)="toggleReports()">
+                                <h3 class="text-zinc-400 text-xs font-black uppercase tracking-widest">Reports ({{
+                                    reportsPage.total }})</h3>
+                                <svg class="w-4 h-4 text-zinc-600 transition-transform"
+                                    [class.rotate-180]="!reportsCollapsed" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path d="M5 15l7-7 7 7" stroke-width="3" />
+                                </svg>
+                            </div>
+                            <div *ngIf="!reportsCollapsed">
+                                <div *ngIf="reportsPage.loading" class="flex justify-center py-8">
+                                    <div
+                                        class="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin">
+                                    </div>
+                                </div>
+                                <div *ngIf="!reportsPage.loading && userReports.length === 0"
+                                    class="px-5 py-4 text-zinc-600 text-xs">No reports found.</div>
+                                <div *ngIf="!reportsPage.loading && userReports.length > 0"
+                                    class="divide-y divide-zinc-800/50">
+                                    <div *ngFor="let report of userReports"
+                                        class="px-5 py-3 flex items-center gap-3 cursor-pointer hover:bg-zinc-800/40 transition-colors"
+                                        (click)="router.navigate(['/resolution-center'], { queryParams: { tab: 'reports', reportId: report.id } })">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-white text-xs font-semibold">{{ report.type }} Report <span
+                                                    class="text-zinc-600 font-normal text-[10px]">#{{ report.id
+                                                    }}</span></p>
+                                            <p class="text-zinc-500 text-[10px]">{{ report.createdAt | date:'MMM d,
+                                                yyyy' }} · By {{ report.reportedByName }}</p>
+                                        </div>
+                                        <span
+                                            class="text-[10px] font-bold uppercase px-2 py-1 rounded-lg border shrink-0"
+                                            [ngClass]="getReportStatusClass(report.status)">{{ report.status }}</span>
+                                    </div>
+                                </div>
+                                <div *ngIf="subPages(reportsPage.total, reportsPage.pageSize) > 1"
+                                    class="px-5 py-3 flex items-center justify-center gap-2 border-t border-zinc-800">
+                                    <button (click)="loadReports(reportsPage.page - 1)"
+                                        [disabled]="reportsPage.page === 1"
+                                        class="px-2.5 py-1 bg-zinc-800 text-zinc-300 text-[10px] rounded-lg disabled:opacity-40 cursor-pointer">←
+                                        Prev</button>
+                                    <span class="text-zinc-500 text-[10px]">{{ reportsPage.page }} / {{
+                                        subPages(reportsPage.total, reportsPage.pageSize) }}</span>
+                                    <button (click)="loadReports(reportsPage.page + 1)"
+                                        [disabled]="reportsPage.page >= subPages(reportsPage.total, reportsPage.pageSize)"
+                                        class="px-2.5 py-1 bg-zinc-800 text-zinc-300 text-[10px] rounded-lg disabled:opacity-40 cursor-pointer">Next
+                                        →</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ─── Support Threads ────────────────────────────────────────────────── -->
+                        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+                            <div class="px-5 py-4 border-b border-zinc-800 flex items-center justify-between cursor-pointer"
+                                (click)="toggleSupport()">
+                                <h3 class="text-zinc-400 text-xs font-black uppercase tracking-widest">Support Threads
+                                    ({{ userDetail.totalSupportThreads ?? 0 }})</h3>
+                                <svg class="w-4 h-4 text-zinc-600 transition-transform"
+                                    [class.rotate-180]="!supportCollapsed" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path d="M5 15l7-7 7 7" stroke-width="3" />
+                                </svg>
+                            </div>
+                            <div *ngIf="!supportCollapsed">
+                                <div *ngIf="supportPage.loading" class="flex justify-center py-8">
+                                    <div
+                                        class="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin">
+                                    </div>
+                                </div>
+                                <div *ngIf="!supportPage.loading && userSupportThreads.length === 0"
+                                    class="px-5 py-4 text-zinc-600 text-xs">No support threads found.</div>
+                                <div *ngIf="!supportPage.loading && userSupportThreads.length > 0"
+                                    class="divide-y divide-zinc-800/50">
+                                    <div *ngFor="let thread of userSupportThreads"
+                                        class="px-5 py-3 flex items-center gap-3 cursor-pointer hover:bg-zinc-800/40 transition-colors"
+                                        (click)="router.navigate(['/admin-support', thread.id])">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-white text-xs font-semibold truncate">{{ thread.subject }}
+                                                <span class="text-zinc-600 font-normal text-[10px]">#{{ thread.id
+                                                    }}</span>
+                                            </p>
+                                            <p class="text-zinc-500 text-[10px]">{{ thread.createdAt | date:'MMM d,
+                                                yyyy' }}
+                                                <span *ngIf="thread.claimedByAdminName"> · Claimed by {{
+                                                    thread.claimedByAdminName }}</span>
+                                            </p>
+                                        </div>
+                                        <span
+                                            class="text-[10px] font-bold uppercase px-2 py-1 rounded-lg border shrink-0"
+                                            [ngClass]="getSupportStatusClass(thread.status)">{{ thread.status }}</span>
+                                    </div>
+                                </div>
+                                <div *ngIf="subPages(supportPage.total, supportPage.pageSize) > 1"
+                                    class="px-5 py-3 flex items-center justify-center gap-2 border-t border-zinc-800">
+                                    <button (click)="loadSupport(supportPage.page - 1)"
+                                        [disabled]="supportPage.page === 1"
+                                        class="px-2.5 py-1 bg-zinc-800 text-zinc-300 text-[10px] rounded-lg disabled:opacity-40 cursor-pointer">←
+                                        Prev</button>
+                                    <span class="text-zinc-500 text-[10px]">{{ supportPage.page }} / {{
+                                        subPages(supportPage.total, supportPage.pageSize) }}</span>
+                                    <button (click)="loadSupport(supportPage.page + 1)"
+                                        [disabled]="supportPage.page >= subPages(supportPage.total, supportPage.pageSize)"
+                                        class="px-2.5 py-1 bg-zinc-800 text-zinc-300 text-[10px] rounded-lg disabled:opacity-40 cursor-pointer">Next
+                                        →</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ─── Score History ──────────────────────────────────────────────────── -->
+                        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+                            <div class="px-5 py-4 border-b border-zinc-800 flex items-center justify-between cursor-pointer"
+                                (click)="toggleScoreHistory()">
+                                <h3 class="text-zinc-400 text-xs font-black uppercase tracking-widest">Score History ({{
+                                    userDetail.scoreHistory?.length || userDetail.totalScoreHistory || 0 }})</h3>
+                                <svg class="w-4 h-4 text-zinc-600 transition-transform"
+                                    [class.rotate-180]="!scoreHistoryCollapsed" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path d="M5 15l7-7 7 7" stroke-width="3" />
+                                </svg>
+                            </div>
+                            <div *ngIf="!scoreHistoryCollapsed" class="divide-y divide-zinc-800/50">
+                                <div *ngIf="!userDetail.scoreHistory" class="flex justify-center py-8">
+                                    <div
+                                        class="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin">
+                                    </div>
+                                </div>
+                                <div *ngIf="userDetail.scoreHistory?.length === 0"
+                                    class="px-5 py-4 text-zinc-600 text-xs">No score history.</div>
+                                <div *ngFor="let entry of pagedScoreHistory"
+                                    class="px-5 py-4 flex items-start justify-between gap-4">
+                                    <div class="flex-1">
+                                        <p class="text-xs font-black mb-0.5"
+                                            [ngClass]="entry.pointsChanged >= 0 ? 'text-emerald-400' : 'text-red-400'">
+                                            {{ entry.pointsChanged > 0 ? '+' : '' }}{{ entry.pointsChanged }} points
+                                        </p>
+                                        <p class="text-[10px] text-zinc-500 font-bold mb-1">{{ entry.reason }}</p>
+                                        <p class="text-zinc-400 text-[10px] leading-relaxed italic">"{{ entry.note }}"
+                                        </p>
+                                    </div>
+                                    <div class="text-right shrink-0">
+                                        <p class="text-zinc-600 text-[9px] font-bold">{{ entry.createdAt | date:'M/d/yy,
+                                            h:mm a' }}</p>
+                                        <p class="text-zinc-400 text-[10px] font-black">→ {{ entry.scoreAfterChange }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div *ngIf="subPages(scoreHistoryPage.total, scoreHistoryPage.pageSize) > 1"
+                                    class="px-5 py-3 flex items-center justify-center gap-2 border-t border-zinc-800">
+                                    <button
+                                        (click)="scoreHistoryPage.page = scoreHistoryPage.page - 1; cdr.detectChanges()"
+                                        [disabled]="scoreHistoryPage.page === 1"
+                                        class="px-2.5 py-1 bg-zinc-800 text-zinc-300 text-[10px] rounded-lg disabled:opacity-40 cursor-pointer">←
+                                        Prev</button>
+                                    <span class="text-zinc-500 text-[10px]">{{ scoreHistoryPage.page }} / {{
+                                        subPages(scoreHistoryPage.total, scoreHistoryPage.pageSize) }}</span>
+                                    <button
+                                        (click)="scoreHistoryPage.page = scoreHistoryPage.page + 1; cdr.detectChanges()"
+                                        [disabled]="scoreHistoryPage.page >= subPages(scoreHistoryPage.total, scoreHistoryPage.pageSize)"
+                                        class="px-2.5 py-1 bg-zinc-800 text-zinc-300 text-[10px] rounded-lg disabled:opacity-40 cursor-pointer">Next
+                                        →</button>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                    </div>
+                </ng-container>
             </div>
         </div>
     </div>
 </main>
 
-<div *ngIf="showUserModal && selectedUser" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" (click)="showUserModal = false"></div>
-    <div
-        class="relative z-10 w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
-
-        <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between sticky top-0 bg-zinc-900 z-10">
-            <div class="flex items-center gap-3">
-                <div
-                    class="w-10 h-10 rounded-xl overflow-hidden bg-zinc-700 shrink-0 flex items-center justify-center text-sm font-bold text-amber-400">
-                    <img *ngIf="userDetail?.avatarUrl" [src]="userDetail?.avatarUrl"
-                        class="w-full h-full object-cover" />
-                    <span *ngIf="!userDetail?.avatarUrl">{{ getInitials(selectedUser.fullName) }}</span>
-                </div>
-                <div>
-                    <h2 class="font-black text-lg text-white" style="font-family:'Syne',sans-serif">{{
-                        selectedUser.fullName }}</h2>
-                    <p class="text-zinc-400 text-xs">@{{ selectedUser.username }} · {{ selectedUser.email }}</p>
-                </div>
-            </div>
-            <button (click)="showUserModal = false"
-                class="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-white transition-colors rounded-lg hover:bg-zinc-800 cursor-pointer">
-                ✕
-            </button>
-        </div>
-
-        <div *ngIf="isLoadingDetail" class="flex items-center justify-center py-16">
-            <div class="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-
-        <div *ngIf="!isLoadingDetail && userDetail" class="p-6 space-y-6">
-
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div class="stat-box">
-                    <p class="stat-label">Score</p>
-                    <p class="stat-value" [ngClass]="getScoreClass(userDetail.score)">{{ userDetail.score }}</p>
-                </div>
-                <div class="stat-box">
-                    <p class="stat-label">Role</p>
-                    <p class="stat-value text-indigo-400">User</p>
-                </div>
-                <div class="stat-box">
-                    <p class="stat-label">Verification</p>
-                    <p class="stat-value text-emerald-400">Verified</p>
-                </div>
-                <div class="stat-box">
-                    <p class="stat-label">Joined</p>
-                    <p class="stat-value text-zinc-400" style="font-size: 0.9rem;">Apr 21, 2026</p>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="stat-box">
-                    <p class="stat-label">Address</p>
-                    <p class="text-zinc-200 text-xs font-medium leading-relaxed">{{ userDetail.address }}</p>
-                </div>
-                <div class="stat-box">
-                    <p class="stat-label">Gender / Age</p>
-                    <p class="text-zinc-200 text-xs font-medium">{{ userDetail.gender }} / {{ userDetail.age }}</p>
-                </div>
-            </div>
-
-            <div class="space-y-3">
-                <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-black">Management Actions</p>
-                <div class="flex flex-wrap gap-4">
-                    <button (click)="router.navigate(['/users', userDetail.id])"
-                        class="text-zinc-400 hover:text-white text-xs font-bold transition-colors">View Public
-                        Profile</button>
-                    <button (click)="toggleVerified()"
-                        class="text-zinc-400 hover:text-emerald-400 text-xs font-bold transition-colors">Unverify</button>
-                    <button (click)="openEdit()"
-                        class="text-zinc-400 hover:text-amber-400 text-xs font-bold transition-colors">Edit
-                        Details</button>
-                    <button (click)="showDeleteConfirm = true"
-                        class="text-zinc-400 hover:text-red-400 text-xs font-bold transition-colors">Delete
-                        Account</button>
-                </div>
-            </div>
-
-            <div class="bg-zinc-800/30 border border-zinc-800 rounded-2xl p-5 space-y-4">
-                <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-black">Adjust User Reputation</p>
-                <div class="flex gap-3">
-                    <input type="number" [(ngModel)]="scoreAdjustment" placeholder="+/- pts" class="admin-input w-24">
-                    <input type="text" [(ngModel)]="scoreNote" placeholder="Administrative note for the user..."
-                        class="admin-input flex-1">
-                </div>
-                <button (click)="adjustScore()"
-                    class="w-full py-3 bg-[#a17a1a] hover:bg-[#b88c1e] text-black font-black text-xs uppercase tracking-widest rounded-xl transition-all">
-                    Apply Score Adjustment
-                </button>
-            </div>
-
-            <div class="space-y-4">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-zinc-400 text-xs font-black uppercase tracking-widest">Score History ({{
-                        userDetail.scoreHistory?.length || 0 }})</h3>
-                    <button (click)="scoreHistoryCollapsed = !scoreHistoryCollapsed"
-                        class="text-zinc-600 hover:text-zinc-300">
-                        <svg class="w-4 h-4 transition-transform" [class.rotate-180]="scoreHistoryCollapsed" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor">
-                            <path d="M5 15l7-7 7 7" stroke-width="3" />
-                        </svg>
-                    </button>
-                </div>
-
-                <div *ngIf="!scoreHistoryCollapsed" class="space-y-3">
-                    <div *ngFor="let entry of userDetail.scoreHistory" class="history-card">
-                        <div class="flex-1">
-                            <p class="text-xs font-black mb-0.5"
-                                [ngClass]="entry.pointsChanged >= 0 ? 'text-emerald-400' : 'text-red-400'">
-                                {{ entry.pointsChanged > 0 ? '+' : '' }}{{ entry.pointsChanged }} points
-                            </p>
-                            <p class="text-[10px] text-zinc-500 font-bold mb-1">{{ entry.reason }}</p>
-                            <p class="text-zinc-400 text-[10px] leading-relaxed italic">"{{ entry.note }}"</p>
-                        </div>
-                        <div class="text-right shrink-0 ml-4">
-                            <p class="text-zinc-600 text-[9px] font-bold">{{ entry.createdAt | date:'M/d/yy, h:mm a' }}
-                            </p>
-                            <p class="text-zinc-400 text-[10px] font-black">Result: {{ entry.scoreAfterChange }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
+<!-- Delete confirm -->
 <div *ngIf="showDeleteConfirm"
     class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
     <div class="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4 shadow-2xl">
         <h3 class="font-black text-white text-lg">Soft Delete User</h3>
-        <p class="text-zinc-400 text-sm">Account data for <b>{{ selectedUser?.username }}</b> will be anonymized. All
-            active items will be hidden.</p>
-        <textarea [(ngModel)]="deletionNote" placeholder="Reason for deletion..."
-            class="admin-input h-20 resize-none"></textarea>
+        <p class="text-zinc-400 text-sm">Account data for <b>{{ selectedUser?.username }}</b> will be anonymized.</p>
+        <textarea [(ngModel)]="deletionNote" placeholder="Reason (optional)..."
+            class="admin-input h-20 resize-none w-full"></textarea>
         <div class="flex gap-3">
             <button (click)="showDeleteConfirm = false"
-                class="flex-1 py-2 bg-zinc-800 text-zinc-300 rounded-xl font-bold">Cancel</button>
+                class="flex-1 py-2 bg-zinc-800 text-zinc-300 rounded-xl font-bold cursor-pointer">Cancel</button>
             <button (click)="deleteUser()" [disabled]="isDeletingUser"
-                class="flex-1 py-2 bg-red-600 text-white rounded-xl font-bold">
+                class="flex-1 py-2 bg-red-600 text-white rounded-xl font-bold cursor-pointer disabled:opacity-50">
                 {{ isDeletingUser ? 'Deleting...' : 'Delete Now' }}
             </button>
         </div>
+    </div>
+</div>
+
+<!-- Photo lightbox -->
+<div *ngIf="expandedPhoto" class="fixed inset-0 z-[200] flex items-center justify-center p-4"
+    (click)="expandedPhoto = null">
+    <div class="absolute inset-0 bg-black/90 backdrop-blur-sm"></div>
+    <div class="relative z-10" (click)="$event.stopPropagation()">
+        <button (click)="expandedPhoto = null"
+            class="absolute -top-10 right-0 w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-white cursor-pointer">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+        <img [src]="expandedPhoto" class="max-w-[90vw] max-h-[85vh] rounded-2xl object-contain shadow-2xl" />
     </div>
 </div>
