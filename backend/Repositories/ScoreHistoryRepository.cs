@@ -52,7 +52,6 @@ namespace backend.Repositories
                 .Where(s => s.UserId == userId)
                 .ToListAsync();
 
-            //Project only the Score field to keep the database payload small
             var user = await _context.Users
                 .AsNoTracking()
                 .Where(u => u.Id == userId)

@@ -110,7 +110,7 @@ namespace backend.Repositories
                          && i.Availability != ItemAvailability.Unavailable)
                 .AsQueryable();
 
-            // Exclude blocked owners BEFORE pagination so TotalCount is correct
+            //Exclude blocked owners BEFORE pagination so TotalCount is correct
             query = ApplyOwnerExclusion(query, excludeOwnerIds);
 
             query = ApplyFilter(query, filter, publicOnly: true);

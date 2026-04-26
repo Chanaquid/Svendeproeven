@@ -86,9 +86,9 @@ namespace backend.Middleware
         }
 
         private async Task HandleExceptionAsync(
-    HttpContext context,
-    HttpStatusCode statusCode,
-    string message)
+            HttpContext context,
+            HttpStatusCode statusCode,
+            string message)
         {
             if (context.Response.HasStarted)
             {
@@ -102,7 +102,7 @@ namespace backend.Middleware
                 return;
             }
 
-            // Clear any existing response content
+            //Clear any existing response content
             context.Response.Clear();
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)statusCode;

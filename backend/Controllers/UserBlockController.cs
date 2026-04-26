@@ -51,7 +51,7 @@ namespace backend.Controllers
             return Ok(ApiResponse<bool>.Ok(isBlocked));
         }
 
-        // -------------------- Admin Endpoints --------------------
+        //Admin Endpoints
 
         // GET /api/blocks
         [HttpGet]

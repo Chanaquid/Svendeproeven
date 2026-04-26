@@ -154,7 +154,7 @@ namespace backend.Repositories
                 .AsQueryable();
 
             query = ApplyFilter(query, filter);
-            // Oldest proof first so nothing sits unreviewed
+            //Oldest proof first so nothing sits unreviewed
             query = string.IsNullOrWhiteSpace(request.SortBy)
                 ? query.OrderBy(f => f.ProofSubmittedAt)
                 : query.ApplySorting(request.SortBy, request.SortDescending);

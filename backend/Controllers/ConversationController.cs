@@ -79,8 +79,6 @@ namespace backend.Controllers
         }
 
         //Message endpoints
-
-
         [HttpPost("{conversationId}/messages")]
         public async Task<ActionResult<ApiResponse<DirectMessageDto>>>
             SendMessage(int conversationId, [FromBody] SendDirectMessageDto dto)

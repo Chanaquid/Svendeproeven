@@ -91,7 +91,6 @@ namespace backend.Services
             UserReviewFilter? filter,
             PagedRequest request)
         {
-            // GetByReviewedUserIdAsync must Include(r => r.Loan).ThenInclude(l => l.Item)
             var paged = await _reviewRepository.GetByReviewedUserIdAsync(reviewedUserId, filter, request);
             return MapPagedResultToListDto(paged, currentUserId: null);
         }
@@ -101,7 +100,6 @@ namespace backend.Services
             UserReviewFilter? filter,
             PagedRequest request)
         {
-            // GetByReviewerIdAsync must Include(r => r.Loan).ThenInclude(l => l.Item)
             var paged = await _reviewRepository.GetByReviewerIdAsync(reviewerId, filter, request);
             return MapPagedResultToListDto(paged, reviewerId);
         }

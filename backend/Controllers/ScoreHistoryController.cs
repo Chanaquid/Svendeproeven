@@ -35,7 +35,7 @@ namespace backend.Controllers
             return Ok(ApiResponse<UserScoreSummaryDto>.Ok(result));
         }
 
-        // -------------------- Admin Endpoints --------------------
+        //Admin Endpoints
 
         // GET /api/score-history
         [HttpGet]

@@ -229,7 +229,7 @@ namespace backend.Repositories
             return await query.ToPagedResultAsync(request);
         }
 
-        // ── Admin queries — exclude disputes involving deleted users ──────────
+        //Admin queries — exclude disputes involving deleted users
 
         public async Task<PagedResult<Dispute>> GetAllAsync(
             DisputeFilter? filter, PagedRequest request)
