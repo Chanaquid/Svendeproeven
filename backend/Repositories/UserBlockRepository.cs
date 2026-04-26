@@ -73,7 +73,7 @@ namespace backend.Repositories
                     (b.BlockerId == userId2 && b.BlockedId == userId1));
         }
 
-        // Returns all user IDs that are in a block relationship with userId (either direction)
+        //Returns all user IDs that are in a block relationship with userId (either direction)
         public async Task<HashSet<string>> GetBlockedUserIdsAsync(string userId)
         {
             var ids = await _context.UserBlocks

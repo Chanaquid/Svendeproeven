@@ -332,9 +332,7 @@ namespace backend.Services
 
             return BorrowingStatus.Free;
         }
-   
-
-
+  
 
         //Mapper unused
         private UserProfileDto MapToUserProfileDto(ApplicationUser user, string? role)

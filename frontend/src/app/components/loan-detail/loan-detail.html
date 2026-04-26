@@ -123,6 +123,12 @@
                   {{ loan.actualReturnDate ? (loan.actualReturnDate | date:'MMM d, yyyy · HH:mm') : '—' }}
                 </p>
               </div>
+               <div>
+                <p class="text-zinc-400 text-[10px] uppercase tracking-widest font-medium mb-1">Total Price</p>
+                <p class="text-amber-400 text-sm font-black" style="font-family:'Syne',sans-serif">
+                  {{ loan.totalPrice > 0 ? 'kr ' + loan.totalPrice : 'Free' }}
+                </p>
+              </div>
 
               <div *ngIf="loan.updatedAt">
                 <p class="text-zinc-400 text-[10px] uppercase tracking-widest font-medium mb-1">Last Updated</p>

@@ -31,7 +31,7 @@ namespace backend.Services
             _hubContext = hubContext;
         }
 
-        // ─── User actions ─────────────────────────────────────────────────────────
+        //User actions
 
         public async Task<SupportThreadDto> CreateThreadAsync(string userId, CreateSupportThreadDto dto)
         {
@@ -152,12 +152,12 @@ namespace backend.Services
                 SentAt = message.SentAt
             };
 
-            // Broadcast to everyone viewing this thread
+            //Broadcast to everyone viewing this thread
             await _hubContext.Clients
                 .Group($"support_thread_{threadId}")
                 .SendAsync("ReceiveMessage", messageDto);
 
-            // Build preview for sidebar update
+            //Build preview for sidebar update
             var preview = message.Content.Length > 60
                 ? message.Content[..60] + "…"
                 : message.Content;
@@ -175,7 +175,7 @@ namespace backend.Services
                 .Group($"support_user_{thread.UserId}")
                 .SendAsync("ThreadUpdated", threadUpdate);
 
-            // Notify the claimed admin's sidebar (if different from sender)
+            //Notify the claimed admin's sidebar (if different from sender)
             if (!string.IsNullOrEmpty(thread.ClaimedByAdminId) && thread.ClaimedByAdminId != senderId)
             {
                 await _hubContext.Clients
@@ -253,7 +253,7 @@ namespace backend.Services
                 );
             }
 
-            // Notify both parties that the thread status changed
+            //Notify both parties that the thread status changed
             var statusUpdate = new { threadId = thread.Id, status = SupportThreadStatus.Closed.ToString() };
 
             await _hubContext.Clients
@@ -334,7 +334,7 @@ namespace backend.Services
                 NotificationReferenceType.SupportThread
             );
 
-            // Notify the user's sidebar of the new thread
+            //Notify the user's sidebar of the new thread
             await _hubContext.Clients
                 .Group($"support_user_{targetUserId}")
                 .SendAsync("ThreadUpdated", new

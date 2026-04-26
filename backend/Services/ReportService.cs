@@ -25,22 +25,22 @@ namespace backend.Services
             _notificationService = notificationService;
         }
 
-        // ── User actions ──────────────────────────────────────────────────────────
+        //User actions
 
         public async Task<ReportDto> CreateReportAsync(string userId, CreateReportDto dto)
         {
             var user = await _userRepository.GetByIdAsync(userId)
                 ?? throw new KeyNotFoundException("User not found.");
 
-            // Single reason
+            //Single reason
             if (!IsSingleFlag(dto.Reasons))
                 throw new InvalidOperationException("Only one reason may be selected per report.");
 
-            // Prevent self-reporting
+            //Prevent self-reporting
             if (dto.Type == ReportType.User && dto.TargetId == userId)
                 throw new InvalidOperationException("You cannot report yourself.");
 
-            // 1-hour cooldown to prevent spam
+            //1-hour cooldown to prevent spam
             var lastReport = await _reportRepository.GetLastReportTimeByUserAsync(userId);
             if (lastReport.HasValue && DateTime.UtcNow - lastReport.Value < TimeSpan.FromMinutes(ReportCooldownMinutes))
             {
@@ -48,7 +48,7 @@ namespace backend.Services
                 throw new InvalidOperationException($"You must wait {minutesLeft} minute(s) before submitting another report.");
             }
 
-            // Prevent duplicate report on the same target
+            //Prevent duplicate report on the same target
             if (await _reportRepository.HasReportedTargetAsync(userId, dto.TargetId, dto.Type))
                 throw new InvalidOperationException("You have already reported this.");
 
@@ -66,7 +66,7 @@ namespace backend.Services
             await _reportRepository.AddAsync(report);
             await _reportRepository.SaveChangesAsync();
 
-            // Notify reporter — confirmation their report was received
+
             await _notificationService.SendAsync(
                 userId,
                 NotificationType.ReportSubmitted,
@@ -74,7 +74,6 @@ namespace backend.Services
                 report.Id,
                 NotificationReferenceType.Report);
 
-            // Notify admins — new report needs attention
             await _notificationService.SendToAdminsAsync(
                 NotificationType.ReportSubmitted,
                 $"New {dto.Type} report filed by {user.FullName}: {dto.Reasons}.",
@@ -105,7 +104,8 @@ namespace backend.Services
             return MapToDto(report, userId);
         }
 
-        // ── Admin actions ─────────────────────────────────────────────────────────
+
+        //Admin actions
 
         public async Task<PagedResult<ReportDto>> GetAllAsync(ReportFilter? filter, PagedRequest request)
         {
@@ -136,7 +136,7 @@ namespace backend.Services
             _reportRepository.Update(report);
             await _reportRepository.SaveChangesAsync();
 
-            // Notify reporter of the outcome
+            //Notify reporter of the outcome
             var outcomeMessage = dto.Status == ReportStatus.Resolved
                 ? $"Your report has been reviewed and action has been taken."
                 : $"Your report has been reviewed and was dismissed.";
@@ -155,7 +155,6 @@ namespace backend.Services
         }
 
         //Helpers
-
         // Enforces single reason rule
         private static bool IsSingleFlag(ReportReason reasons)
         {
@@ -164,8 +163,6 @@ namespace backend.Services
 
         private static ReportDto MapToDto(Report report, string? currentUserId = null, bool adminView = false)
         {
-
-
             return new ReportDto
             {
                 Id = report.Id,

@@ -20,6 +20,8 @@ import {
   getAvailabilityClass,
   getAvailabilityLabel,
 } from '../../utils/item.utils';
+import { UserRecentlyViewedItemDto } from '../../dtos/userRecentlyViewedItemDto';
+import { UserRecentlyViewedService } from '../../services/userRecentlyViewedService';
 
 @Component({
   selector: 'app-home',
@@ -59,6 +61,9 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
   currentPage = 1;
   totalCount = 0;
   currentUserId = '';
+
+
+  recentlyViewed: UserRecentlyViewedItemDto[] = [];
 
   // ── Dynamic page size — cols × 3 rows, matches CSS minmax(240px, 1fr) ────
   get pageSize(): number {
@@ -115,10 +120,11 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     private authService: AuthService,
-    private router: Router,
+    public router: Router,
     private cdr: ChangeDetectorRef,
     private userService: UserService,
     private itemService: ItemService,
+    private recentlyViewedService: UserRecentlyViewedService,
     private favoriteService: UserFavoriteService,
     private route: ActivatedRoute
   ) { }
@@ -131,6 +137,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
 
     this.loadUserInfo();
     this.loadFavorites();
+    // this.loadRecentlyViewed();
 
     // Debounce search — 350ms after user stops typing
     this.searchSubject.pipe(
@@ -224,11 +231,6 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
       error: (err) => console.error('Failed to load user info:', err)
     });
   }
-
-  /**
-   * Fetches items from backend using dynamic pageSize (cols × 3 rows).
-   * Shows skeleton only on first load — subsequent fetches swap content silently.
-   */
   loadItems(): void {
     if (this.isInitialLoad) {
       this.isLoading = true;
@@ -279,9 +281,18 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // Search and filters
+  private loadRecentlyViewed(): void {
+    this.recentlyViewedService.getRecentlyViewed().subscribe({
+      next: (res) => {
+        this.recentlyViewed = res.data ?? [];
+        console.log('recently viewed:', this.recentlyViewed.length, this.recentlyViewed);
+        this.cdr.detectChanges();
+      },
+      error: (err) => { console.error('recently viewed error:', err); }
+    });
+  }
 
-  /** Keystroke handler — debounced, no immediate fetch */
+  // Search and filters
   onSearch(): void {
     this.cdr.detectChanges();
     this.searchSubject.next(this.searchQuery);
@@ -390,6 +401,8 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
       behavior: 'smooth',
     });
   }
+
+  goToMapView(): void { this.router.navigate(['/maps']); }
 
   // Pagination
 

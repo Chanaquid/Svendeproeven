@@ -71,7 +71,7 @@ namespace backend.Controllers
         }
 
 
-        // ── Admin Endpoints ───────────────────────────────────────────────────
+        //Admin Endpoints
 
         // GET /api/appeals
         [HttpGet]
