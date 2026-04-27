@@ -16,23 +16,21 @@ import { Report } from '../report/report';
   styleUrl: './resolution-center.css',
 })
 export class ResolutionCenter implements OnInit {
-
   activeTab: 'disputes' | 'appeals' | 'verification' | 'fines' | 'reports' = 'disputes';
 
   selectedDisputeId: number | null = null;
-  selectedFineId: number | null = null;  
-  selectedAppealId: number | null = null; 
+  selectedFineId: number | null = null;
+  selectedAppealId: number | null = null;
   selectedVerificationId: number | null = null;
   selectedReportId: number | null = null;
-  
-  tabs = [
-    { key: 'disputes'     as const, label: 'Disputes',     icon: '⚖️' },
-    { key: 'fines'        as const, label: 'Fines',        icon: '💸' },
-    { key: 'appeals'      as const, label: 'Appeals',      icon: '📣' },
-    { key: 'verification' as const, label: 'Verification', icon: '🪪' },
-    { key: 'reports'      as const, label: 'Reports',      icon: '📊' },
-  ];
 
+  tabs = [
+    { key: 'disputes' as const,     label: 'Tvister',       icon: '⚖️' },
+    { key: 'fines' as const,        label: 'Bøder',         icon: '💸' },
+    { key: 'appeals' as const,      label: 'Klager',        icon: '📣' },
+    { key: 'verification' as const, label: 'Verifikation',  icon: '🪪' },
+    { key: 'reports' as const,      label: 'Anmeldelser',   icon: '📊' },
+  ];
 
   constructor(
     private authService: AuthService,
@@ -47,41 +45,20 @@ export class ResolutionCenter implements OnInit {
       return;
     }
 
-     this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe((params) => {
       if (params['tab']) {
-        this.activeTab = params['tab'] as 'disputes' | 'appeals' | 'fines' | 'verification' | 'reports';
+        this.activeTab = params['tab'] as
+          | 'disputes' | 'appeals' | 'fines' | 'verification' | 'reports';
       }
 
-      // pass disputeId down (important part)
-      const disputeId = params['disputeId'];
-      if (disputeId) {
-        this.selectedDisputeId = +disputeId;
-      }
+      if (params['disputeId']) this.selectedDisputeId = +params['disputeId'];
+      if (params['fineId']) this.selectedFineId = +params['fineId'];
+      if (params['appealId']) this.selectedAppealId = +params['appealId'];
+      if (params['verificationId']) this.selectedVerificationId = +params['verificationId'];
+      if (params['reportId']) this.selectedReportId = +params['reportId'];
 
-      const fineId = params['fineId'];
-      if (fineId) {
-        this.selectedFineId = +fineId;
-      }
-
-        const appealId = params['appealId'];
-      if (appealId) {
-        this.selectedAppealId = +appealId;
-      }
-
-      const verificationId = params['verificationId'];
-      if (verificationId) {
-        this.selectedVerificationId = +verificationId;
-      }
-      
-      const reportId = params['reportId'];
-      if (reportId) {
-        this.selectedReportId = +reportId;
-      }
-
-
-
-    this.cdr.detectChanges();
-  });
+      this.cdr.detectChanges();
+    });
   }
 
   setTab(tab: 'disputes' | 'appeals' | 'fines' | 'verification' | 'reports'): void {

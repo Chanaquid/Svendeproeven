@@ -1,0 +1,6 @@
+/* Resolution-center — purely a tab shell.
+   Everything (.page, .page-header, .tabs, .tab) lives in styles.css. */
+
+.tab > span:first-child {
+  font-size: 14px;
+}

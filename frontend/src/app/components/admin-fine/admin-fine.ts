@@ -10,7 +10,7 @@ import { AuthService } from '../../services/authService';
 import { FineService } from '../../services/fineService';
 import { FineDto, FineListDto } from '../../dtos/fineDto';
 import { FineFilter } from '../../dtos/filterDto';
-import { FineStatus, FineType } from '../../dtos/enums';
+import { FineStatus, FineType, PaymentMethod } from '../../dtos/enums';
 import { PagedRequest } from '../../dtos/paginationDto';
 import { getPageNumbers, getTotalPages } from '../../utils/pagination.utils';
 
@@ -18,12 +18,11 @@ type TabKey = 'all' | 'unpaid' | 'pendingVerification' | 'paid' | 'rejected' | '
 
 @Component({
   selector: 'app-admin-fine',
-  imports: [CommonModule, RouterLink, FormsModule, Navbar],
+  imports: [CommonModule, FormsModule, Navbar],
   templateUrl: './admin-fine.html',
   styleUrl: './admin-fine.css',
 })
 export class AdminFine implements OnInit, OnDestroy {
-
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
   private resizeHandler = () => { this.currentPage = 1; this.loadFines(); };
@@ -34,40 +33,36 @@ export class AdminFine implements OnInit, OnDestroy {
   searchQuery = '';
   activeTab: TabKey = 'pendingVerification';
 
-  // Pagination
   currentPage = 1;
   totalCount = 0;
 
-  // Modal
   showModal = false;
   isLoadingDetail = false;
   selectedItem: FineListDto | null = null;
   detail: FineDto | null = null;
   selectedPhoto: string | null = null;
 
-  // Payment proof review
   proofRejectionReason = '';
   proofError = '';
   proofSuccess = '';
   isProcessingProof = false;
   showRejectProofForm = false;
 
-  // Void fine
   showVoidConfirm = false;
   isVoiding = false;
   voidError = '';
 
   tabs: { key: TabKey; label: string; count?: number }[] = [
-    { key: 'all',                 label: 'All' },
-    { key: 'unpaid',              label: 'Unpaid' },
-    { key: 'pendingVerification', label: 'Proof Review' },
-    { key: 'paid',                label: 'Paid' },
-    { key: 'rejected',            label: 'Rejected' },
-    { key: 'voided',              label: 'Voided' },
+    { key: 'all',                 label: 'Alle' },
+    { key: 'unpaid',              label: 'Ubetalt' },
+    { key: 'pendingVerification', label: 'Bevis-gennemgang' },
+    { key: 'paid',                label: 'Betalt' },
+    { key: 'rejected',            label: 'Afvist' },
+    { key: 'voided',              label: 'Annulleret' },
   ];
 
   readonly FineStatus = FineStatus;
-  readonly FineType   = FineType;
+  readonly FineType = FineType;
 
   constructor(
     private authService: AuthService,
@@ -76,10 +71,6 @@ export class AdminFine implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
   ) {}
 
-  // ─── Dynamic page size ────────────────────────────────────────────────────
-  // navbar 64 + header ~200 + tabs 48 + search 52 + pagination 56 + padding 80
-  // Each card ~88px
-
   get pageSize(): number {
     const available = window.innerHeight - 64 - 200 - 48 - 52 - 56 - 80;
     return Math.max(5, Math.floor(available / 88));
@@ -87,8 +78,6 @@ export class AdminFine implements OnInit, OnDestroy {
 
   get totalPages(): number { return getTotalPages(this.totalCount, this.pageSize); }
   get pageNumbers(): number[] { return getPageNumbers(this.currentPage, this.totalPages); }
-
-  // ─── Lifecycle ───────────────────────────────────────────────────────────
 
   ngOnInit(): void {
     if (!this.authService.isAdmin()) {
@@ -99,11 +88,12 @@ export class AdminFine implements OnInit, OnDestroy {
     this.loadFines();
     this.loadTabCounts();
 
-    this.searchSubject.pipe(
-      debounceTime(350),
-      distinctUntilChanged(),
-      takeUntil(this.destroy$)
-    ).subscribe(() => { this.currentPage = 1; this.loadFines(); });
+    this.searchSubject
+      .pipe(debounceTime(350), distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.currentPage = 1;
+        this.loadFines();
+      });
 
     window.addEventListener('resize', this.resizeHandler);
   }
@@ -113,8 +103,6 @@ export class AdminFine implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
   }
-
-  // ─── Load ────────────────────────────────────────────────────────────────
 
   loadFines(): void {
     this.isLoading = true;
@@ -129,7 +117,7 @@ export class AdminFine implements OnInit, OnDestroy {
     };
 
     const filter: FineFilter = {
-      status: this.activeTab !== 'all' ? (statusMap[this.activeTab] ?? null) : null,
+      status: this.activeTab !== 'all' ? statusMap[this.activeTab] ?? null : null,
       search: this.searchQuery.trim() || null,
     };
 
@@ -140,31 +128,43 @@ export class AdminFine implements OnInit, OnDestroy {
       sortDescending: true,
     };
 
-    this.fineService.adminGetAll(filter, request)
-      .pipe(takeUntil(this.destroy$), finalize(() => {
-        this.isLoading = false;
-        this.cdr.detectChanges();
-      }))
+    this.fineService
+      .adminGetAll(filter, request)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }),
+      )
       .subscribe({
         next: (res) => {
           this.fines = res.data?.items ?? [];
           this.totalCount = res.data?.totalCount ?? 0;
-          const tab = this.tabs.find(t => t.key === this.activeTab);
+          const tab = this.tabs.find((t) => t.key === this.activeTab);
           if (tab) tab.count = this.totalCount;
         },
-        error: () => { this.listError = 'Failed to load fines. Please try again.'; },
+        error: () => {
+          this.listError = 'Kunne ikke hente bøder. Prøv igen.';
+        },
       });
   }
 
   private loadTabCounts(): void {
     const request: PagedRequest = { page: 1, pageSize: 1, sortBy: 'createdAt', sortDescending: true };
 
-    this.fineService.adminGetAll(null, request).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (res) => {
-        const tab = this.tabs.find(t => t.key === 'all');
-        if (tab) { tab.count = res.data?.totalCount ?? 0; this.cdr.detectChanges(); }
-      }
-    });
+    this.fineService
+      .adminGetAll(null, request)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          const tab = this.tabs.find((t) => t.key === 'all');
+          if (tab) {
+            tab.count = res.data?.totalCount ?? 0;
+            this.cdr.detectChanges();
+          }
+        },
+      });
 
     const statusTabs: { key: TabKey; status: FineStatus }[] = [
       { key: 'unpaid',              status: FineStatus.Unpaid },
@@ -175,16 +175,20 @@ export class AdminFine implements OnInit, OnDestroy {
     ];
 
     for (const { key, status } of statusTabs) {
-      this.fineService.adminGetAll({ status }, request).pipe(takeUntil(this.destroy$)).subscribe({
-        next: (res) => {
-          const tab = this.tabs.find(t => t.key === key);
-          if (tab) { tab.count = res.data?.totalCount ?? 0; this.cdr.detectChanges(); }
-        }
-      });
+      this.fineService
+        .adminGetAll({ status }, request)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (res) => {
+            const tab = this.tabs.find((t) => t.key === key);
+            if (tab) {
+              tab.count = res.data?.totalCount ?? 0;
+              this.cdr.detectChanges();
+            }
+          },
+        });
     }
   }
-
-  // ─── Filters / Pagination ─────────────────────────────────────────────────
 
   switchTab(key: TabKey): void {
     this.activeTab = key;
@@ -200,8 +204,6 @@ export class AdminFine implements OnInit, OnDestroy {
     this.loadFines();
   }
 
-  // ─── Modal ───────────────────────────────────────────────────────────────
-
   openModal(item: FineListDto): void {
     this.selectedItem = item;
     this.detail = null;
@@ -215,11 +217,15 @@ export class AdminFine implements OnInit, OnDestroy {
     this.voidError = '';
     this.selectedPhoto = null;
 
-    this.fineService.adminGetById(item.id)
-      .pipe(takeUntil(this.destroy$), finalize(() => {
-        this.isLoadingDetail = false;
-        this.cdr.detectChanges();
-      }))
+    this.fineService
+      .adminGetById(item.id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.isLoadingDetail = false;
+          this.cdr.detectChanges();
+        }),
+      )
       .subscribe({
         next: (res) => { this.detail = res.data ?? null; },
         error: () => { this.showModal = false; },
@@ -232,11 +238,11 @@ export class AdminFine implements OnInit, OnDestroy {
     this.selectedPhoto = null;
   }
 
-  // ─── Payment proof review ─────────────────────────────────────────────────
-
   get hasPendingProof(): boolean {
-    return this.detail?.status === FineStatus.PendingVerification
-        && !!this.detail?.paymentProofImageUrl;
+    return (
+      this.detail?.status === FineStatus.PendingVerification &&
+      !!this.detail?.paymentProofImageUrl
+    );
   }
 
   approveProof(): void {
@@ -244,15 +250,19 @@ export class AdminFine implements OnInit, OnDestroy {
     this.isProcessingProof = true;
     this.proofError = '';
 
-    this.fineService.adminVerifyPayment(this.detail.id, { isApproved: true })
-      .pipe(takeUntil(this.destroy$), finalize(() => {
-        this.isProcessingProof = false;
-        this.cdr.detectChanges();
-      }))
+    this.fineService
+      .adminVerifyPayment(this.detail.id, { isApproved: true })
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.isProcessingProof = false;
+          this.cdr.detectChanges();
+        }),
+      )
       .subscribe({
         next: (res) => {
           this.detail = res.data!;
-          this.proofSuccess = 'Payment approved — fine marked as paid.';
+          this.proofSuccess = 'Betaling godkendt — bøden er markeret som betalt.';
           this.loadFines();
           this.loadTabCounts();
           setTimeout(() => {
@@ -261,7 +271,9 @@ export class AdminFine implements OnInit, OnDestroy {
             this.cdr.detectChanges();
           }, 1500);
         },
-        error: (err) => { this.proofError = err.error?.message ?? 'Failed to approve payment.'; },
+        error: (err) => {
+          this.proofError = err.error?.message ?? 'Kunne ikke godkende betaling.';
+        },
       });
   }
 
@@ -270,35 +282,45 @@ export class AdminFine implements OnInit, OnDestroy {
     this.isProcessingProof = true;
     this.proofError = '';
 
-    this.fineService.adminVerifyPayment(this.detail.id, {
-      isApproved: false,
-      rejectionReason: this.proofRejectionReason.trim(),
-    }).pipe(takeUntil(this.destroy$), finalize(() => {
-      this.isProcessingProof = false;
-      this.cdr.detectChanges();
-    })).subscribe({
-      next: (res) => {
-        this.detail = res.data!;
-        this.proofSuccess = 'Payment proof rejected.';
-        this.showRejectProofForm = false;
-        this.proofRejectionReason = '';
-        this.loadFines();
-        this.loadTabCounts();
-        setTimeout(() => {
-          this.showModal = false;
-          this.proofSuccess = '';
+    this.fineService
+      .adminVerifyPayment(this.detail.id, {
+        isApproved: false,
+        rejectionReason: this.proofRejectionReason.trim(),
+      })
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.isProcessingProof = false;
           this.cdr.detectChanges();
-        }, 1500);
-      },
-      error: (err) => { this.proofError = err.error?.message ?? 'Failed to reject payment.'; },
-    });
+        }),
+      )
+      .subscribe({
+        next: (res) => {
+          this.detail = res.data!;
+          this.proofSuccess = 'Betalingsbevis afvist.';
+          this.showRejectProofForm = false;
+          this.proofRejectionReason = '';
+          this.loadFines();
+          this.loadTabCounts();
+          setTimeout(() => {
+            this.showModal = false;
+            this.proofSuccess = '';
+            this.cdr.detectChanges();
+          }, 1500);
+        },
+        error: (err) => {
+          this.proofError = err.error?.message ?? 'Kunne ikke afvise betaling.';
+        },
+      });
   }
-
-  // ─── Void fine ────────────────────────────────────────────────────────────
 
   get canVoid(): boolean {
     const s = this.detail?.status;
-    return s === FineStatus.Unpaid || s === FineStatus.Rejected || s === FineStatus.PendingVerification;
+    return (
+      s === FineStatus.Unpaid ||
+      s === FineStatus.Rejected ||
+      s === FineStatus.PendingVerification
+    );
   }
 
   voidFine(): void {
@@ -306,11 +328,15 @@ export class AdminFine implements OnInit, OnDestroy {
     this.isVoiding = true;
     this.voidError = '';
 
-    this.fineService.adminVoidFine(this.detail.id)
-      .pipe(takeUntil(this.destroy$), finalize(() => {
-        this.isVoiding = false;
-        this.cdr.detectChanges();
-      }))
+    this.fineService
+      .adminVoidFine(this.detail.id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.isVoiding = false;
+          this.cdr.detectChanges();
+        }),
+      )
       .subscribe({
         next: () => {
           this.showVoidConfirm = false;
@@ -318,40 +344,61 @@ export class AdminFine implements OnInit, OnDestroy {
           this.loadFines();
           this.loadTabCounts();
         },
-        error: (err) => { this.voidError = err.error?.message ?? 'Failed to void fine.'; },
+        error: (err) => {
+          this.voidError = err.error?.message ?? 'Kunne ikke annullere bøde.';
+        },
       });
   }
 
-  // ─── Helpers ─────────────────────────────────────────────────────────────
-
-  getFineStatusClass(status: string): string {
+  getStatusBadge(status: string): string {
     switch (status) {
-      case FineStatus.Unpaid:              return 'bg-red-500/10 text-red-400 border-red-500/20';
-      case FineStatus.PendingVerification: return 'bg-amber-400/10 text-amber-400 border-amber-400/20';
-      case FineStatus.Paid:                return 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20';
-      case FineStatus.Rejected:            return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-      case FineStatus.Voided:              return 'bg-zinc-700/50 text-zinc-500 border-zinc-600/50';
-      default:                             return 'bg-zinc-800 text-zinc-400 border-zinc-700';
+      case FineStatus.Unpaid:              return 'badge badge-danger';
+      case FineStatus.PendingVerification: return 'badge badge-warning';
+      case FineStatus.Paid:                return 'badge badge-success';
+      case FineStatus.Rejected:            return 'badge badge-danger';
+      case FineStatus.Voided:              return 'badge';
+      default:                             return 'badge';
     }
   }
 
-  getFineTypeClass(type: string): string {
-    switch (type) {
-      case FineType.ResultedByDispute: return 'bg-purple-400/10 text-purple-400';
-      case FineType.Custom:            return 'bg-blue-400/10 text-blue-400';
-      default:                         return 'bg-zinc-800 text-zinc-400';
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case FineStatus.Unpaid:              return 'Ubetalt';
+      case FineStatus.PendingVerification: return 'Afventer';
+      case FineStatus.Paid:                return 'Betalt';
+      case FineStatus.Rejected:            return 'Afvist';
+      case FineStatus.Voided:              return 'Annulleret';
+      default:                             return status;
     }
   }
 
-  getFineTypeLabel(type: string): string {
+  getTypeBadge(type: string): string {
     switch (type) {
-      case FineType.ResultedByDispute: return '⚖️ Dispute';
-      case FineType.Custom:            return '✏️ Custom';
+      case FineType.ResultedByDispute: return 'badge badge-warning';
+      case FineType.Custom:            return 'badge badge-info';
+      default:                         return 'badge';
+    }
+  }
+
+  getTypeLabel(type: string): string {
+    switch (type) {
+      case FineType.ResultedByDispute: return 'Tvistresultat';
+      case FineType.Custom:            return 'Manuel';
       default:                         return type;
     }
   }
 
+  getPaymentMethodLabel(method: string): string {
+    switch (method) {
+      case PaymentMethod.MobilePay:    return 'MobilePay';
+      case PaymentMethod.Card:         return 'Kort';
+      case PaymentMethod.BankTransfer: return 'Bankoverførsel';
+      case PaymentMethod.Cash:         return 'Kontant';
+      default:                         return method;
+    }
+  }
+
   getInitials(name: string): string {
-    return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) ?? '';
+    return name?.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) ?? '';
   }
 }

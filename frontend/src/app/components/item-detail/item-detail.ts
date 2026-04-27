@@ -22,22 +22,21 @@ import { UserFavoriteService } from '../../services/userFavoriteService';
 import { UploadImageService } from '../../services/uploadImageService';
 
 interface EditablePhoto {
-  id?: number;          // undefined = newly uploaded, not yet saved
+  id?: number; // undefined = newly uploaded, not yet saved
   photoUrl: string;
   isPrimary: boolean;
   displayOrder: number;
-  file?: File;          // present only for new uploads before save
+  file?: File; // present only for new uploads before save
   uploading?: boolean;
 }
 
 @Component({
   selector: 'app-item-detail',
-  imports: [CommonModule, RouterLink, FormsModule, Navbar],
+  imports: [CommonModule, FormsModule, Navbar],
   templateUrl: './item-detail.html',
   styleUrl: './item-detail.css',
 })
 export class ItemDetail implements OnInit {
-
   item: ItemDto | null = null;
   reviews: ItemReviewDto[] = [];
   isLoading = true;
@@ -118,12 +117,18 @@ export class ItemDetail implements OnInit {
 
   // Reviews
   visibleReviews = 5;
-  get displayedReviews() { return this.reviews.slice(0, this.visibleReviews); }
-  loadMoreReviews() { this.visibleReviews += 5; }
+  get displayedReviews() {
+    return this.reviews.slice(0, this.visibleReviews);
+  }
+  loadMoreReviews() {
+    this.visibleReviews += 5;
+  }
 
   get averageRating(): number {
     if (!this.reviews.length) return 0;
-    return Math.round((this.reviews.reduce((s, r) => s + r.rating, 0) / this.reviews.length) * 10) / 10;
+    return (
+      Math.round((this.reviews.reduce((s, r) => s + r.rating, 0) / this.reviews.length) * 10) / 10
+    );
   }
 
   get isOwner(): boolean {
@@ -132,23 +137,35 @@ export class ItemDetail implements OnInit {
 
   get canRequestLoan(): boolean {
     if (!this.item) return false;
-    return this.item.status === 'Approved' &&
+    return (
+      this.item.status === 'Approved' &&
       this.item.isActive &&
       !this.item.isCurrentlyOnLoan &&
       !this.isOwner &&
       !this.existingLoan &&
-      (!this.item.requiresVerification || this.isVerified);
+      (!this.item.requiresVerification || this.isVerified)
+    );
   }
 
   get hasActiveLoanRequest(): boolean {
     if (!this.existingLoan) return false;
-    return ['Pending', 'AdminPending', 'Approved', 'Active', 'Late'].includes(this.existingLoan.status);
+    return ['Pending', 'AdminPending', 'Approved', 'Active', 'Late'].includes(
+      this.existingLoan.status,
+    );
   }
 
-  get displayedDisputes() { return this.disputeHistory.slice(0, this.visibleDisputes); }
-  get displayedLoanHistory() { return this.loanHistory.slice(0, this.visibleLoans); }
-  loadMoreDisputes() { this.visibleDisputes += 5; }
-  loadMoreLoanHistory() { this.visibleLoans += 5; }
+  get displayedDisputes() {
+    return this.disputeHistory.slice(0, this.visibleDisputes);
+  }
+  get displayedLoanHistory() {
+    return this.loanHistory.slice(0, this.visibleLoans);
+  }
+  loadMoreDisputes() {
+    this.visibleDisputes += 5;
+  }
+  loadMoreLoanHistory() {
+    this.visibleLoans += 5;
+  }
 
   constructor(
     private route: ActivatedRoute,
@@ -163,7 +180,7 @@ export class ItemDetail implements OnInit {
     private favoriteService: UserFavoriteService,
     private uploadService: UploadImageService,
     private cdr: ChangeDetectorRef,
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.isAdmin = this.authService.isAdmin();
@@ -175,7 +192,7 @@ export class ItemDetail implements OnInit {
           this.isVerified = res.data?.isVerified ?? false;
           this.cdr.detectChanges();
         },
-        error: () => { }
+        error: () => {},
       });
     }
 
@@ -211,11 +228,9 @@ export class ItemDetail implements OnInit {
       error: () => {
         this.isLoading = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
-
-
 
   private resetPhotoIndex(): void {
     this.activePhotoIndex = 0;
@@ -224,12 +239,10 @@ export class ItemDetail implements OnInit {
   prevPhoto(total: number): void {
     this.activePhotoIndex = (this.activePhotoIndex - 1 + total) % total;
   }
-  
+
   nextPhoto(total: number): void {
     this.activePhotoIndex = (this.activePhotoIndex + 1) % total;
   }
-
-
 
   private checkExistingLoan(): void {
     if (!this.item) return;
@@ -238,7 +251,7 @@ export class ItemDetail implements OnInit {
         if (res.data) this.existingLoan = res.data;
         this.cdr.detectChanges();
       },
-      error: () => { }
+      error: () => {},
     });
   }
 
@@ -248,7 +261,7 @@ export class ItemDetail implements OnInit {
         this.isFavorited = res.data?.isFavorited ?? false;
         this.cdr.detectChanges();
       },
-      error: () => { }
+      error: () => {},
     });
   }
 
@@ -264,7 +277,7 @@ export class ItemDetail implements OnInit {
       error: () => {
         this.isTogglingFavorite = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -280,7 +293,7 @@ export class ItemDetail implements OnInit {
       error: () => {
         this.isLoadingReviews = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -290,14 +303,14 @@ export class ItemDetail implements OnInit {
     const request: PagedRequest = { page: 1, pageSize: 50 };
     this.loanService.getMyAsLender(filter, request).subscribe({
       next: (res) => {
-        this.loanHistory = (res.data?.items ?? []).filter(l => l.itemId === itemId);
+        this.loanHistory = (res.data?.items ?? []).filter((l) => l.itemId === itemId);
         this.isLoadingHistory = false;
         this.cdr.detectChanges();
       },
       error: () => {
         this.isLoadingHistory = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -321,9 +334,9 @@ export class ItemDetail implements OnInit {
           error: () => {
             this.isLoadingDisputes = false;
             this.cdr.detectChanges();
-          }
+          },
         });
-      }
+      },
     });
   }
 
@@ -337,28 +350,30 @@ export class ItemDetail implements OnInit {
     this.isRequesting = true;
     this.loanError = '';
 
-    this.loanService.create({
-      itemId: this.item.id,
-      startDate: this.loanForm.startDate,
-      endDate: this.loanForm.endDate,
-    }).subscribe({
-      next: () => {
-        this.isRequesting = false;
-        this.loanSuccess = '✓ Loan request sent!';
-        this.cdr.detectChanges();
-        setTimeout(() => {
-          this.showLoanModal = false;
-          const slug = this.route.snapshot.paramMap.get('slug')!;
-          this.loadItem(slug);
+    this.loanService
+      .create({
+        itemId: this.item.id,
+        startDate: this.loanForm.startDate,
+        endDate: this.loanForm.endDate,
+      })
+      .subscribe({
+        next: () => {
+          this.isRequesting = false;
+          this.loanSuccess = '✓ Loan request sent!';
           this.cdr.detectChanges();
-        }, 1000);
-      },
-      error: (err) => {
-        this.loanError = err.error?.message ?? 'Failed to send request.';
-        this.isRequesting = false;
-        this.cdr.detectChanges();
-      }
-    });
+          setTimeout(() => {
+            this.showLoanModal = false;
+            const slug = this.route.snapshot.paramMap.get('slug')!;
+            this.loadItem(slug);
+            this.cdr.detectChanges();
+          }, 1000);
+        },
+        error: (err) => {
+          this.loanError = err.error?.message ?? 'Failed to send request.';
+          this.isRequesting = false;
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   cancelLoan(): void {
@@ -366,23 +381,25 @@ export class ItemDetail implements OnInit {
     this.isCancellingLoan = true;
     this.cancelError = '';
 
-    this.loanService.cancel(this.existingLoan.id, {
-      loanId: this.existingLoan.id,
-      reason: ''
-    }).subscribe({
-      next: () => {
-        this.existingLoan = null;
-        this.isCancellingLoan = false;
-        const slug = this.route.snapshot.paramMap.get('slug')!;
-        this.loadItem(slug);
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        this.cancelError = err.error?.message ?? 'Failed to cancel loan.';
-        this.isCancellingLoan = false;
-        this.cdr.detectChanges();
-      }
-    });
+    this.loanService
+      .cancel(this.existingLoan.id, {
+        loanId: this.existingLoan.id,
+        reason: '',
+      })
+      .subscribe({
+        next: () => {
+          this.existingLoan = null;
+          this.isCancellingLoan = false;
+          const slug = this.route.snapshot.paramMap.get('slug')!;
+          this.loadItem(slug);
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.cancelError = err.error?.message ?? 'Failed to cancel loan.';
+          this.isCancellingLoan = false;
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   openLoanModal(): void {
@@ -479,11 +496,16 @@ export class ItemDetail implements OnInit {
         const url = await this.uploadService.uploadImage(file);
         const idx = this.editPhotos.indexOf(placeholder);
         if (idx !== -1) {
-          this.editPhotos[idx] = { ...this.editPhotos[idx], photoUrl: url, uploading: false, file: undefined };
+          this.editPhotos[idx] = {
+            ...this.editPhotos[idx],
+            photoUrl: url,
+            uploading: false,
+            file: undefined,
+          };
           this.editPhotos = [...this.editPhotos];
         }
       } catch {
-        this.editPhotos = this.editPhotos.filter(p => p !== placeholder);
+        this.editPhotos = this.editPhotos.filter((p) => p !== placeholder);
         this.editError = `Failed to upload ${file.name}.`;
       }
       this.cdr.detectChanges();
@@ -549,7 +571,7 @@ export class ItemDetail implements OnInit {
       this.editError = 'Title is required.';
       return;
     }
-    if (this.editPhotos.some(p => p.uploading)) {
+    if (this.editPhotos.some((p) => p.uploading)) {
       this.editError = 'Please wait for all photos to finish uploading.';
       return;
     }
@@ -558,81 +580,86 @@ export class ItemDetail implements OnInit {
     this.editError = '';
     this.editSuccess = '';
 
-    // Derive availability from isActive toggle
     const availability: ItemAvailability = this.editForm.isActive
       ? ItemAvailability.Available
       : ItemAvailability.Unavailable;
 
-    this.itemService.update(this.item.id, {
-      title: this.editForm.title.trim(),
-      description: this.editForm.description,
-      condition: this.editForm.condition,
-      currentValue: this.editForm.currentValue,
-      availableFrom: this.editForm.availableFrom,
-      availableUntil: this.editForm.availableUntil,
-      minLoanDays: this.editForm.minLoanDays,
-      pickupAddress: this.editForm.pickupAddress,
-      pickupLatitude: this.editForm.pickupLatitude,
-      pickupLongitude: this.editForm.pickupLongitude,
-      requiresVerification: this.editForm.requiresVerification,
-      isActive: this.editForm.isActive,
-      availability,
-    }).subscribe({
-      next: (res) => {
-        if (res.data) {
-          this.syncPhotos(res.data);
-        } else {
+    this.itemService
+      .update(this.item.id, {
+        title: this.editForm.title.trim(),
+        description: this.editForm.description,
+        condition: this.editForm.condition,
+        currentValue: this.editForm.currentValue,
+        availableFrom: this.editForm.availableFrom,
+        availableUntil: this.editForm.availableUntil,
+        minLoanDays: this.editForm.minLoanDays,
+        pickupAddress: this.editForm.pickupAddress,
+        pickupLatitude: this.editForm.pickupLatitude,
+        pickupLongitude: this.editForm.pickupLongitude,
+        requiresVerification: this.editForm.requiresVerification,
+        isActive: this.editForm.isActive,
+        availability,
+      })
+      .subscribe({
+        next: (res) => {
+          if (res.data) {
+            this.syncPhotos(res.data);
+          } else {
+            this.isSavingEdit = false;
+            this.editError = 'Unexpected response from server.';
+            this.cdr.detectChanges();
+          }
+        },
+        error: (err) => {
+          this.editError = err.error?.message ?? 'Failed to save changes.';
           this.isSavingEdit = false;
-          this.editError = 'Unexpected response from server.';
           this.cdr.detectChanges();
-        }
-      },
-      error: (err) => {
-        this.editError = err.error?.message ?? 'Failed to save changes.';
-        this.isSavingEdit = false;
-        this.cdr.detectChanges();
-      }
-    });
+        },
+      });
   }
-
 
   private async syncPhotos(updatedItem: ItemDto): Promise<void> {
     const itemId = updatedItem.id;
 
-    // Delete ALL existing photos first
     for (const photo of updatedItem.photos ?? []) {
-      try { await this.itemService.deletePhoto(itemId, photo.id).toPromise(); } catch { /* best-effort */ }
+      try {
+        await this.itemService.deletePhoto(itemId, photo.id).toPromise();
+      } catch {
+        /* best-effort */
+      }
     }
 
-    // Re-add all photos in the user's chosen order (index 0 = primary)
     for (let i = 0; i < this.editPhotos.length; i++) {
       const photo = this.editPhotos[i];
       try {
-        await this.itemService.addPhoto(itemId, {
-          photoUrl: photo.photoUrl,
-          isPrimary: i === 0,
-          displayOrder: i,
-        }).toPromise();
-      } catch { /* best-effort */ }
+        await this.itemService
+          .addPhoto(itemId, {
+            photoUrl: photo.photoUrl,
+            isPrimary: i === 0,
+            displayOrder: i,
+          })
+          .toPromise();
+      } catch {
+        /* best-effort */
+      }
     }
 
-    // Refresh item to get new photo ids, then explicitly set primary
     this.itemService.getById(itemId).subscribe({
       next: async (res) => {
         const freshItem = res.data ?? updatedItem;
-        
-        // Set primary to the first photo
+
         const firstPhoto = freshItem.photos
           ?.slice()
           .sort((a, b) => a.displayOrder - b.displayOrder)[0];
-        
+
         if (firstPhoto?.id) {
           try {
             await this.itemService.setPrimaryPhoto(itemId, firstPhoto.id).toPromise();
-          } catch { /* best-effort */ }
+          } catch {
+            /* best-effort */
+          }
         }
 
-        // Final refresh
         this.itemService.getById(itemId).subscribe({
           next: (final) => {
             this.item = final.data ?? freshItem;
@@ -653,39 +680,45 @@ export class ItemDetail implements OnInit {
             this.isSavingEdit = false;
             this.editSuccess = '✓ Changes saved!';
             this.cdr.detectChanges();
-            setTimeout(() => { this.showEditModal = false; }, 1200);
-          }
+            setTimeout(() => {
+              this.showEditModal = false;
+            }, 1200);
+          },
         });
       },
       error: () => {
         this.isSavingEdit = false;
         this.editSuccess = '✓ Changes saved!';
         this.cdr.detectChanges();
-        setTimeout(() => { this.showEditModal = false; }, 1200);
-      }
+        setTimeout(() => {
+          this.showEditModal = false;
+        }, 1200);
+      },
     });
   }
-
 
   // ── Address autocomplete (Geoapify — same as register) ────────
 
   onAddressInput(value: string): void {
     clearTimeout(this.addressSearchTimeout);
     this.showAddressSuggestions = false;
-    if (!value || value.length < 3) { this.addressSuggestions = []; return; }
+    if (!value || value.length < 3) {
+      this.addressSuggestions = [];
+      return;
+    }
 
     this.addressSearchTimeout = setTimeout(() => {
       const apiKey = '6efe16ed3bb047b8975d6f4738a471a9';
       const url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(value)}&limit=5&apiKey=${apiKey}`;
 
       fetch(url)
-        .then(res => res.json())
-        .then(data => {
+        .then((res) => res.json())
+        .then((data) => {
           this.addressSuggestions = data.features ?? [];
           this.showAddressSuggestions = true;
           this.cdr.detectChanges();
         })
-        .catch(() => { });
+        .catch(() => {});
     }, 400);
   }
 
@@ -710,60 +743,55 @@ export class ItemDetail implements OnInit {
   }
 
   submitReport(): void {
-    if (!this.reportReason) { this.reportError = 'Please select a reason.'; return; }
+    if (!this.reportReason) {
+      this.reportError = 'Please select a reason.';
+      return;
+    }
     this.isSubmittingReport = true;
     this.reportError = '';
 
-    this.reportService.create({
-      type: ReportType.Item,
-      targetId: this.item!.id.toString(),
-      reasons: this.reportReason as ReportReason,
-      additionalDetails: this.reportDetails.trim() || null,
-    }).subscribe({
-      next: () => {
-        this.isSubmittingReport = false;
-        this.reportSuccess = '✓ Report submitted. Thank you.';
-        this.cdr.detectChanges();
-        setTimeout(() => { this.showReportModal = false; }, 1500);
-      },
-      error: (err) => {
-        this.reportError = err.error?.message ?? 'Failed to submit report.';
-        this.isSubmittingReport = false;
-        this.cdr.detectChanges();
-      }
-    });
+    this.reportService
+      .create({
+        type: ReportType.Item,
+        targetId: this.item!.id.toString(),
+        reasons: this.reportReason as ReportReason,
+        additionalDetails: this.reportDetails.trim() || null,
+      })
+      .subscribe({
+        next: () => {
+          this.isSubmittingReport = false;
+          this.reportSuccess = '✓ Report submitted. Thank you.';
+          this.cdr.detectChanges();
+          setTimeout(() => {
+            this.showReportModal = false;
+          }, 1500);
+        },
+        error: (err) => {
+          this.reportError = err.error?.message ?? 'Failed to submit report.';
+          this.isSubmittingReport = false;
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   // ── Loan price helpers ────────────────────────────────────────
 
   get totalLoanPrice(): number | null {
     if (!this.item || this.item.isFree) return null;
-    
-    // USE THE LOANDAYS HELPER HERE INSTEAD OF DOING MATH AGAIN
-    const days = this.loanDays; 
-    
+    if (!this.loanForm.startDate || !this.loanForm.endDate) return null;
+    const start = new Date(this.loanForm.startDate);
+    const end = new Date(this.loanForm.endDate);
+    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     if (days <= 0) return null;
-    
     return days * this.item.pricePerDay;
   }
 
   get loanDays(): number {
     if (!this.loanForm.startDate || !this.loanForm.endDate) return 0;
-    
     const start = new Date(this.loanForm.startDate);
     const end = new Date(this.loanForm.endDate);
-
-    // Normalize to midnight
-    start.setHours(0, 0, 0, 0);
-    end.setHours(0, 0, 0, 0);
-
-    const diffTime = end.getTime() - start.getTime();
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-    
-    // This +1 makes it inclusive (picking up 26th and returning 28th = 3 days)
-    return diffDays >= 0 ? diffDays + 1 : 0;
+    return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
   }
-
 
   // ── Generic helpers ───────────────────────────────────────────
 
@@ -776,24 +804,46 @@ export class ItemDetail implements OnInit {
     return `${y}-${m}-${d}`;
   }
 
-  getCategoryEmoji(cat: string): string { return getCategoryEmoji(cat); }
-  getConditionClass(condition: string): string { return getConditionClass(condition as ItemCondition); }
-  getInitials(name: string): string {
-    return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) ?? '';
+  getCategoryEmoji(cat: string): string {
+    return getCategoryEmoji(cat);
   }
-  goBack(): void { window.history.back(); }
+  getConditionClass(condition: string): string {
+    return getConditionClass(condition as ItemCondition);
+  }
+  getInitials(name: string): string {
+    return (
+      name
+        ?.split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2) ?? ''
+    );
+  }
+  goBack(): void {
+    window.history.back();
+  }
 
   getLoanStatusClass(status: string): string {
     switch (status?.toLowerCase()) {
-      case 'active':       return 'history-status-tag--active';
-      case 'approved':     return 'history-status-tag--approved';
-      case 'late':         return 'history-status-tag--late';
-      case 'pending':      return 'history-status-tag--pending';
-      case 'adminpending': return 'history-status-tag--adminpending';
-      case 'cancelled':    return 'history-status-tag--cancelled';
-      case 'rejected':     return 'history-status-tag--rejected';
-      case 'completed':    return 'history-status-tag--completed';
-      default:             return '';
+      case 'active':
+        return 'history-status-tag--active';
+      case 'approved':
+        return 'history-status-tag--approved';
+      case 'late':
+        return 'history-status-tag--late';
+      case 'pending':
+        return 'history-status-tag--pending';
+      case 'adminpending':
+        return 'history-status-tag--adminpending';
+      case 'cancelled':
+        return 'history-status-tag--cancelled';
+      case 'rejected':
+        return 'history-status-tag--rejected';
+      case 'completed':
+        return 'history-status-tag--completed';
+      default:
+        return '';
     }
   }
 }

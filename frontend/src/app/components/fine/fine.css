@@ -1,0 +1,169 @@
+/* Fine — split list/detail. Mostly leans on styles.css. */
+
+.fine-shell {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.fine-list-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fine-toolbar {
+  display: flex;
+  gap: 8px;
+}
+
+.fine-toolbar .input { flex: 1; }
+.fine-toolbar .select { width: auto; min-width: 120px; }
+
+.fine-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fine-list .list-row {
+  text-align: left;
+  background: var(--color-surface);
+}
+
+.fine-list .list-row--active {
+  border-color: var(--color-border);
+  background: var(--color-surface-alt);
+}
+
+.fine-detail-pane { min-height: 320px; }
+
+.fine-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fine-amount {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 4px 0 0;
+}
+
+.fine-message {
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  color: var(--color-text);
+}
+
+.fine-message--danger {
+  border-left: 3px solid var(--color-danger);
+}
+
+.fine-proof-thumb {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+  overflow: hidden;
+  cursor: pointer;
+  padding: 0;
+}
+
+.fine-proof-thumb:hover { border-color: var(--color-border); }
+
+.fine-proof-thumb img {
+  width: 100%;
+  display: block;
+  max-height: 360px;
+  object-fit: contain;
+  background: var(--color-surface-alt);
+}
+
+.fine-proof-preview {
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-surface-alt);
+}
+
+.fine-proof-preview img {
+  width: 100%;
+  max-height: 240px;
+  object-fit: contain;
+  display: block;
+}
+
+.tab-count {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 9999px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border-soft);
+  line-height: 1.4;
+}
+
+.subnav-item--active .tab-count { color: var(--color-text); }
+
+.lightbox-img {
+  max-width: 95vw;
+  max-height: 95vh;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  cursor: zoom-out;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: var(--color-surface-alt);
+  border-color: var(--color-border);
+}
+
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.page-btn--active {
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  border-color: var(--color-primary);
+}
+
+.page-ellipsis {
+  padding: 0 4px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 800px) {
+  .fine-shell { grid-template-columns: 1fr; }
+}

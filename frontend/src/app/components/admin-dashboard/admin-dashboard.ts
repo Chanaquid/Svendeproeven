@@ -8,11 +8,11 @@ import { AdminService } from '../../services/adminService';
 
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [CommonModule, RouterLink, Navbar],
+  imports: [CommonModule, Navbar],
   templateUrl: './admin-dashboard.html',
+  styleUrl: './admin-dashboard.css',
 })
 export class AdminDashboard implements OnInit {
-
   dashboard: AdminDashboardDto | null = null;
   isLoading = true;
   error: string | null = null;
@@ -38,15 +38,14 @@ export class AdminDashboard implements OnInit {
     this.adminService.getDashboard().subscribe({
       next: (data: AdminDashboardDto) => {
         this.dashboard = data;
-        console.log(this.dashboard);
         this.isLoading = false;
         this.cdr.detectChanges();
       },
       error: () => {
-        this.error = 'Failed to load dashboard.';
+        this.error = 'Kunne ikke hente dashboard.';
         this.isLoading = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 

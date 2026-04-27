@@ -1,0 +1,98 @@
+/* admin-loan — table + detail modal. Most via styles.css. */
+
+.al-toolbar { margin-bottom: 16px; }
+
+.al-row { cursor: pointer; }
+.al-row:hover td { background: var(--color-surface-alt); }
+
+.al-thumb {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: 16px;
+}
+
+.al-thumb--lg { width: 56px; height: 56px; font-size: 22px; }
+
+.al-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.al-parties {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.al-party {
+  padding: 10px;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+}
+
+.tab-count {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 9999px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border-soft);
+  line-height: 1.4;
+}
+
+.subnav-item--active .tab-count { color: var(--color-text); }
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: var(--color-surface-alt);
+  border-color: var(--color-border);
+}
+
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.page-btn--active {
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  border-color: var(--color-primary);
+}
+
+.page-ellipsis {
+  padding: 0 6px;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 600px) {
+  .al-parties { grid-template-columns: 1fr; }
+}

@@ -45,11 +45,11 @@ export class Item implements OnInit, OnDestroy {
   isDeleting = false;
 
   tabs = [
-    { key: 'all' as const, label: 'All' },
-    { key: 'active' as const, label: 'Active' },
-    { key: 'pending' as const, label: 'Pending' },
-    { key: 'rejected' as const, label: 'Rejected' },
-    { key: 'inactive' as const, label: 'Inactive' },
+    { key: 'all' as const, label: 'Alle' },
+    { key: 'active' as const, label: 'Aktive' },
+    { key: 'pending' as const, label: 'Afventer' },
+    { key: 'rejected' as const, label: 'Afvist' },
+    { key: 'inactive' as const, label: 'Inaktive' },
   ];
 
   // Add item
@@ -66,20 +66,17 @@ export class Item implements OnInit, OnDestroy {
   createdItemId: number | null = null;
   copiedSlug: string | null = null;
 
-  // ── Pagination — dynamic page size matching window cols × 3 rows ──────────
   currentPage = 1;
-
 
   // Photo management for create modal
   createPhotos: EditablePhoto[] = [];
   isDraggingOver: number | null = null;
   dragSourceIndex: number | null = null;
 
-
-  //Sorting
+  // Sorting
   sortLabel = 'newest';
 
-  //Address api
+  // Address api
   private readonly GEOAPIFY_KEY = '6efe16ed3bb047b8975d6f4738a471a9';
 
   get pageSize(): number {
@@ -117,7 +114,6 @@ export class Item implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  // Recalculate on resize — page size changes with window width
   private resizeHandler = () => {
     this.currentPage = 1;
     this.cdr.detectChanges();
@@ -132,7 +128,7 @@ export class Item implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     if (!this.authService.isLoggedIn()) {
@@ -141,8 +137,7 @@ export class Item implements OnInit, OnDestroy {
     }
     this.isAdmin = this.authService.isAdmin();
 
-    // Restore page + tab from URL
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe((params) => {
       this.activeTab = (params['tab'] as any) || 'all';
       this.currentPage = +params['page'] || 1;
     });
@@ -158,8 +153,7 @@ export class Item implements OnInit, OnDestroy {
 
   emptyCreateForm(): CreateItemDto & { photoUrl?: string } {
     const pad = (n: number) => String(n).padStart(2, '0');
-    const localStr = (d: Date) =>
-      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const localStr = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
     const today = new Date();
     const threeMonths = new Date(today);
@@ -197,7 +191,7 @@ export class Item implements OnInit, OnDestroy {
       error: () => {
         this.isLoading = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -206,21 +200,26 @@ export class Item implements OnInit, OnDestroy {
 
     if (this.searchQuery.trim()) {
       const q = this.searchQuery.toLowerCase();
-      result = result.filter(i =>
-        i.title.toLowerCase().includes(q) ||
-        i.categoryName.toLowerCase().includes(q)
+      result = result.filter(
+        (i) => i.title.toLowerCase().includes(q) || i.categoryName.toLowerCase().includes(q),
       );
     }
 
     switch (this.activeTab) {
-      case 'active': result = result.filter(i => i.status === 'Approved' && i.isActive !== false); break;
-      case 'pending': result = result.filter(i => i.status === 'Pending'); break;
-      case 'rejected': result = result.filter(i => i.status === 'Rejected'); break;
-      case 'inactive': result = result.filter(i => i.isActive === false); break;
+      case 'active':
+        result = result.filter((i) => i.status === 'Approved' && i.isActive !== false);
+        break;
+      case 'pending':
+        result = result.filter((i) => i.status === 'Pending');
+        break;
+      case 'rejected':
+        result = result.filter((i) => i.status === 'Rejected');
+        break;
+      case 'inactive':
+        result = result.filter((i) => i.isActive === false);
+        break;
     }
 
-
-    // 3Sorting Logic
     switch (this.sortLabel) {
       case 'newest':
         result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -247,7 +246,6 @@ export class Item implements OnInit, OnDestroy {
 
     this.filteredItems = result;
   }
-
 
   onSortChange(value: string): void {
     this.sortLabel = value;
@@ -283,19 +281,33 @@ export class Item implements OnInit, OnDestroy {
 
   getTabCount(key: string): number {
     switch (key) {
-      case 'all': return this.allItems.length;
-      case 'active': return this.allItems.filter(i => i.status === 'Approved' && i.isActive !== false).length;
-      case 'pending': return this.allItems.filter(i => i.status === 'Pending').length;
-      case 'rejected': return this.allItems.filter(i => i.status === 'Rejected').length;
-      case 'inactive': return this.allItems.filter(i => i.isActive === false).length;
-      default: return 0;
+      case 'all':
+        return this.allItems.length;
+      case 'active':
+        return this.allItems.filter((i) => i.status === 'Approved' && i.isActive !== false).length;
+      case 'pending':
+        return this.allItems.filter((i) => i.status === 'Pending').length;
+      case 'rejected':
+        return this.allItems.filter((i) => i.status === 'Rejected').length;
+      case 'inactive':
+        return this.allItems.filter((i) => i.isActive === false).length;
+      default:
+        return 0;
     }
   }
 
-  get approvedCount() { return this.allItems.filter(i => i.status === 'Approved' && i.isActive !== false).length; }
-  get pendingCount() { return this.allItems.filter(i => i.status === 'Pending').length; }
-  get rejectedCount() { return this.allItems.filter(i => i.status === 'Rejected').length; }
-  get inactiveCount() { return this.allItems.filter(i => i.isActive === false).length; }
+  get approvedCount() {
+    return this.allItems.filter((i) => i.status === 'Approved' && i.isActive !== false).length;
+  }
+  get pendingCount() {
+    return this.allItems.filter((i) => i.status === 'Pending').length;
+  }
+  get rejectedCount() {
+    return this.allItems.filter((i) => i.status === 'Rejected').length;
+  }
+  get inactiveCount() {
+    return this.allItems.filter((i) => i.isActive === false).length;
+  }
 
   toggleActive(item: ItemListDto): void {
     this.itemService.toggleActive(item.id, { isActive: !item.isActive }).subscribe({
@@ -308,7 +320,9 @@ export class Item implements OnInit, OnDestroy {
     });
   }
 
-  goToItem(slug: string): void { this.router.navigate(['/items', slug]); }
+  goToItem(slug: string): void {
+    this.router.navigate(['/items', slug]);
+  }
 
   confirmDelete(item: ItemListDto): void {
     this.itemToDelete = item;
@@ -320,7 +334,7 @@ export class Item implements OnInit, OnDestroy {
     this.isDeleting = true;
     this.itemService.delete(this.itemToDelete.id).subscribe({
       next: () => {
-        this.allItems = this.allItems.filter(i => i.id !== this.itemToDelete!.id);
+        this.allItems = this.allItems.filter((i) => i.id !== this.itemToDelete!.id);
         this.applyFilters();
         if (this.currentPage > this.totalPages && this.totalPages > 0) {
           this.currentPage = this.totalPages;
@@ -333,31 +347,51 @@ export class Item implements OnInit, OnDestroy {
       error: () => {
         this.isDeleting = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
-  getCategoryEmoji(cat: string): string { return getCategoryEmoji(cat); }
-  getConditionClass(condition: ItemCondition): string { return getConditionClass(condition); }
-  getAvailabilityClass(availability: ItemAvailability): string { return getAvailabilityClass(availability); }
-  getAvailabilityLabel(availability: ItemAvailability): string { return getAvailabilityLabel(availability); }
+  getCategoryEmoji(cat: string): string {
+    return getCategoryEmoji(cat);
+  }
+  getConditionClass(condition: ItemCondition): string {
+    return getConditionClass(condition);
+  }
+  getAvailabilityClass(availability: ItemAvailability): string {
+    return getAvailabilityClass(availability);
+  }
+  getAvailabilityLabel(availability: ItemAvailability): string {
+    return getAvailabilityLabel(availability);
+  }
 
-  // "Approved" → shows as "Active" (green), never shows raw "Approved" text
+  /**
+   * Status class for the "My listings" admin view.
+   * Returns a status-chip--* class matching Monday's design language.
+   */
   getStatusClass(item: ItemListDto): string {
-    if (item.status === 'Approved' && item.isActive !== false) return 'status-active';
-    if (item.status === 'Pending') return 'status-pending';
-    if (item.status === 'Rejected') return 'status-rejected';
-    return 'status-inactive';
+    if (item.status === 'Approved' && item.isActive !== false) return 'status-chip--success';
+    if (item.status === 'Pending') return 'status-chip--warning';
+    if (item.status === 'Rejected') return 'status-chip--danger';
+    return 'status-chip--muted';
   }
 
   getStatusLabel(item: ItemListDto): string {
-    if (item.status === 'Approved' && item.isActive !== false) return 'Active';
-    if (item.status === 'Approved' && item.isActive === false) return 'Inactive';
+    if (item.status === 'Approved' && item.isActive !== false) return 'Aktiv';
+    if (item.status === 'Approved' && item.isActive === false) return 'Inaktiv';
+    if (item.status === 'Pending') return 'Afventer';
+    if (item.status === 'Rejected') return 'Afvist';
     return item.status;
   }
 
   getInitials(name: string): string {
-    return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) ?? '';
+    return (
+      name
+        ?.split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2) ?? ''
+    );
   }
 
   openAddModal(): void {
@@ -370,7 +404,7 @@ export class Item implements OnInit, OnDestroy {
         next: (res) => {
           this.categories = res.data ?? [];
           this.cdr.detectChanges();
-        }
+        },
       });
     }
   }
@@ -396,15 +430,13 @@ export class Item implements OnInit, OnDestroy {
       this.createError = 'Please fill in all required fields.';
       return;
     }
-    if (this.createPhotos.some(p => p.uploading)) {
+    if (this.createPhotos.some((p) => p.uploading)) {
       this.createError = 'Please wait for all photos to finish uploading.';
       return;
     }
 
     this.isCreating = true;
     this.createError = '';
-
-
 
     const { photoUrl, ...itemDto } = this.createForm;
     if (!itemDto.minLoanDays) itemDto.minLoanDays = undefined;
@@ -424,20 +456,24 @@ export class Item implements OnInit, OnDestroy {
           for (let i = 0; i < this.createPhotos.length; i++) {
             const photo = this.createPhotos[i];
             try {
-              const result = await this.itemService.addPhoto(created.id, {
-                photoUrl: photo.photoUrl,
-                isPrimary: i === 0,
-                displayOrder: i,
-              }).toPromise();
-              if (i === 0 && result?.data?.id) {
-                firstPhotoId = result.data.id;
-              }
-            } catch { /* best-effort */ }
+              const result = await this.itemService
+                .addPhoto(created.id, {
+                  photoUrl: photo.photoUrl,
+                  isPrimary: i === 0,
+                  displayOrder: i,
+                })
+                .toPromise();
+              if (i === 0 && result?.data?.id) firstPhotoId = result.data.id;
+            } catch {
+              /* best-effort */
+            }
           }
           if (firstPhotoId) {
             try {
               await this.itemService.setPrimaryPhoto(created.id, firstPhotoId).toPromise();
-            } catch { /* best-effort */ }
+            } catch {
+              /* best-effort */
+            }
           }
           this.finishCreate();
         };
@@ -448,7 +484,7 @@ export class Item implements OnInit, OnDestroy {
         this.createError = err.error?.message ?? 'Failed to create item.';
         this.isCreating = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -462,14 +498,16 @@ export class Item implements OnInit, OnDestroy {
   onAddressInput(value: string): void {
     clearTimeout(this.addressSearchTimeout);
     this.showAddressSuggestions = false;
-    if (!value || value.length < 3) { this.addressSuggestions = []; return; }
-
+    if (!value || value.length < 3) {
+      this.addressSuggestions = [];
+      return;
+    }
 
     this.addressSearchTimeout = setTimeout(() => {
       const url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(value)}&limit=5&apiKey=${this.GEOAPIFY_KEY}`;
       fetch(url)
-        .then(res => res.json())
-        .then(data => {
+        .then((res) => res.json())
+        .then((data) => {
           this.ngZone.run(() => {
             this.addressSuggestions = data.features ?? [];
             this.showAddressSuggestions = this.addressSuggestions.length > 0;
@@ -492,11 +530,17 @@ export class Item implements OnInit, OnDestroy {
   copyShareLink(slug: string, event: Event): void {
     event.stopPropagation();
     const shareUrl = `${window.location.origin}/items/${slug}`;
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      this.copiedSlug = slug;
-      this.cdr.detectChanges();
-      setTimeout(() => { this.copiedSlug = null; this.cdr.detectChanges(); }, 2000);
-    }).catch(err => console.error('Could not copy text:', err));
+    navigator.clipboard
+      .writeText(shareUrl)
+      .then(() => {
+        this.copiedSlug = slug;
+        this.cdr.detectChanges();
+        setTimeout(() => {
+          this.copiedSlug = null;
+          this.cdr.detectChanges();
+        }, 2000);
+      })
+      .catch((err) => console.error('Could not copy text:', err));
   }
 
   async onCreatePhotosSelected(event: Event): Promise<void> {
@@ -523,11 +567,16 @@ export class Item implements OnInit, OnDestroy {
         const url = await this.uploadService.uploadImage(file);
         const idx = this.createPhotos.indexOf(placeholder);
         if (idx !== -1) {
-          this.createPhotos[idx] = { ...this.createPhotos[idx], photoUrl: url, uploading: false, file: undefined };
+          this.createPhotos[idx] = {
+            ...this.createPhotos[idx],
+            photoUrl: url,
+            uploading: false,
+            file: undefined,
+          };
           this.createPhotos = [...this.createPhotos];
         }
       } catch {
-        this.createPhotos = this.createPhotos.filter(p => p !== placeholder);
+        this.createPhotos = this.createPhotos.filter((p) => p !== placeholder);
         this.createError = `Failed to upload ${file.name}.`;
       }
       this.cdr.detectChanges();
@@ -547,14 +596,18 @@ export class Item implements OnInit, OnDestroy {
     }));
   }
 
-  onCreateDragStart(index: number): void { this.dragSourceIndex = index; }
+  onCreateDragStart(index: number): void {
+    this.dragSourceIndex = index;
+  }
 
   onCreateDragOver(event: DragEvent, index: number): void {
     event.preventDefault();
     this.isDraggingOver = index;
   }
 
-  onCreateDragLeave(): void { this.isDraggingOver = null; }
+  onCreateDragLeave(): void {
+    this.isDraggingOver = null;
+  }
 
   onCreateDrop(event: DragEvent, targetIndex: number): void {
     event.preventDefault();
@@ -576,8 +629,4 @@ export class Item implements OnInit, OnDestroy {
     this.isDraggingOver = null;
     this.dragSourceIndex = null;
   }
-
-
-
-
 }

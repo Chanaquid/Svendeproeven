@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, NgZone } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { RegisterUserRequestDto } from '../../dtos/userDto';
 import { AuthService } from '../../services/authService';
 import { UploadImageService } from '../../services/uploadImageService';
+import { ThemeService } from '../../services/themeService';
 
 @Component({
   selector: 'app-register',
@@ -12,8 +13,8 @@ import { UploadImageService } from '../../services/uploadImageService';
   templateUrl: './register.html',
   styleUrl: './register.css',
 })
-
 export class Register {
+  readonly theme = inject(ThemeService);
 
   dto: RegisterUserRequestDto = {
     fullName: '',
@@ -36,6 +37,7 @@ export class Register {
   suggestions: any[] = [];
   showSuggestions = false;
   avatarPreview: string | null = null;
+  acceptedTerms = false;
   private avatarFile: File | null = null;
   private searchTimeout: any;
 
@@ -44,8 +46,7 @@ export class Register {
     private uploadService: UploadImageService,
     private router: Router,
     private cdr: ChangeDetectorRef,
-
-  ) { }
+  ) {}
 
   onAddressInput(value: string) {
     clearTimeout(this.searchTimeout);
@@ -61,26 +62,22 @@ export class Register {
       const url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(value)}&limit=5&apiKey=${apiKey}`;
 
       fetch(url)
-        .then(res => res.json())
-        .then(data => {
+        .then((res) => res.json())
+        .then((data) => {
           this.suggestions = data.features ?? [];
           this.showSuggestions = true;
-          console.log(data)
-
           this.cdr.detectChanges();
         });
     }, 400);
   }
 
-  //avatar pic
   onAvatarSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-
     if (!file) return;
 
     if (file.size > 4 * 1024 * 1024) {
-      this.errorMessage = 'Image must be under 4MB.';
+      this.errorMessage = 'Billedet skal være under 4 MB.';
       input.value = '';
       return;
     }
@@ -99,7 +96,6 @@ export class Register {
 
   selectSuggestion(place: any) {
     const props = place.properties;
-
     this.dto.address = props.formatted;
     this.dto.latitude = place.geometry.coordinates[1];
     this.dto.longitude = place.geometry.coordinates[0];
@@ -108,10 +104,9 @@ export class Register {
     this.cdr.detectChanges();
   }
 
-
   async register() {
     if (this.dto.password !== this.dto.confirmPassword) {
-      this.errorMessage = 'Passwords do not match';
+      this.errorMessage = 'Adgangskoderne stemmer ikke overens';
       return;
     }
 
@@ -122,18 +117,11 @@ export class Register {
     if (this.avatarFile) {
       try {
         this.isUploadingAvatar = true;
-
         const url = await this.uploadService.uploadAvatar(this.avatarFile);
-
-        console.log('Cloudinary URL:', url);
-
         this.dto.avatarUrl = url;
-
-        console.log('Avatar URL to be saved:', this.dto.avatarUrl);
-
       } catch (e) {
         console.error('Upload error:', e);
-        this.errorMessage = 'Image upload failed. Please try again.';
+        this.errorMessage = 'Billedoverførsel mislykkedes. Prøv igen.';
         this.isLoading = false;
         return;
       } finally {
@@ -144,7 +132,7 @@ export class Register {
     this.authService.register(this.dto).subscribe({
       next: () => {
         this.isLoading = false;
-        this.successMessage = 'Account created! Please check your email to confirm your account.';
+        this.successMessage = 'Konto oprettet! Tjek din e-mail for at bekræfte din konto.';
         this.dto = {
           fullName: '',
           email: '',
@@ -164,13 +152,10 @@ export class Register {
         setTimeout(() => this.router.navigate(['/login']), 2000);
       },
       error: (err) => {
-        this.errorMessage = err.error?.message ?? 'Registration failed. Please try again.';
+        this.errorMessage = err.error?.message ?? 'Registrering mislykkedes. Prøv igen.';
         this.isLoading = false;
         this.cdr.detectChanges();
       },
     });
   }
-
-
-
 }

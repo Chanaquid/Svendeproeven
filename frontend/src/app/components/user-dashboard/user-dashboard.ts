@@ -3,7 +3,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { Navbar } from "../navbar/navbar";
+import { Navbar } from '../navbar/navbar';
 import { DeleteAccountDto, UpdateProfileDto, UserProfileDto } from '../../dtos/userDto';
 import { ItemListDto } from '../../dtos/itemDto';
 import { LoanListDto } from '../../dtos/loanDto';
@@ -20,7 +20,6 @@ import { ScoreHistoryService } from '../../services/scoreHistoryService';
 import { ItemStatus } from '../../dtos/enums';
 import { take } from 'rxjs';
 
-
 @Component({
   selector: 'app-user-dashboard',
   imports: [CommonModule, RouterLink, FormsModule, Navbar],
@@ -28,7 +27,6 @@ import { take } from 'rxjs';
   styleUrl: './user-dashboard.css',
 })
 export class UserDashboard implements OnInit {
-
   // Data
   profile: UserProfileDto | null = null;
   showAvatarModal = false;
@@ -48,7 +46,6 @@ export class UserDashboard implements OnInit {
   loanView: 'borrowed' | 'lent' = 'borrowed';
 
   PAGE_SIZE = 10;
-
 
   // --- Items pagination ---
   itemsPage = 1;
@@ -124,10 +121,24 @@ export class UserDashboard implements OnInit {
   ];
 
   private emojiMap: Record<string, string> = {
-    electronics: '📱', tools: '🔧', sports: '⚽', music: '🎸',
-    books: '📚', camping: '⛺', photography: '📷', gaming: '🎮',
-    gardening: '🌱', biking: '🚲', kitchen: '🍳', cleaning: '🧹',
-    fashion: '👗', art: '🎨', baby: '👶', events: '🎉', auto: '🚗', other: '📦',
+    electronics: '📱',
+    tools: '🔧',
+    sports: '⚽',
+    music: '🎸',
+    books: '📚',
+    camping: '⛺',
+    photography: '📷',
+    gaming: '🎮',
+    gardening: '🌱',
+    biking: '🚲',
+    kitchen: '🍳',
+    cleaning: '🧹',
+    fashion: '👗',
+    art: '🎨',
+    baby: '👶',
+    events: '🎉',
+    auto: '🚗',
+    other: '📦',
   };
 
   constructor(
@@ -138,10 +149,10 @@ export class UserDashboard implements OnInit {
     private fineService: FineService,
     private scoreHistoryService: ScoreHistoryService,
     private verificationService: VerificationRequestService,
-    public  router: Router,
+    private router: Router,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
-  ) { }
+  ) {}
 
   ngOnInit() {
     if (!this.authService.isLoggedIn()) {
@@ -149,7 +160,7 @@ export class UserDashboard implements OnInit {
       return;
     }
 
-    this.route.queryParams.pipe(take(1)).subscribe(params => {
+    this.route.queryParams.pipe(take(1)).subscribe((params) => {
       this.activeTab = (params['tab'] as any) || 'items';
       this.loanView = (params['loanView'] as any) || 'borrowed';
       this.itemsPage = +params['itemsPage'] || 1;
@@ -191,7 +202,9 @@ export class UserDashboard implements OnInit {
     });
   }
 
-  openAvatarModal(): void { this.showAvatarModal = true; }
+  openAvatarModal(): void {
+    this.showAvatarModal = true;
+  }
 
   resetPasswordForm() {
     this.passwordForm = { currentPassword: '', newPassword: '', confirmPassword: '' };
@@ -237,23 +250,27 @@ export class UserDashboard implements OnInit {
         this.loadedFlags.items = true;
 
         if (page === 1) {
-          this.itemService.getMyItems(
-            { status: ItemStatus.Approved, isActive: true },
-            { page: 1, pageSize: 1, sortDescending: true }
-          ).subscribe({
-            next: (r) => {
-              this.totalActiveItems = r.data?.totalCount ?? 0;
-              this.checkAndBuildStats();
-              this.cdr.detectChanges(); // ← no syncQueryParams here
-            }
-          });
+          this.itemService
+            .getMyItems(
+              { status: ItemStatus.Approved, isActive: true },
+              { page: 1, pageSize: 1, sortDescending: true },
+            )
+            .subscribe({
+              next: (r) => {
+                this.totalActiveItems = r.data?.totalCount ?? 0;
+                this.checkAndBuildStats();
+                this.cdr.detectChanges();
+              },
+            });
         }
 
         this.checkAndBuildStats();
-        this.syncQueryParams(); // ← only here
+        this.syncQueryParams();
         this.cdr.detectChanges();
       },
-      error: () => { this.itemsLoading = false; },
+      error: () => {
+        this.itemsLoading = false;
+      },
     });
   }
 
@@ -263,6 +280,13 @@ export class UserDashboard implements OnInit {
     this.loanService.getMyAsBorrower({}, this.pagedRequest(page, 5)).subscribe({
       next: (res) => {
         this.borrowedResult = res.data;
+
+        // Auto-correct: hvis siden er tom men der findes lån, hop til side 1
+        if (page > 1 && (res.data?.items?.length ?? 0) === 0 && (res.data?.totalCount ?? 0) > 0) {
+          this.loadBorrowedLoans(1);
+          return;
+        }
+
         this.borrowedLoading = false;
 
         this.loadedFlags.loans = true;
@@ -287,12 +311,7 @@ export class UserDashboard implements OnInit {
       next: (res) => {
         this.lentResult = res.data;
 
-        // Auto-correct: if the page is empty but items exist, go back to page 1
-        if (
-          page > 1 &&
-          (res.data?.items?.length ?? 0) === 0 &&
-          (res.data?.totalCount ?? 0) > 0
-        ) {
+        if (page > 1 && (res.data?.items?.length ?? 0) === 0 && (res.data?.totalCount ?? 0) > 0) {
           this.loadLentLoans(1);
           return;
         }
@@ -318,7 +337,9 @@ export class UserDashboard implements OnInit {
         this.syncQueryParams();
         this.cdr.detectChanges();
       },
-      error: () => { this.scoreLoading = false; },
+      error: () => {
+        this.scoreLoading = false;
+      },
     });
   }
 
@@ -339,13 +360,18 @@ export class UserDashboard implements OnInit {
 
   private loadVerificationStatus(): void {
     if (this.profile?.isVerified) return;
-    this.verificationService.getMyRequests({}, { page: 1, pageSize: 1, sortDescending: true }).subscribe({
-      next: (res) => {
-        this.verificationStatus = res.data?.items?.[0]?.status ?? null;
-        this.cdr.detectChanges();
-      },
-      error: () => { this.verificationStatus = null; this.cdr.detectChanges(); },
-    });
+    this.verificationService
+      .getMyRequests({}, { page: 1, pageSize: 1, sortDescending: true })
+      .subscribe({
+        next: (res) => {
+          this.verificationStatus = res.data?.items?.[0]?.status ?? null;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.verificationStatus = null;
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   // ── Stats ─────────────────────────────────────────────────
@@ -360,14 +386,16 @@ export class UserDashboard implements OnInit {
 
   private buildStats() {
     const allLoans = this.borrowedResult?.items ?? [];
-    const activeLoans = allLoans.filter(l => l.status === 'Active' || l.status === 'Approved').length;
+    const activeLoans = allLoans.filter(
+      (l) => l.status === 'Active' || l.status === 'Approved',
+    ).length;
     const completedLoans = this.profile?.totalCompletedLoans ?? 0;
     const totalFinesPaid = this.myFines
-      .filter(f => f.status === 'Paid')
+      .filter((f) => f.status === 'Paid')
       .reduce((sum, f) => sum + f.amount, 0);
 
     this.stats = [
-      { icon: '📦', value: this.totalActiveItems, label: 'Active items' }, // ← uses total, not page slice
+      { icon: '📦', value: this.totalActiveItems, label: 'Active items' },
       { icon: '🤝', value: activeLoans, label: 'Active loans' },
       { icon: '✅', value: completedLoans, label: 'Completed loans' },
       { icon: '💸', value: totalFinesPaid, currency: 'kr', label: 'Total fines paid' },
@@ -376,10 +404,18 @@ export class UserDashboard implements OnInit {
 
   // ── Pagination helpers ────────────────────────────────────
 
-  get itemPages(): number[] { return this.pageRange(this.itemsResult?.totalPages ?? 1); }
-  get borrowedPages(): number[] { return this.pageRange(this.borrowedResult?.totalPages ?? 1); }
-  get lentPages(): number[] { return this.pageRange(this.lentResult?.totalPages ?? 1); }
-  get scorePages(): number[] { return this.pageRange(this.scoreResult?.totalPages ?? 1); }
+  get itemPages(): number[] {
+    return this.pageRange(this.itemsResult?.totalPages ?? 1);
+  }
+  get borrowedPages(): number[] {
+    return this.pageRange(this.borrowedResult?.totalPages ?? 1);
+  }
+  get lentPages(): number[] {
+    return this.pageRange(this.lentResult?.totalPages ?? 1);
+  }
+  get scorePages(): number[] {
+    return this.pageRange(this.scoreResult?.totalPages ?? 1);
+  }
 
   private pageRange(total: number): number[] {
     return Array.from({ length: total }, (_, i) => i + 1);
@@ -391,22 +427,24 @@ export class UserDashboard implements OnInit {
     if (!this.verifyForm.documentUrl || !this.verifyForm.documentType) return;
     this.isSubmittingVerify = true;
     this.verifyError = '';
-    this.verificationService.submitRequest({
-      documentUrl: this.verifyForm.documentUrl,
-      documentType: this.verifyForm.documentType as any,
-    }).subscribe({
-      next: () => {
-        this.verificationStatus = 'Pending';
-        this.isSubmittingVerify = false;
-        this.showVerifyModal = false;
-        this.verifyForm = { documentUrl: '', documentType: '' };
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        this.verifyError = err.error?.message ?? 'Something went wrong.';
-        this.isSubmittingVerify = false;
-      },
-    });
+    this.verificationService
+      .submitRequest({
+        documentUrl: this.verifyForm.documentUrl,
+        documentType: this.verifyForm.documentType as any,
+      })
+      .subscribe({
+        next: () => {
+          this.verificationStatus = 'Pending';
+          this.isSubmittingVerify = false;
+          this.showVerifyModal = false;
+          this.verifyForm = { documentUrl: '', documentType: '' };
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.verifyError = err.error?.message ?? 'Something went wrong.';
+          this.isSubmittingVerify = false;
+        },
+      });
   }
 
   saveProfile() {
@@ -420,8 +458,8 @@ export class UserDashboard implements OnInit {
         if (res.data) this.profile = res.data as any;
         this.isSaving = false;
         this.updateSuccess = true;
-        this.editMode = false;        // collapse immediately
-        this.cdr.detectChanges();     // force Angular to pick up all three changes at once
+        this.editMode = false;
+        this.cdr.detectChanges();
 
         setTimeout(() => {
           this.updateSuccess = false;
@@ -438,39 +476,44 @@ export class UserDashboard implements OnInit {
 
   changePassword() {
     if (!this.passwordForm.currentPassword || !this.passwordForm.newPassword) {
-      this.passwordError = 'All fields are required.'; return;
+      this.passwordError = 'All fields are required.';
+      return;
     }
     if (this.passwordForm.newPassword !== this.passwordForm.confirmPassword) {
-      this.passwordError = 'Passwords do not match.'; return;
+      this.passwordError = 'Passwords do not match.';
+      return;
     }
     if (this.passwordForm.newPassword.length < 6) {
-      this.passwordError = 'Password must be at least 6 characters.'; return;
+      this.passwordError = 'Password must be at least 6 characters.';
+      return;
     }
     this.isSavingPassword = true;
     this.passwordSuccess = false;
     this.passwordError = '';
-    this.authService.changePassword({
-      currentPassword: this.passwordForm.currentPassword,
-      newPassword: this.passwordForm.newPassword,
-      confirmNewPassword: this.passwordForm.confirmPassword,
-    }).subscribe({
-      next: () => {
-        this.isSavingPassword = false;
-        this.passwordSuccess = true;
-        this.passwordMode = false;
-        this.resetPasswordForm();
-        this.cdr.detectChanges();
-        setTimeout(() => {
-          this.passwordSuccess = false;
+    this.authService
+      .changePassword({
+        currentPassword: this.passwordForm.currentPassword,
+        newPassword: this.passwordForm.newPassword,
+        confirmNewPassword: this.passwordForm.confirmPassword,
+      })
+      .subscribe({
+        next: () => {
+          this.isSavingPassword = false;
+          this.passwordSuccess = true;
+          this.passwordMode = false;
+          this.resetPasswordForm();
           this.cdr.detectChanges();
-        }, 2500);
-      },
-      error: (err) => {
-        this.passwordError = err.error?.message ?? 'Failed to update password.';
-        this.isSavingPassword = false;
-        this.cdr.detectChanges();
-      },
-    });
+          setTimeout(() => {
+            this.passwordSuccess = false;
+            this.cdr.detectChanges();
+          }, 2500);
+        },
+        error: (err) => {
+          this.passwordError = err.error?.message ?? 'Failed to update password.';
+          this.isSavingPassword = false;
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   verifyDeletePassword() {
@@ -481,7 +524,6 @@ export class UserDashboard implements OnInit {
 
     this.userService.deleteAccount({ password: this.deletePassword }).subscribe({
       next: () => {
-        // Password was correct and account is deleted — show final confirm before redirect
         this.isDeletingAccount = false;
         this.showDeleteFinalConfirm = true;
         this.cdr.detectChanges();
@@ -503,11 +545,16 @@ export class UserDashboard implements OnInit {
   onAddressInput(value: string) {
     clearTimeout(this.addressSearchTimeout);
     this.showAddressSuggestions = false;
-    if (!value || value.length < 3) { this.addressSuggestions = []; return; }
+    if (!value || value.length < 3) {
+      this.addressSuggestions = [];
+      return;
+    }
     this.addressSearchTimeout = setTimeout(() => {
-      fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(value)}&limit=5`)
-        .then(res => res.json())
-        .then(data => {
+      fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(value)}&limit=5`,
+      )
+        .then((res) => res.json())
+        .then((data) => {
           this.addressSuggestions = data;
           this.showAddressSuggestions = true;
           this.cdr.detectChanges();
@@ -530,48 +577,55 @@ export class UserDashboard implements OnInit {
     this.cdr.detectChanges();
   }
 
-  goToItem(slug: string) { this.router.navigate(['/items', slug]); }
-  goToLoan(id: number) { this.router.navigate(['/loans', id]); }
-  goToBlockedUsers() { this.router.navigate(['/blocked-user']); }
+  goToItem(slug: string) {
+    this.router.navigate(['/items', slug]);
+  }
+  goToLoan(id: number) {
+    this.router.navigate(['/loans', id]);
+  }
+  goToBlockedUsers() {
+    this.router.navigate(['/blocked-users']);
+  }
 
   getInitials(name: string): string {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   }
 
   getCategoryEmoji(cat: string): string {
     return this.emojiMap[cat.toLowerCase()] ?? '📦';
   }
 
-getLoanStatusClass(status: string): string {
-  // Normalize to handle potential Enum casing differences
-  switch (status) {
-    case 'Completed': 
-      return 'bg-emerald-400/10 text-emerald-400'; // Green
-    
-    case 'Pending':
-    case 'AdminPending': 
-      return 'bg-amber-400/10 text-amber-400'; // Yellow
-    
-    case 'Active': 
-      return 'bg-sky-400/10 text-sky-400'; // Sky Blue
-    
-    case 'Late': 
-      return 'bg-orange-500/10 text-orange-500'; // Orange
-    
-    case 'Rejected': 
-      return 'bg-red-500/10 text-red-500'; // Red
-    
-    case 'Cancelled': 
-      return 'bg-zinc-500/10 text-zinc-500'; // Grey
-    
-    case 'Extended': 
-      return 'bg-indigo-400/10 text-indigo-400'; // Indigo (Standout state)
-    
-    case 'Approved':
-      return 'bg-blue-400/10 text-blue-400'; // Darker Blue (Waiting for pickup)
-      
-    default: 
-      return 'bg-zinc-700 text-zinc-400';
+  /**
+   * Returns a CSS class name for loan status badges. In Monday's monochrome
+   * design language, status variants are communicated by subtle border color
+   * shifts plus a text color — not heavy filled backgrounds.
+   */
+  getLoanStatusClass(status: string): string {
+    switch (status) {
+      case 'Completed':
+        return 'status-chip--success';
+      case 'Pending':
+      case 'AdminPending':
+        return 'status-chip--warning';
+      case 'Active':
+        return 'status-chip--info';
+      case 'Late':
+        return 'status-chip--warning';
+      case 'Rejected':
+        return 'status-chip--danger';
+      case 'Cancelled':
+        return 'status-chip--muted';
+      case 'Extended':
+        return 'status-chip--info';
+      case 'Approved':
+        return 'status-chip--info';
+      default:
+        return 'status-chip--muted';
+    }
   }
-}
 }

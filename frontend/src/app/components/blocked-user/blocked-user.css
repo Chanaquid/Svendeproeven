@@ -1,0 +1,65 @@
+/* Blocked-user — minimal. styles.css covers .page, .list-row, .modal, .badge etc. */
+
+.bu-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.bu-toolbar .input { flex: 1; min-width: 200px; }
+.bu-toolbar .select { width: auto; min-width: 140px; }
+
+.bu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.bu-list .list-row {
+  cursor: default;
+}
+
+.bu-list .list-row:hover {
+  border-color: var(--color-border-soft);
+  background: var(--color-surface);
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: var(--color-surface-alt);
+  border-color: var(--color-border);
+}
+
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.page-btn--active {
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  border-color: var(--color-primary);
+}
+
+.page-ellipsis {
+  padding: 0 6px;
+  color: var(--color-text-muted);
+}

@@ -36,27 +36,25 @@ interface Tab {
   styleUrl: './report.css',
 })
 export class Report implements OnInit, OnChanges, OnDestroy {
-
   @Input() openReportId: number | null = null;
 
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
   private resizeHandler = () => { this.currentPage = 1; this.loadReports(); };
 
-  // Expose enum to template
   ReportStatus = ReportStatus;
+  ReportType = ReportType;
 
   isLoading = true;
 
   tabs: Tab[] = [
-    { id: 'all',       label: 'All',       icon: '▤' },
-    { id: 'pending',   label: 'Pending',   icon: '⏳', status: ReportStatus.Pending },
-    { id: 'resolved',  label: 'Resolved',  icon: '✓',  status: ReportStatus.Resolved },
-    { id: 'dismissed', label: 'Dismissed', icon: '✕',  status: ReportStatus.Dismissed },
+    { id: 'all',       label: 'Alle',     icon: '▤' },
+    { id: 'pending',   label: 'Afventer', icon: '⏳', status: ReportStatus.Pending },
+    { id: 'resolved',  label: 'Afgjort',  icon: '✓',  status: ReportStatus.Resolved },
+    { id: 'dismissed', label: 'Afvist',   icon: '✕',  status: ReportStatus.Dismissed },
   ];
   activeTab: TabId = 'all';
 
-  // List state
   reports: ReportListDto[] = [];
   listLoading = false;
   listError: string | null = null;
@@ -65,7 +63,6 @@ export class Report implements OnInit, OnChanges, OnDestroy {
   searchQuery = '';
   sortFilter = 'newest';
 
-  // Detail state
   selectedId: number | null = null;
   selectedReport: ReportDto | null = null;
   detailLoading = false;
@@ -75,7 +72,6 @@ export class Report implements OnInit, OnChanges, OnDestroy {
     private cdr: ChangeDetectorRef,
   ) {}
 
-  // ─── Dynamic page size (height-driven like dispute) ───────────────────────────
   get pageSize(): number {
     const availableHeight = window.innerHeight - 64 - 52 - 48 - 80;
     return Math.max(5, Math.floor(availableHeight / 110));
@@ -84,20 +80,16 @@ export class Report implements OnInit, OnChanges, OnDestroy {
   get totalPages(): number { return getTotalPages(this.totalCount, this.pageSize); }
   get pageNumbers(): number[] { return getPageNumbers(this.currentPage, this.totalPages); }
 
-  // ─── Lifecycle ────────────────────────────────────────────────────────────────
-
   ngOnInit(): void {
     this.loadReports();
     this.loadTabCounts();
 
-    this.searchSubject.pipe(
-      debounceTime(350),
-      distinctUntilChanged(),
-      takeUntil(this.destroy$)
-    ).subscribe(() => {
-      this.currentPage = 1;
-      this.loadReports();
-    });
+    this.searchSubject
+      .pipe(debounceTime(350), distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.currentPage = 1;
+        this.loadReports();
+      });
 
     window.addEventListener('resize', this.resizeHandler);
   }
@@ -114,13 +106,11 @@ export class Report implements OnInit, OnChanges, OnDestroy {
     this.destroy$.complete();
   }
 
-  // ─── Load ─────────────────────────────────────────────────────────────────────
-
   loadReports(): void {
     if (this.isLoading) this.listLoading = true;
     this.listError = null;
 
-    const status = this.tabs.find(t => t.id === this.activeTab)?.status ?? undefined;
+    const status = this.tabs.find((t) => t.id === this.activeTab)?.status ?? undefined;
 
     const filter: ReportFilter = {
       search: this.searchQuery.trim() || null,
@@ -134,39 +124,49 @@ export class Report implements OnInit, OnChanges, OnDestroy {
       sortDescending: this.sortFilter !== 'oldest',
     };
 
-    this.reportService.getMy(filter, request)
-      .pipe(takeUntil(this.destroy$), finalize(() => {
-        this.listLoading = false;
-        this.isLoading = false;
-        this.cdr.markForCheck();
-      }))
+    this.reportService
+      .getMy(filter, request)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.listLoading = false;
+          this.isLoading = false;
+          this.cdr.markForCheck();
+        }),
+      )
       .subscribe({
         next: (res) => {
           if (res.success && res.data) {
             this.reports = res.data.items;
             this.totalCount = res.data.totalCount;
-            const tab = this.tabs.find(t => t.id === this.activeTab);
+            const tab = this.tabs.find((t) => t.id === this.activeTab);
             if (tab) tab.count = res.data.totalCount;
           } else {
-            this.listError = res.message || 'Failed to load reports.';
+            this.listError = res.message || 'Kunne ikke hente anmeldelser.';
           }
         },
-        error: () => { this.listError = 'An error occurred. Please try again.'; },
+        error: () => {
+          this.listError = 'Der opstod en fejl. Prøv igen.';
+        },
       });
   }
 
   private loadTabCounts(): void {
     const req: PagedRequest = { page: 1, pageSize: 1, sortBy: 'createdAt', sortDescending: true };
 
-    // All count
-    this.reportService.getMy({}, req).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (res) => {
-        const tab = this.tabs.find(t => t.id === 'all');
-        if (tab && res.data) { tab.count = res.data.totalCount; this.cdr.markForCheck(); }
-      }
-    });
+    this.reportService
+      .getMy({}, req)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          const tab = this.tabs.find((t) => t.id === 'all');
+          if (tab && res.data) {
+            tab.count = res.data.totalCount;
+            this.cdr.markForCheck();
+          }
+        },
+      });
 
-    // Status counts
     const statusTabs: { id: TabId; status: ReportStatus }[] = [
       { id: 'pending',   status: ReportStatus.Pending },
       { id: 'resolved',  status: ReportStatus.Resolved },
@@ -174,12 +174,18 @@ export class Report implements OnInit, OnChanges, OnDestroy {
     ];
 
     for (const { id, status } of statusTabs) {
-      this.reportService.getMy({ status }, req).pipe(takeUntil(this.destroy$)).subscribe({
-        next: (res) => {
-          const tab = this.tabs.find(t => t.id === id);
-          if (tab && res.data) { tab.count = res.data.totalCount; this.cdr.markForCheck(); }
-        }
-      });
+      this.reportService
+        .getMy({ status }, req)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (res) => {
+            const tab = this.tabs.find((t) => t.id === id);
+            if (tab && res.data) {
+              tab.count = res.data.totalCount;
+              this.cdr.markForCheck();
+            }
+          },
+        });
     }
   }
 
@@ -190,26 +196,26 @@ export class Report implements OnInit, OnChanges, OnDestroy {
     this.detailLoading = true;
     this.cdr.markForCheck();
 
-    this.reportService.getById(id)
-      .pipe(takeUntil(this.destroy$), finalize(() => {
-        this.detailLoading = false;
-        this.cdr.markForCheck();
-      }))
+    this.reportService
+      .getById(id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.detailLoading = false;
+          this.cdr.markForCheck();
+        }),
+      )
       .subscribe({
         next: (res) => {
-          if (res.success && res.data) {
-            this.selectedReport = res.data;
-          }
+          if (res.success && res.data) this.selectedReport = res.data;
         },
         error: () => {
           this.selectedId = null;
-          this.listError = 'Failed to load report details.';
+          this.listError = 'Kunne ikke indlæse anmeldelse.';
           this.cdr.markForCheck();
         },
       });
   }
-
-  // ─── Tabs & filters ───────────────────────────────────────────────────────────
 
   switchTab(tab: TabId): void {
     this.activeTab = tab;
@@ -232,38 +238,49 @@ export class Report implements OnInit, OnChanges, OnDestroy {
 
   trackById(_: number, r: ReportListDto): number { return r.id; }
 
-  // ─── UI helpers ───────────────────────────────────────────────────────────────
-
-  getStatusClass(status: ReportStatus | string): string {
+  getStatusBadge(status: ReportStatus | string): string {
     switch (status) {
-      case ReportStatus.Pending:   return 'bg-amber-400/10 text-amber-400 border-amber-400/20';
-      case ReportStatus.Resolved:  return 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20';
-      case ReportStatus.Dismissed: return 'bg-zinc-700 text-zinc-400 border-zinc-700';
-      default:                     return 'bg-zinc-800 text-zinc-400 border-zinc-700';
+      case ReportStatus.Pending:   return 'badge badge-warning';
+      case ReportStatus.Resolved:  return 'badge badge-success';
+      case ReportStatus.Dismissed: return 'badge';
+      default:                     return 'badge';
     }
   }
 
-  getTypeBadgeClass(type: ReportType | string): string {
+  getStatusLabel(status: ReportStatus | string): string {
+    switch (status) {
+      case ReportStatus.Pending:   return 'Afventer';
+      case ReportStatus.Resolved:  return 'Afgjort';
+      case ReportStatus.Dismissed: return 'Afvist';
+      default:                     return status as string;
+    }
+  }
+
+  getTypeBadge(type: ReportType | string): string {
     switch (type) {
-      case ReportType.User: return 'bg-blue-400/10 text-blue-400';
-      case ReportType.Item: return 'bg-purple-400/10 text-purple-400';
-      default:              return 'bg-zinc-800 text-zinc-400';
+      case ReportType.User: return 'badge badge-info';
+      case ReportType.Item: return 'badge badge-warning';
+      default:              return 'badge';
+    }
+  }
+
+  getTypeLabel(type: ReportType | string): string {
+    switch (type) {
+      case ReportType.User: return 'Bruger';
+      case ReportType.Item: return 'Annonce';
+      default:              return type as string;
     }
   }
 
   getReasonLabel(reason: ReportReason | string): string {
     switch (reason) {
-      case ReportReason.FakeIdentity:          return 'Fake Identity';
-      case ReportReason.Scammer:               return 'Scammer';
-      case ReportReason.Harassment:            return 'Harassment';
-      case ReportReason.InappropriateContent:  return 'Inappropriate Content';
-      case ReportReason.Spam:                  return 'Spam';
-      case ReportReason.Other:                 return 'Other';
-      default:                                 return reason as string;
+      case ReportReason.FakeIdentity:         return 'Falsk identitet';
+      case ReportReason.Scammer:              return 'Svindler';
+      case ReportReason.Harassment:           return 'Chikane';
+      case ReportReason.InappropriateContent: return 'Upassende indhold';
+      case ReportReason.Spam:                 return 'Spam';
+      case ReportReason.Other:                return 'Andet';
+      default:                                return reason as string;
     }
-  }
-
-  getDefaultAvatar(name: string): string {
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=27272a&color=a1a1aa&size=80`;
   }
 }
