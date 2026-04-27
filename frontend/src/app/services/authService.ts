@@ -16,12 +16,13 @@ import {
   RegisterUserResponseDto,
 } from '../dtos/userDto';
 import { ApiResponse } from '../dtos/apiResponseDto';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  private readonly baseUrl = 'https://localhost:7183/api/auth';
+  private readonly baseUrl = `${environment.apiUrl}/auth`;
 
   private _scheduleWarning?: () => void;
   setScheduler(fn: () => void): void {

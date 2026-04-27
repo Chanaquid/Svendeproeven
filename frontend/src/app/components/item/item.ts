@@ -17,6 +17,7 @@ import {
   getAvailabilityLabel,
 } from '../../utils/item.utils';
 import { UploadImageService } from '../../services/uploadImageService';
+import { environment } from '../../../environments/environment';
 
 interface EditablePhoto {
   photoUrl: string;
@@ -77,7 +78,7 @@ export class Item implements OnInit, OnDestroy {
   sortLabel = 'newest';
 
   // Address api
-  private readonly GEOAPIFY_KEY = '6efe16ed3bb047b8975d6f4738a471a9';
+  private readonly GEOAPIFY_KEY = environment.geoapifyKey;
 
   get pageSize(): number {
     const cardMinWidth = 240;

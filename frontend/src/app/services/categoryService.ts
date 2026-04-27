@@ -3,12 +3,13 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResponse } from '../dtos/apiResponseDto';
 import { CategoryDto, CreateCategoryDto, UpdateCategoryDto } from '../dtos/categoryDto';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class CategoryService {
-  private readonly baseUrl = 'https://localhost:7183/api/categories';
+  private readonly baseUrl = `${environment.apiUrl}/categories`;
 
   constructor(private http: HttpClient) {}
 

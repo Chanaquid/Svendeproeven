@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import * as signalR from '@microsoft/signalr';
 import { AuthService } from './authService';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -10,7 +11,7 @@ export class NotificationHubService {
 
   constructor(private authService: AuthService) {
     this.connection = new signalR.HubConnectionBuilder()
-      .withUrl('https://localhost:7183/hubs/notifications', {
+      .withUrl(`${environment.baseUrl}/hubs/notifications`, {
         accessTokenFactory: () => this.authService.getToken() ?? '',
       })
       .withAutomaticReconnect()

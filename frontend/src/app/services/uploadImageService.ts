@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 type UploadResponse = {
   url: string;
@@ -8,7 +9,7 @@ type UploadResponse = {
 
 @Injectable({ providedIn: 'root' })
 export class UploadImageService {
-  private readonly baseUrl = 'https://localhost:7183/api/upload/image';
+  private readonly baseUrl = `${environment.apiUrl}/upload/image`;
 
   constructor(private http: HttpClient) {}
 

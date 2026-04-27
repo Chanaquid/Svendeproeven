@@ -5,12 +5,13 @@ import { ApiResponse } from '../dtos/apiResponseDto';
 import { PagedRequest, PagedResult } from '../dtos/paginationDto';
 import { UserBlockDto, UserBlockListDto } from '../dtos/userBlockDto';
 import { UserBlockFilter } from '../dtos/filterDto';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class UserBlockService {
-  private readonly baseUrl = 'https://localhost:7183/api/blocks';
+  private readonly baseUrl = `${environment.apiUrl}/blocks`;
 
   constructor(private http: HttpClient) {}
 

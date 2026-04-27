@@ -16,13 +16,14 @@ import {
   ScanQrCodeDto,
 } from '../dtos/loanDto';
 import { LoanFilter } from '../dtos/filterDto';
+import { environment } from '../../environments/environment';
 
 
 @Injectable({
   providedIn: 'root',
 })
 export class LoanService {
-  private readonly baseUrl = 'https://localhost:7183/api/loans';
+  private readonly baseUrl = `${environment.apiUrl}/loans`;
 
   constructor(private http: HttpClient) {}
 

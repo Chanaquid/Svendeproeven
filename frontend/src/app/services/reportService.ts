@@ -9,12 +9,13 @@ import {
   ReportDto,
 } from '../dtos/reportDto';
 import { ReportFilter } from '../dtos/filterDto';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ReportService {
-  private readonly baseUrl = 'https://localhost:7183/api/reports';
+  private readonly baseUrl = `${environment.apiUrl}/reports`;
 
   constructor(private http: HttpClient) {}
 

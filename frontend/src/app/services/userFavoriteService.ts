@@ -13,12 +13,13 @@ import {
   UserFavoriteItemListDto
 } from '../dtos/userFavoriteItemDto';
 import { ItemListDto } from '../dtos/itemDto';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class UserFavoriteService {
-  private readonly baseUrl = 'https://localhost:7183/api/favorites';
+  private readonly baseUrl = `${environment.apiUrl}/favorites`;
 
   constructor(private http: HttpClient) {}
 

@@ -15,12 +15,13 @@ import {
 } from '../dtos/fineDto';
 import { FineFilter } from '../dtos/filterDto';
 import { FineStatus } from '../dtos/enums';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class FineService {
-  private readonly baseUrl = 'https://localhost:7183/api/fines';
+  private readonly baseUrl = `${environment.apiUrl}/fines`;
 
   constructor(private http: HttpClient) {}
 

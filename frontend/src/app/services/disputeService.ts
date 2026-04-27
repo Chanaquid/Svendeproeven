@@ -15,10 +15,11 @@ import { DisputeFilter } from '../dtos/filterDto';
 import { DisputeStatus } from '../dtos/enums';
 import { ApiResponse } from '../dtos/apiResponseDto';
 import { PagedRequest, PagedResult } from '../dtos/paginationDto';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class DisputeService {
-  private readonly baseUrl = 'https://localhost:7183/api/disputes';
+  private readonly baseUrl = `${environment.apiUrl}/disputes`;
 
   constructor(private http: HttpClient) {}
 

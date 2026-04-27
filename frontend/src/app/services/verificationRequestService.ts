@@ -9,10 +9,11 @@ import {
   AdminDecideVerificationRequestDto,
 } from '../dtos/verificationRequestDto';
 import { VerificationRequestFilter } from '../dtos/filterDto';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class VerificationRequestService {
-  private readonly baseUrl = 'https://localhost:7183/api/verification';
+  private readonly baseUrl = `${environment.apiUrl}/verification`;
 
   constructor(private http: HttpClient) {}
 

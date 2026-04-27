@@ -18,6 +18,7 @@ import { UserBanHistoryService } from '../../services/userBanHistoryService';
 import { ReportService } from '../../services/reportService';
 import { SupportService } from '../../services/supportService';
 import { FineService } from '../../services/fineService';
+import { environment } from '../../../environments/environment';
 
 type TabKey = 'all' | 'verified' | 'unverified' | 'admin' | 'banned' | 'deleted';
 
@@ -407,7 +408,7 @@ export class AdminUser implements OnInit, OnDestroy {
     this.showAddressSuggestions = false;
     if (!value || value.length < 3) { this.addressSuggestions = []; return; }
     this.addressTimeout = setTimeout(() => {
-      const apiKey = '6efe16ed3bb047b8975d6f4738a471a9';
+      const apiKey = environment.geoapifyKey;
       fetch(`https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(value)}&limit=5&apiKey=${apiKey}`)
         .then(r => r.json())
         .then(data => { this.addressSuggestions = data.features ?? []; this.showAddressSuggestions = true; this.cdr.detectChanges(); });

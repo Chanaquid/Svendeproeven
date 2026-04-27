@@ -10,12 +10,13 @@ import {
   UpdateItemReviewDto,
 } from '../dtos/itemReviewDto';
 import { ItemReviewFilter } from '../dtos/filterDto';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ItemReviewService {
-  private readonly baseUrl = 'https://localhost:7183/api/items';
+  private readonly baseUrl = `${environment.apiUrl}/items`;
 
   constructor(private http: HttpClient) {}
 

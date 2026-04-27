@@ -14,12 +14,13 @@ import {
   SupportMessageDto,
 } from '../dtos/supportMessageDto';
 import { SupportThreadFilter } from '../dtos/filterDto';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class SupportService {
-  private readonly baseUrl = 'https://localhost:7183/api/support';
+  private readonly baseUrl = `${environment.apiUrl}/support`;
 
   constructor(private http: HttpClient) {}
 

@@ -15,12 +15,13 @@ import {
 } from '../dtos/itemDto';
 import { AddItemPhotoDto } from '../dtos/itemPhotoDto';
 import { ItemFilter } from '../dtos/filterDto';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ItemService {
-  private readonly baseUrl = 'https://localhost:7183/api/items';
+  private readonly baseUrl = `${environment.apiUrl}/items`;
 
   constructor(private http: HttpClient) {}
 

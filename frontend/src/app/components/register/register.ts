@@ -6,6 +6,7 @@ import { RegisterUserRequestDto } from '../../dtos/userDto';
 import { AuthService } from '../../services/authService';
 import { UploadImageService } from '../../services/uploadImageService';
 import { ThemeService } from '../../services/themeService';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-register',
@@ -58,7 +59,7 @@ export class Register {
     }
 
     this.searchTimeout = setTimeout(() => {
-      const apiKey = '6efe16ed3bb047b8975d6f4738a471a9';
+      const apiKey = environment.geoapifyKey;
       const url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(value)}&limit=5&apiKey=${apiKey}`;
 
       fetch(url)

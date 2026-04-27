@@ -35,13 +35,14 @@ import {
   UserFilter,
   VerificationRequestFilter,
 } from '../dtos/filterDto';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class UserService {
-  private readonly baseUrl = 'https://localhost:7183/api/users';
-  private readonly adminBaseUrl = 'https://localhost:7183/api/admin/users';
+  private readonly baseUrl = `${environment.apiUrl}/users`;
+  private readonly adminBaseUrl = `${environment.apiUrl}/admin/users`;
 
   constructor(private http: HttpClient) {}
 

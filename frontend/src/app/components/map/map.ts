@@ -21,8 +21,9 @@ import {
   getAvailabilityClass,
   getAvailabilityLabel,
 } from '../../utils/item.utils';
+import { environment } from '../../../environments/environment';
 
-const GEOAPIFY_KEY = '6efe16ed3bb047b8975d6f4738a471a9';
+const GEOAPIFY_KEY = environment.geoapifyKey;
 
 @Component({
   selector: 'app-map',

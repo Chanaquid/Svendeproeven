@@ -9,12 +9,13 @@ import {
 } from '../dtos/notificationDto';
 import { NotificationFilter } from '../dtos/filterDto';
 import { PagedRequest, PagedResult } from '../dtos/paginationDto';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class NotificationService {
-  private readonly baseUrl = 'https://localhost:7183/api/notifications';
+  private readonly baseUrl = `${environment.apiUrl}/notifications`;
 
   constructor(private http: HttpClient) {}
 

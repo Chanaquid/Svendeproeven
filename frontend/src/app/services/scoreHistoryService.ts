@@ -9,12 +9,13 @@ import {
   UserScoreSummaryDto,
 } from '../dtos/scoreHistoryDto';
 import { ScoreHistoryFilter } from '../dtos/filterDto';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ScoreHistoryService {
-  private readonly baseUrl = 'https://localhost:7183/api/score-history';
+  private readonly baseUrl = `${environment.apiUrl}/score-history`;
 
   constructor(private http: HttpClient) {}
 

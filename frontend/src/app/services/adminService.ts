@@ -4,11 +4,12 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { AdminEditUserDto } from '../dtos/adminUserDto';
 import { AppealFilter, DisputeFilter, FineFilter, ItemFilter, LoanFilter, ReportFilter, SupportThreadFilter, VerificationRequestFilter } from '../dtos/filterDto';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
-  private readonly baseUrl = 'https://localhost:7183/api/admin';
-
+  private readonly baseUrl = `${environment.apiUrl}/admin`;
+ 
   constructor(private http: HttpClient) {}
 
   // ── Dashboard ─────────────────────────────────────────────────────────────

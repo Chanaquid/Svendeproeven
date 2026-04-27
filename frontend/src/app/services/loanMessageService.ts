@@ -9,12 +9,13 @@ import {
   MarkLoanMessagesReadDto,
   SendLoanMessageDto,
 } from '../dtos/loanMessageDto';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class LoanMessageService {
-  private readonly baseUrl = 'https://localhost:7183/api/loans';
+  private readonly baseUrl = `${environment.apiUrl}/loans`;
 
   constructor(private http: HttpClient) {}
 

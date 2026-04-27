@@ -10,12 +10,13 @@ import {
 } from '../dtos/directConversationDto';
 import { DirectMessageDto, SendDirectMessageDto } from '../dtos/directMessageDto'
 import { ConversationFilter, MessageFilter } from '../dtos/filterDto';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ConversationService {
-  private readonly baseUrl = 'https://localhost:7183/api/conversations';
+  private readonly baseUrl = `${environment.apiUrl}/conversations`;
 
   constructor(private http: HttpClient) {}
 

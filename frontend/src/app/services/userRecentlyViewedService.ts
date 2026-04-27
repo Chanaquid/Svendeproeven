@@ -4,12 +4,13 @@ import { Observable } from 'rxjs';
 
 import { ApiResponse } from '../dtos/apiResponseDto';
 import { UserRecentlyViewedItemDto } from '../dtos/userRecentlyViewedItemDto';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class UserRecentlyViewedService {
-  private readonly baseUrl = 'https://localhost:7183/api/recently-viewed';
+  private readonly baseUrl = `${environment.apiUrl}/recently-viewed`;
 
   constructor(private http: HttpClient) {}
 

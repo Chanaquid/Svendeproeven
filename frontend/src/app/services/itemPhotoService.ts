@@ -9,7 +9,7 @@ import { ItemPhotoDto } from '../dtos/itemPhotoDto';
 
 export interface UploadedPhoto {
   file: File;
-  previewUrl: string; // local object URL for preview before upload
+  previewUrl: string; //local object URL for preview before upload
 }
 
 @Injectable({ providedIn: 'root' })
@@ -19,10 +19,6 @@ export class ItemPhotoService {
     private uploadService: UploadImageService
   ) {}
 
-  /**
-   * Upload a single file to Cloudinary, then attach it to the item.
-   * isPrimary and displayOrder are optional.
-   */
   uploadAndAdd(
     itemId: number,
     file: File,
@@ -36,15 +32,7 @@ export class ItemPhotoService {
     );
   }
 
-  /**
-   * Upload multiple files sequentially and attach each to the item.
-   * The first file is marked primary if markFirstAsPrimary is true.
-   * Returns an array of ItemDto responses (one per photo added).
-   *
-   * Uses forkJoin so all uploads run in parallel — if any fail the
-   * whole observable errors. Swap for a sequential approach if you
-   * need strict ordering.
-   */
+
   uploadAndAddMany(
     itemId: number,
     files: File[],
@@ -59,25 +47,16 @@ export class ItemPhotoService {
     return forkJoin(uploads$);
   }
 
-  /**
-   * Delete a photo from the item (no Cloudinary cleanup — that's handled
-   * server-side or can be added later).
-   */
+
   deletePhoto(itemId: number, photoId: number): Observable<ApiResponse<ItemDto>> {
     return this.itemService.deletePhoto(itemId, photoId);
   }
 
-  /**
-   * Set a photo as the primary/main photo for the item.
-   */
+
   setPrimary(itemId: number, photoId: number): Observable<ApiResponse<ItemDto>> {
     return this.itemService.setPrimaryPhoto(itemId, photoId);
   }
 
-  /**
-   * Replace a photo: delete the old one, upload a new file, attach it.
-   * Useful for "change photo" UX.
-   */
   replacePhoto(
     itemId: number,
     oldPhotoId: number,
@@ -89,10 +68,7 @@ export class ItemPhotoService {
     );
   }
 
-  /**
-   * Create a local preview URL for a File before uploading.
-   * Remember to call URL.revokeObjectURL(url) when done to avoid memory leaks.
-   */
+ 
   createPreview(file: File): string {
     return URL.createObjectURL(file);
   }
@@ -101,9 +77,7 @@ export class ItemPhotoService {
     URL.revokeObjectURL(url);
   }
 
-  /**
-   * Validate a file before upload. Returns an error string or null if valid.
-   */
+
   validate(file: File, maxSizeMb = 4): string | null {
     const allowed = ['image/jpeg', 'image/png', 'image/webp'];
     if (!allowed.includes(file.type)) return 'Only JPEG, PNG, and WebP images are allowed.';

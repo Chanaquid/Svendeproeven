@@ -1,2 +1,49 @@
-
+# ========================
+# IDE / OS
+# ========================
 .vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# ========================
+# ASP.NET Core
+# ========================
+**/bin/
+**/obj/
+appsettings.Development.json
+appsettings.Production.json
+appsettings.json
+*.user
+*.suo
+
+# Secrets (CRITICAL)
+**/secrets.json
+
+# ========================
+# Node / Angular
+# ========================
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env files (VERY IMPORTANT)
+.env
+.env.*
+!.env.example
+
+# ========================
+# Logs
+# ========================
+logs/
+*.log
+
+# ========================
+# Build outputs
+# ========================
+wwwroot/

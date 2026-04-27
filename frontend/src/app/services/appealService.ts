@@ -13,10 +13,11 @@ import {
 } from '../dtos/appealDto';
 import { AppealFilter } from '../dtos/filterDto';
 import { AppealStatus, AppealType } from '../dtos/enums';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AppealService {
-  private readonly baseUrl = 'https://localhost:7183/api/appeals';
+  private readonly baseUrl = `${environment.apiUrl}/appeals`;
 
   constructor(private http: HttpClient) {}
 

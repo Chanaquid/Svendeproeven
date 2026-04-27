@@ -18,6 +18,12 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+    .AddEnvironmentVariables();
+
 //CORS
 builder.Services.AddCors(options =>
 {
@@ -32,7 +38,10 @@ builder.Services.AddCors(options =>
 
 //Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sql => sql.EnableRetryOnFailure()
+    ));
 
 //Identity
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
@@ -61,7 +70,10 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 
 //JWT
 var jwtSettings = builder.Configuration.GetSection("Jwt");
-var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
+var jwtKey = builder.Configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException("JWT Key is missing");
+
+var key = Encoding.UTF8.GetBytes(jwtKey);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -133,6 +145,9 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+
+
+
 
 builder.Services.Configure<ScoreThresholdOptions>(
     builder.Configuration.GetSection(ScoreThresholdOptions.SectionName) );
@@ -225,6 +240,9 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
+    // Run migrations (creates DB if it doesn't exist)
+    context.Database.Migrate();
+
     // Roles
     foreach (var role in new[] { "Admin", "User" })
     {
@@ -300,11 +318,10 @@ using (var scope = app.Services.CreateScope())
 }
 
 //Middleware pipeline
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+
+app.UseSwagger();
+app.UseSwaggerUI();
+
 
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseHttpsRedirection();

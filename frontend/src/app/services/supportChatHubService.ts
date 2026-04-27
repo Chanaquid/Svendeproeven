@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import * as signalR from '@microsoft/signalr';
 import { AuthService } from './authService';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -10,7 +11,7 @@ export class SupportChatHubService {
 
   constructor(private authService: AuthService) {
     this.connection = new signalR.HubConnectionBuilder()
-      .withUrl('https://localhost:7183/hubs/support-chat', {
+      .withUrl(`${environment.baseUrl}/hubs/support-chat`, {
         accessTokenFactory: () => this.authService.getToken() ?? '',
       })
       .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])

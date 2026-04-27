@@ -20,6 +20,7 @@ import { ItemCondition, ItemAvailability, ReportReason, ReportType } from '../..
 import { ReportService } from '../../services/reportService';
 import { UserFavoriteService } from '../../services/userFavoriteService';
 import { UploadImageService } from '../../services/uploadImageService';
+import { environment } from '../../../environments/environment';
 
 interface EditablePhoto {
   id?: number; // undefined = newly uploaded, not yet saved
@@ -708,7 +709,7 @@ export class ItemDetail implements OnInit {
     }
 
     this.addressSearchTimeout = setTimeout(() => {
-      const apiKey = '6efe16ed3bb047b8975d6f4738a471a9';
+      const apiKey = environment.geoapifyKey; 
       const url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(value)}&limit=5&apiKey=${apiKey}`;
 
       fetch(url)

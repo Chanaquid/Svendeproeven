@@ -5,12 +5,13 @@ import { ApiResponse } from '../dtos/apiResponseDto';
 import { PagedRequest, PagedResult } from '../dtos/paginationDto';
 import { UserBanHistoryDto } from '../dtos/userBanHistoryDto';
 import { UserBanHistoryFilter } from '../dtos/filterDto'
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class UserBanHistoryService {
-  private readonly baseUrl = 'https://localhost:7183/api/ban-history';
+  private readonly baseUrl = `${environment.apiUrl}/ban-history`;
 
   constructor(private http: HttpClient) {}
 

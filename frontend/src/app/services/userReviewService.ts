@@ -15,12 +15,13 @@ import {
 } from '../dtos/userReviewDto';
 
 import { UserReviewFilter } from '../dtos/filterDto';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class UserReviewService {
-  private readonly baseUrl = 'https://localhost:7183/api/user-reviews';
+  private readonly baseUrl = `${environment.apiUrl}/user-reviews`;
 
   constructor(private http: HttpClient) {}
 
