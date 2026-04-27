@@ -30,7 +30,6 @@ interface Tab {
   styleUrl: './notification.css',
 })
 export class Notification implements OnInit, OnDestroy {
-
   private destroy$ = new Subject<void>();
 
   isLoading = true;
@@ -39,7 +38,6 @@ export class Notification implements OnInit, OnDestroy {
   notifications: NotificationDto[] = [];
   totalCount = 0;
 
-  // Sort & filter
   sortBy = 'createdAt';
   sortDescending = true;
   typeFilter: NotificationType | null = null;
@@ -48,8 +46,8 @@ export class Notification implements OnInit, OnDestroy {
 
   activeTab: TabId = 'all';
   tabs: Tab[] = [
-    { id: 'all',    label: 'All',    icon: '▤' },
-    { id: 'unread', label: 'Unread', icon: '●' },
+    { id: 'all',    label: 'Alle',   icon: '▤' },
+    { id: 'unread', label: 'Ulæste', icon: '●' },
   ];
 
   currentPage = 1;
@@ -59,7 +57,6 @@ export class Notification implements OnInit, OnDestroy {
   isDeletingAll = false;
   navigatingIds = new Set<number>();
 
-  // Expose NotificationType to template
   NotificationType = NotificationType;
 
   constructor(
@@ -69,32 +66,16 @@ export class Notification implements OnInit, OnDestroy {
     public router: Router,
   ) {}
 
-  // ─── Computed ─────────────────────────────────────────────────────────────────
+  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
+  get pageNumbers(): number[] { return getPageNumbers(this.currentPage, this.totalPages); }
+  get hasUnread(): boolean { return this.notifications.some((n) => !n.isRead); }
 
-  get totalPages(): number {
-    return Math.ceil(this.totalCount / this.pageSize);
-  }
-
-  get pageNumbers(): number[] {
-    return getPageNumbers(this.currentPage, this.totalPages);
-  }
-
-  get hasUnread(): boolean {
-    return this.notifications.some(n => !n.isRead);
-  }
-
-  // ─── Lifecycle ────────────────────────────────────────────────────────────────
-
-  ngOnInit(): void {
-    this.loadNotifications();
-  }
+  ngOnInit(): void { this.loadNotifications(); }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
-
-  // ─── Load ─────────────────────────────────────────────────────────────────────
 
   loadNotifications(): void {
     this.isLoading = true;
@@ -112,11 +93,15 @@ export class Notification implements OnInit, OnDestroy {
       sortDescending: this.sortDescending,
     };
 
-    this.notificationService.getAll(filter, request)
-      .pipe(takeUntil(this.destroy$), finalize(() => {
-        this.isLoading = false;
-        this.cdr.markForCheck();
-      }))
+    this.notificationService
+      .getAll(filter, request)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.isLoading = false;
+          this.cdr.markForCheck();
+        }),
+      )
       .subscribe({
         next: (res) => {
           if (res.success && res.data) {
@@ -124,39 +109,37 @@ export class Notification implements OnInit, OnDestroy {
             this.totalCount = res.data.totalCount;
             this.refreshTabCounts();
           } else {
-            this.error = res.message || 'Failed to load notifications.';
+            this.error = res.message || 'Kunne ikke hente notifikationer.';
           }
         },
-        error: () => { this.error = 'An error occurred. Please try again.'; },
+        error: () => {
+          this.error = 'Der opstod en fejl. Prøv igen.';
+        },
       });
   }
 
   private refreshTabCounts(): void {
-    const allTab    = this.tabs.find(t => t.id === 'all');
-    const unreadTab = this.tabs.find(t => t.id === 'unread');
+    const allTab = this.tabs.find((t) => t.id === 'all');
+    const unreadTab = this.tabs.find((t) => t.id === 'unread');
 
-    // Update the active tab count from the current response
-    if (this.activeTab === 'all' && allTab) {
-      allTab.count = this.totalCount;
-    } else if (this.activeTab === 'unread' && unreadTab) {
-      unreadTab.count = this.totalCount;
-    }
+    if (this.activeTab === 'all' && allTab) allTab.count = this.totalCount;
+    else if (this.activeTab === 'unread' && unreadTab) unreadTab.count = this.totalCount;
 
-    // Always fetch the unread count for the badge
-    this.notificationService.getAll({ isRead: false }, { page: 1, pageSize: 1 })
+    this.notificationService
+      .getAll({ isRead: false }, { page: 1, pageSize: 1 })
       .pipe(takeUntil(this.destroy$))
-      .subscribe(res => {
+      .subscribe((res) => {
         if (unreadTab && res.data) {
           unreadTab.count = res.data.totalCount;
           this.cdr.markForCheck();
         }
       });
 
-    // If we're on unread tab, also refresh the all count
     if (this.activeTab === 'unread') {
-      this.notificationService.getAll({}, { page: 1, pageSize: 1 })
+      this.notificationService
+        .getAll({}, { page: 1, pageSize: 1 })
         .pipe(takeUntil(this.destroy$))
-        .subscribe(res => {
+        .subscribe((res) => {
           if (allTab && res.data) {
             allTab.count = res.data.totalCount;
             this.cdr.markForCheck();
@@ -165,8 +148,6 @@ export class Notification implements OnInit, OnDestroy {
     }
   }
 
-  // ─── Tab & filter controls ────────────────────────────────────────────────────
-
   switchTab(tab: TabId): void {
     this.activeTab = tab;
     this.currentPage = 1;
@@ -174,9 +155,8 @@ export class Notification implements OnInit, OnDestroy {
   }
 
   onSortChange(sortBy: string): void {
-    if (this.sortBy === sortBy) {
-      this.sortDescending = !this.sortDescending;
-    } else {
+    if (this.sortBy === sortBy) this.sortDescending = !this.sortDescending;
+    else {
       this.sortBy = sortBy;
       this.sortDescending = true;
     }
@@ -185,7 +165,7 @@ export class Notification implements OnInit, OnDestroy {
   }
 
   onTypeFilterChange(value: string): void {
-    this.typeFilter = value === '' ? null : +value as unknown as NotificationType;
+    this.typeFilter = value === '' ? null : ((+value) as unknown as NotificationType);
     this.currentPage = 1;
     this.loadNotifications();
   }
@@ -197,33 +177,30 @@ export class Notification implements OnInit, OnDestroy {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // ─── Click handler ────────────────────────────────────────────────────────────
-
   onNotificationClick(n: NotificationDto): void {
     if (!n.isRead) {
       n.isRead = true;
       this.cdr.markForCheck();
-      this.notificationService.markAsRead(n.id)
+      this.notificationService
+        .markAsRead(n.id)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => this.refreshTabCounts(),
           error: () => {
             n.isRead = false;
             this.cdr.markForCheck();
-          }
+          },
         });
     }
     this.navigate(n);
   }
-
-  // ─── Navigation ───────────────────────────────────────────────────────────────
 
   navigate(n: NotificationDto): void {
     if (!n.referenceId || !n.referenceType) return;
     if (this.navigatingIds.has(n.id)) return;
 
     const type = n.referenceType;
-    const id   = n.referenceId;
+    const id = n.referenceId;
 
     if (type === NotificationReferenceType.Item) {
       if (n.type === NotificationType.ItemDeleted) {
@@ -237,14 +214,14 @@ export class Notification implements OnInit, OnDestroy {
           this.navigatingIds.delete(n.id);
           const slug = res.data?.slug;
           if (slug) this.router.navigate(['/items', slug]);
-          else      this.router.navigate(['/my-items']);
+          else this.router.navigate(['/my-items']);
           this.cdr.markForCheck();
         },
         error: () => {
           this.navigatingIds.delete(n.id);
           this.router.navigate(['/my-items']);
           this.cdr.markForCheck();
-        }
+        },
       });
       return;
     }
@@ -253,32 +230,26 @@ export class Notification implements OnInit, OnDestroy {
       this.router.navigate(['/loans', id]);
       return;
     }
-
     if (type === NotificationReferenceType.Fine) {
       this.router.navigate(['/resolution-center'], { queryParams: { tab: 'fines', fineId: id } });
       return;
     }
-
     if (type === NotificationReferenceType.Dispute) {
       this.router.navigate(['/resolution-center'], { queryParams: { tab: 'disputes', disputeId: id } });
       return;
     }
-
     if (type === NotificationReferenceType.Appeal) {
       this.router.navigate(['/resolution-center'], { queryParams: { tab: 'appeals', appealId: id } });
       return;
     }
-
     if (type === NotificationReferenceType.Verification) {
       this.router.navigate(['/resolution-center'], { queryParams: { tab: 'verification', verificationId: id } });
       return;
     }
-
     if (type === NotificationReferenceType.Report) {
       this.router.navigate(['/resolution-center'], { queryParams: { tab: 'reports', reportId: id } });
       return;
     }
-
     if (type === NotificationReferenceType.DirectConversation) {
       this.router.navigate(['/my-chats'], { queryParams: { conversationId: id } });
       return;
@@ -294,38 +265,39 @@ export class Notification implements OnInit, OnDestroy {
     return !noNav.includes(n.referenceType);
   }
 
-  // ─── Bulk actions ─────────────────────────────────────────────────────────────
-
   markAllAsRead(): void {
-    this.notificationService.markAllAsRead()
+    this.notificationService
+      .markAllAsRead()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.notifications.forEach(n => n.isRead = true);
+          this.notifications.forEach((n) => (n.isRead = true));
           this.refreshTabCounts();
           this.cdr.markForCheck();
-          // If on unread tab, reload to clear the list
           if (this.activeTab === 'unread') {
             this.currentPage = 1;
             this.loadNotifications();
           }
-        }
+        },
       });
   }
 
   deleteNotification(id: number): void {
     this.deletingIds.add(id);
     this.cdr.markForCheck();
-    this.notificationService.delete(id)
-      .pipe(takeUntil(this.destroy$), finalize(() => {
-        this.deletingIds.delete(id);
-        this.cdr.markForCheck();
-      }))
+    this.notificationService
+      .delete(id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.deletingIds.delete(id);
+          this.cdr.markForCheck();
+        }),
+      )
       .subscribe({
         next: () => {
-          this.notifications = this.notifications.filter(n => n.id !== id);
+          this.notifications = this.notifications.filter((n) => n.id !== id);
           this.totalCount = Math.max(0, this.totalCount - 1);
-          // If page is now empty and not the first page, go back one
           if (this.notifications.length === 0 && this.currentPage > 1) {
             this.currentPage--;
             this.loadNotifications();
@@ -333,30 +305,32 @@ export class Notification implements OnInit, OnDestroy {
             this.refreshTabCounts();
           }
           this.cdr.markForCheck();
-        }
+        },
       });
   }
 
   deleteAll(): void {
     this.isDeletingAll = true;
-    this.notificationService.deleteAll()
-      .pipe(takeUntil(this.destroy$), finalize(() => {
-        this.isDeletingAll = false;
-        this.showDeleteAllConfirm = false;
-        this.cdr.markForCheck();
-      }))
+    this.notificationService
+      .deleteAll()
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.isDeletingAll = false;
+          this.showDeleteAllConfirm = false;
+          this.cdr.markForCheck();
+        }),
+      )
       .subscribe({
         next: () => {
           this.notifications = [];
           this.totalCount = 0;
           this.currentPage = 1;
-          this.tabs.forEach(t => t.count = 0);
+          this.tabs.forEach((t) => (t.count = 0));
           this.cdr.markForCheck();
-        }
+        },
       });
   }
-
-  // ─── Helpers ──────────────────────────────────────────────────────────────────
 
   trackById(_: number, n: NotificationDto): number { return n.id; }
 
@@ -403,65 +377,51 @@ export class Notification implements OnInit, OnDestroy {
     }
   }
 
-  getNotificationIconBg(type: NotificationType): string {
-    switch (type) {
-      case NotificationType.LoanApproved:
-      case NotificationType.LoanActive:
-      case NotificationType.LoanReturned:
-      case NotificationType.ItemApproved:
-      case NotificationType.ItemAvailable:
-      case NotificationType.FinePaid:
-      case NotificationType.FineVoided:
-      case NotificationType.AppealApproved:
-      case NotificationType.VerificationApproved:
-      case NotificationType.ReportResolved:
-        return 'bg-emerald-400/10';
+  /**
+   * Returns one of: notif-icon--success / --danger / --warning / --info / ''
+   * — used as a colour modifier for the icon background. Maps to CSS variables in styles.css.
+   */
+  getNotificationIconClass(type: NotificationType): string {
+    const successTypes = [
+      NotificationType.LoanApproved, NotificationType.LoanActive, NotificationType.LoanReturned,
+      NotificationType.ItemApproved, NotificationType.ItemAvailable, NotificationType.FinePaid,
+      NotificationType.FineVoided, NotificationType.AppealApproved,
+      NotificationType.VerificationApproved, NotificationType.ReportResolved,
+    ];
+    const dangerTypes = [
+      NotificationType.LoanRejected, NotificationType.LoanCancelled, NotificationType.LoanOverdue,
+      NotificationType.ItemRejected, NotificationType.ItemDeleted, NotificationType.FineIssued,
+      NotificationType.FineRejected, NotificationType.AppealRejected,
+      NotificationType.VerificationRejected, NotificationType.DisputeExpired,
+    ];
+    const warningTypes = [
+      NotificationType.LoanRequested, NotificationType.DueSoon, NotificationType.ItemPendingReview,
+      NotificationType.FinePaymentPendingVerification, NotificationType.DisputeFiled,
+      NotificationType.DisputeResponseSubmitted, NotificationType.AppealSubmitted,
+      NotificationType.VerificationSubmitted, NotificationType.ReportSubmitted,
+      NotificationType.SupportThreadCreated,
+    ];
+    const infoTypes = [
+      NotificationType.ScoreChanged, NotificationType.DisputeResolved,
+      NotificationType.LoanMessageReceived, NotificationType.DirectMessageReceived,
+      NotificationType.SupportMessageReceived, NotificationType.SupportThreadClaimed,
+      NotificationType.SupportThreadClosed,
+    ];
 
-      case NotificationType.LoanRejected:
-      case NotificationType.LoanCancelled:
-      case NotificationType.LoanOverdue:
-      case NotificationType.ItemRejected:
-      case NotificationType.ItemDeleted:
-      case NotificationType.FineIssued:
-      case NotificationType.FineRejected:
-      case NotificationType.AppealRejected:
-      case NotificationType.VerificationRejected:
-      case NotificationType.DisputeExpired:
-        return 'bg-red-400/10';
-
-      case NotificationType.LoanRequested:
-      case NotificationType.DueSoon:
-      case NotificationType.ItemPendingReview:
-      case NotificationType.FinePaymentPendingVerification:
-      case NotificationType.DisputeFiled:
-      case NotificationType.DisputeResponseSubmitted:
-      case NotificationType.AppealSubmitted:
-      case NotificationType.VerificationSubmitted:
-      case NotificationType.ReportSubmitted:
-      case NotificationType.SupportThreadCreated:
-        return 'bg-amber-400/10';
-
-      case NotificationType.ScoreChanged:
-      case NotificationType.DisputeResolved:
-      case NotificationType.LoanMessageReceived:
-      case NotificationType.DirectMessageReceived:
-      case NotificationType.SupportMessageReceived:
-      case NotificationType.SupportThreadClaimed:
-      case NotificationType.SupportThreadClosed:
-        return 'bg-blue-400/10';
-
-      default:
-        return 'bg-zinc-800';
-    }
+    if (successTypes.includes(type)) return 'notif-icon--success';
+    if (dangerTypes.includes(type))  return 'notif-icon--danger';
+    if (warningTypes.includes(type)) return 'notif-icon--warning';
+    if (infoTypes.includes(type))    return 'notif-icon--info';
+    return '';
   }
 
-  getTypeBadgeClass(type: NotificationType): string {
-    const bg = this.getNotificationIconBg(type);
-    if (bg.includes('emerald')) return 'bg-emerald-400/10 text-emerald-400';
-    if (bg.includes('red'))     return 'bg-red-400/10 text-red-400';
-    if (bg.includes('amber'))   return 'bg-amber-400/10 text-amber-400';
-    if (bg.includes('blue'))    return 'bg-blue-400/10 text-blue-400';
-    return 'bg-zinc-800 text-zinc-400';
+  getTypeBadge(type: NotificationType): string {
+    const cls = this.getNotificationIconClass(type);
+    if (cls === 'notif-icon--success') return 'badge badge-success';
+    if (cls === 'notif-icon--danger')  return 'badge badge-danger';
+    if (cls === 'notif-icon--warning') return 'badge badge-warning';
+    if (cls === 'notif-icon--info')    return 'badge badge-info';
+    return 'badge';
   }
 
   getTypeLabel(type: NotificationType): string {
@@ -500,16 +460,16 @@ export class Notification implements OnInit, OnDestroy {
     ];
     const reportTypes = [NotificationType.ReportSubmitted, NotificationType.ReportResolved];
 
-    if (loanTypes.includes(type))         return 'Loan';
-    if (itemTypes.includes(type))         return 'Item';
-    if (fineTypes.includes(type))         return 'Fine';
-    if (disputeTypes.includes(type))      return 'Dispute';
-    if (appealTypes.includes(type))       return 'Appeal';
-    if (verificationTypes.includes(type)) return 'Verification';
+    if (loanTypes.includes(type))         return 'Lån';
+    if (itemTypes.includes(type))         return 'Annonce';
+    if (fineTypes.includes(type))         return 'Bøde';
+    if (disputeTypes.includes(type))      return 'Tvist';
+    if (appealTypes.includes(type))       return 'Klage';
+    if (verificationTypes.includes(type)) return 'Verifikation';
     if (supportTypes.includes(type))      return 'Support';
-    if (reportTypes.includes(type))       return 'Report';
-    if (type === NotificationType.DirectMessageReceived) return 'Message';
+    if (reportTypes.includes(type))       return 'Anmeldelse';
+    if (type === NotificationType.DirectMessageReceived) return 'Besked';
     if (type === NotificationType.ScoreChanged)          return 'Score';
-    return 'General';
+    return 'Generelt';
   }
 }

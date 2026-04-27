@@ -1,0 +1,105 @@
+/* admin-fine — table + detail modal. */
+
+.af-toolbar { margin-bottom: 16px; }
+
+.af-row { cursor: pointer; }
+.af-row:hover td { background: var(--color-surface-alt); }
+
+.af-amount {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 4px 0 0;
+}
+
+.af-message {
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  color: var(--color-text);
+}
+
+.af-message--danger { border-left: 3px solid var(--color-danger, #ef4444); }
+
+.af-thumb {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+  overflow: hidden;
+  cursor: pointer;
+  padding: 0;
+}
+
+.af-thumb:hover { border-color: var(--color-border); }
+
+.af-thumb img {
+  width: 100%;
+  display: block;
+  max-height: 360px;
+  object-fit: contain;
+  background: var(--color-surface-alt);
+}
+
+.tab-count {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 9999px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border-soft);
+  line-height: 1.4;
+}
+
+.subnav-item--active .tab-count { color: var(--color-text); }
+
+.lightbox-img {
+  max-width: 95vw;
+  max-height: 95vh;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  cursor: zoom-out;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: var(--color-surface-alt);
+  border-color: var(--color-border);
+}
+
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.page-btn--active {
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  border-color: var(--color-primary);
+}
+
+.page-ellipsis { padding: 0 6px; color: var(--color-text-muted); }

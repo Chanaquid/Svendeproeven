@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject } from 'rxjs';
@@ -25,12 +33,11 @@ import { UserRecentlyViewedService } from '../../services/userRecentlyViewedServ
 
 @Component({
   selector: 'app-home',
-  imports: [CommonModule, RouterLink, FormsModule, Navbar],
+  imports: [CommonModule, FormsModule, Navbar],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
 export class Home implements OnInit, AfterViewInit, OnDestroy {
-
   @ViewChild('categoryStrip') categoryStrip!: ElementRef;
   ItemAvailability = ItemAvailability;
 
@@ -61,7 +68,6 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
   currentPage = 1;
   totalCount = 0;
   currentUserId = '';
-
 
   recentlyViewed: UserRecentlyViewedItemDto[] = [];
 
@@ -101,11 +107,24 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
   private scrollStartX = 0;
 
   private categoryIdMap: Record<string, number> = {
-    'Electronics': 1, 'Tools': 2, 'Sports': 3, 'Music': 4,
-    'Books': 5, 'Camping': 6, 'Photography': 7, 'Gaming': 8,
-    'Gardening': 9, 'Biking': 10, 'Kitchen': 11, 'Cleaning': 12,
-    'Fashion': 13, 'Art': 14, 'Baby': 15, 'Events': 16,
-    'Auto': 17, 'Other': 18,
+    Electronics: 1,
+    Tools: 2,
+    Sports: 3,
+    Music: 4,
+    Books: 5,
+    Camping: 6,
+    Photography: 7,
+    Gaming: 8,
+    Gardening: 9,
+    Biking: 10,
+    Kitchen: 11,
+    Cleaning: 12,
+    Fashion: 13,
+    Art: 14,
+    Baby: 15,
+    Events: 16,
+    Auto: 17,
+    Other: 18,
   };
 
   // ── RxJS ──────────────────────────────────────────────────────────────────
@@ -124,10 +143,10 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private userService: UserService,
     private itemService: ItemService,
-    private recentlyViewedService: UserRecentlyViewedService,
     private favoriteService: UserFavoriteService,
-    private route: ActivatedRoute
-  ) { }
+    private route: ActivatedRoute,
+    private recentlyViewedService: UserRecentlyViewedService,
+  ) {}
 
   ngOnInit(): void {
     if (!this.authService.isLoggedIn()) {
@@ -140,10 +159,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
     // this.loadRecentlyViewed();
 
     // Debounce search — 350ms after user stops typing
-    this.searchSubject.pipe(
-      debounceTime(350),
-      takeUntil(this.destroy$)
-    ).subscribe(() => {
+    this.searchSubject.pipe(debounceTime(350), takeUntil(this.destroy$)).subscribe(() => {
       this.currentPage = 1;
       this.router.navigate([], {
         relativeTo: this.route,
@@ -156,7 +172,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
     window.addEventListener('resize', this.resizeHandler);
 
     // Read page + search query from URL so back-navigation restores state
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe((params) => {
       const q = params['q'] || '';
       const page = parseInt(params['page']) || 1;
       this.searchQuery = q;
@@ -207,12 +223,16 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
-    el.addEventListener('click', (e: MouseEvent) => {
-      if (hasDragged) {
-        e.stopPropagation();
-        hasDragged = false;
-      }
-    }, true);
+    el.addEventListener(
+      'click',
+      (e: MouseEvent) => {
+        if (hasDragged) {
+          e.stopPropagation();
+          hasDragged = false;
+        }
+      },
+      true,
+    );
   }
 
   ngOnDestroy(): void {
@@ -228,9 +248,14 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
         this.currentUserId = user.data?.id ?? '';
         this.cdr.detectChanges();
       },
-      error: (err) => console.error('Failed to load user info:', err)
+      error: (err) => console.error('Failed to load user info:', err),
     });
   }
+
+  /**
+   * Fetches items from backend using dynamic pageSize (cols × 3 rows).
+   * Shows skeleton only on first load — subsequent fetches swap content silently.
+   */
   loadItems(): void {
     if (this.isInitialLoad) {
       this.isLoading = true;
@@ -241,7 +266,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
       ...(this.searchQuery.trim() && { search: this.searchQuery.trim() }),
       ...(this.selectedCategory && { categoryId: this.categoryIdMap[this.selectedCategory] }),
       ...(this.availableOnly && { availability: ItemAvailability.Available }),
-      ...(this.freeOnly ? { isFree: true } : (this.sortBy === 'pricePerDay' && { isFree: false })),
+      ...(this.freeOnly ? { isFree: true } : this.sortBy === 'pricePerDay' && { isFree: false }),
     };
 
     const request: PagedRequest = {
@@ -254,8 +279,6 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
     this.itemService.getAllApproved(filter, request).subscribe({
       next: (res) => {
         this.items = res.data?.items ?? [];
-        console.log('items.length:', this.items.length);
-        console.log('totalCount:', this.totalCount);
         this.totalCount = res.data?.totalCount ?? 0;
         this.isLoading = false;
         this.isInitialLoad = false;
@@ -266,7 +289,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
         this.isLoading = false;
         this.isInitialLoad = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -274,25 +297,30 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
     const request: PagedRequest = { page: 1, pageSize: 100 };
     this.favoriteService.getMyFavorites(request).subscribe({
       next: (favs) => {
-        this.favoriteIds = new Set((favs.data?.items ?? []).map(i => i.id));
+        this.favoriteIds = new Set((favs.data?.items ?? []).map((i) => i.id));
         this.cdr.detectChanges();
       },
-      error: (err) => console.error('Failed to load favorites:', err)
+      error: (err) => console.error('Failed to load favorites:', err),
     });
   }
 
+  /**
+   * Hentet, men ikke kaldt — kommenteret ud i ngOnInit.
+   * Bevares så markup og service kan kobles til, når funktionen aktiveres.
+   */
   private loadRecentlyViewed(): void {
     this.recentlyViewedService.getRecentlyViewed().subscribe({
       next: (res) => {
         this.recentlyViewed = res.data ?? [];
-        console.log('recently viewed:', this.recentlyViewed.length, this.recentlyViewed);
         this.cdr.detectChanges();
       },
-      error: (err) => { console.error('recently viewed error:', err); }
+      error: (err) => console.error('recently viewed error:', err),
     });
   }
 
   // Search and filters
+
+  /** Keystroke handler — debounced, no immediate fetch */
   onSearch(): void {
     this.cdr.detectChanges();
     this.searchSubject.next(this.searchQuery);
@@ -312,14 +340,37 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
   onSortChange(value: string): void {
     this.sortLabel = value;
     switch (value) {
-      case 'newest':     this.sortBy = 'createdAt';     this.sortDescending = true;  break;
-      case 'oldest':     this.sortBy = 'createdAt';     this.sortDescending = false; break;
-      case 'rating':     this.sortBy = 'averageRating'; this.sortDescending = true;  break;
-      case 'az':         this.sortBy = 'title';         this.sortDescending = false; break;
-      case 'za':         this.sortBy = 'title';         this.sortDescending = true;  break;
-      case 'price_asc':  this.sortBy = 'pricePerDay';   this.sortDescending = false; break;
-      case 'price_desc': this.sortBy = 'pricePerDay';   this.sortDescending = true;  break;
-      default:           this.sortBy = 'createdAt';     this.sortDescending = true;
+      case 'newest':
+        this.sortBy = 'createdAt';
+        this.sortDescending = true;
+        break;
+      case 'oldest':
+        this.sortBy = 'createdAt';
+        this.sortDescending = false;
+        break;
+      case 'rating':
+        this.sortBy = 'averageRating';
+        this.sortDescending = true;
+        break;
+      case 'az':
+        this.sortBy = 'title';
+        this.sortDescending = false;
+        break;
+      case 'za':
+        this.sortBy = 'title';
+        this.sortDescending = true;
+        break;
+      case 'price_asc':
+        this.sortBy = 'pricePerDay';
+        this.sortDescending = false;
+        break;
+      case 'price_desc':
+        this.sortBy = 'pricePerDay';
+        this.sortDescending = true;
+        break;
+      default:
+        this.sortBy = 'createdAt';
+        this.sortDescending = true;
     }
     this.currentPage = 1;
     this.router.navigate([], {
@@ -372,7 +423,7 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
         this.showToast(error.error?.message ?? 'Something went wrong.');
         this.togglingIds.delete(itemId);
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -402,8 +453,6 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  goToMapView(): void { this.router.navigate(['/maps']); }
-
   // Pagination
 
   get totalPages(): number {
@@ -428,13 +477,28 @@ export class Home implements OnInit, AfterViewInit, OnDestroy {
 
   // Helpers
 
-  goToItem(slug: string): void { this.router.navigate(['/items', slug]); }
-  getCategoryEmoji(name: string): string { return getCategoryEmoji(name); }
-  getConditionClass(condition: ItemCondition): string { return getConditionClass(condition); }
-  getAvailabilityClass(availability: ItemAvailability): string { return getAvailabilityClass(availability); }
-  getAvailabilityLabel(availability: ItemAvailability): string { return getAvailabilityLabel(availability); }
+  goToItem(slug: string): void {
+    this.router.navigate(['/items', slug]);
+  }
+  getCategoryEmoji(name: string): string {
+    return getCategoryEmoji(name);
+  }
+  getConditionClass(condition: ItemCondition): string {
+    return getConditionClass(condition);
+  }
+  getAvailabilityClass(availability: ItemAvailability): string {
+    return getAvailabilityClass(availability);
+  }
+  getAvailabilityLabel(availability: ItemAvailability): string {
+    return getAvailabilityLabel(availability);
+  }
   getInitials(name: string): string {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   }
 
   showToast(message: string): void {

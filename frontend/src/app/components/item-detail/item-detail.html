@@ -1,804 +1,1054 @@
-<div class="page-bg"></div>
-<div class="page-grid"></div>
-
 <app-navbar></app-navbar>
 
 <main class="item-page">
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="loading-spinner"></div>
+    <p class="loading-text">Indlæser genstand...</p>
+  </div>
 
-    <!-- Loading -->
-    <div *ngIf="isLoading" class="loading-state">
-        <div class="loading-spinner"></div>
-        <p class="loading-text">Loading item...</p>
-    </div>
-
-    <div *ngIf="!isLoading && item">
-
-        <!-- Header -->
-        <div class="item-header">
-            <div class="item-header-inner">
-                <div class="item-header-left">
-                    <div class="breadcrumb">
-                        <button (click)="goBack()" class="breadcrumb-back">
-                            <svg class="breadcrumb-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 19l-7-7 7-7" />
-                            </svg>
-                            Back
-                        </button>
-                        <span class="breadcrumb-sep">/</span>
-                        <span class="breadcrumb-title">{{ item.title }}</span>
-                    </div>
-
-                    <h1 class="item-title">{{ item.title }}</h1>
-
-                    <div class="item-meta-tags">
-                        <span class="item-category-tag">{{ item.categoryName }}</span>
-                        <span class="meta-dot">·</span>
-                        <span class="condition-tag" [ngClass]="getConditionClass(item.condition)">{{ item.condition
-                            }}</span>
-                        <span *ngIf="item.isCurrentlyOnLoan" class="status-tag status-tag--onloan">On Loan</span>
-                        <span *ngIf="item.status !== 'Approved'" class="status-tag"
-                            [class.status-tag--pending]="item.status === 'Pending'"
-                            [class.status-tag--rejected]="item.status === 'Rejected'">
-                            {{ item.status }}
-                        </span>
-                    </div>
-                </div>
-
-                <div class="item-header-actions">
-                    <button *ngIf="canRequestLoan" (click)="openLoanModal()" class="btn-loan">
-                        <svg class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        Request Loan
-                    </button>
-
-                    <button *ngIf="!isOwner && !isAdmin" (click)="toggleFavorite()" [disabled]="isTogglingFavorite"
-                        class="btn-report" [class.btn-favorited]="isFavorited"
-                        [title]="isFavorited ? 'Remove from favorites' : 'Add to favorites'">
-                        <svg class="btn-icon" fill="currentColor" viewBox="0 0 24 24">
-                            <path *ngIf="isFavorited"
-                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                            <path *ngIf="!isFavorited" fill="none" stroke="currentColor" stroke-width="2"
-                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                        </svg>
-                        {{ isTogglingFavorite ? '...' : isFavorited ? 'Saved' : 'Save' }}
-                    </button>
-
-                    <button *ngIf="!isOwner && !isAdmin" (click)="openReportModal()" class="btn-report">
-                        <svg class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
-                        </svg>
-                        Report
-                    </button>
-
-                    <!-- Verification required notice (header) -->
-                    <div *ngIf="item.requiresVerification && !isOwner && !isAdmin && !isVerified && !existingLoan && !item.isCurrentlyOnLoan && item.status === 'Approved' && item.isActive"
-                        class="verification-required-notice">
-                        <svg class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
-                        </svg>
-                        Verified account required
-                    </div>
-
-                    <button *ngIf="isOwner || isAdmin" (click)="openEditModal()" class="btn-edit">
-                        <svg class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                        Edit Item
-                    </button>
-                </div>
-            </div>
+  <div *ngIf="!isLoading && item">
+    <!-- ===== Header ===== -->
+    <header class="item-header">
+      <div class="item-header-left">
+        <div class="breadcrumb">
+          <button (click)="goBack()" class="breadcrumb-back">
+            <svg
+              class="icon-sm"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Tilbage
+          </button>
+          <span class="breadcrumb-sep">/</span>
+          <span class="breadcrumb-title">{{ item.title }}</span>
         </div>
 
-        <div class="item-body">
-            <div class="item-grid">
+        <h1 class="item-title">{{ item.title }}</h1>
 
-                <!-- LEFT -->
-                <div class="item-main">
-
-                    <!-- Photos -->
-                    <div *ngIf="item.photos && item.photos.length > 0" class="photos-wrap">
-                        <div class="photo-primary">
-                            <img [src]="item.photos[activePhotoIndex]?.photoUrl" [alt]="item.title"
-                                class="photo-primary-img"
-                                (click)="selectedPhoto = (item.photos[activePhotoIndex]?.photoUrl ?? null)" />
-
-                            <!-- Left arrow -->
-                            <button *ngIf="item.photos.length > 1" (click)="prevPhoto(item.photos.length)"
-                                class="photo-nav photo-nav--prev">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-                                </svg>
-                            </button>
-
-                            <!-- Right arrow -->
-                            <button *ngIf="item.photos.length > 1" (click)="nextPhoto(item.photos.length)"
-                                class="photo-nav photo-nav--next">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                                </svg>
-                            </button>
-
-                            <!-- Dot indicators -->
-                            <div *ngIf="item.photos.length > 1" class="photo-dots">
-                                <span *ngFor="let photo of item.photos; let i = index" class="photo-dot"
-                                    [class.photo-dot--active]="i === activePhotoIndex" (click)="activePhotoIndex = i">
-                                </span>
-                            </div>
-                        </div>
-
-                        <div *ngIf="item.photos.length > 1" class="photo-thumbs">
-                            <div *ngFor="let photo of item.photos; let i = index" (click)="activePhotoIndex = i"
-                                class="photo-thumb" [class.photo-thumb--active]="i === activePhotoIndex">
-                                <img [src]="photo.photoUrl" class="photo-thumb-img" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- No photo -->
-                    <div *ngIf="!item.photos || item.photos.length === 0" class="photo-placeholder">
-                        {{ getCategoryEmoji(item.categoryName || '') }}
-                    </div>
-
-                    <!-- Description -->
-                    <div class="detail-card">
-                        <h3 class="detail-card-title">Description</h3>
-                        <p class="detail-card-text">{{ item.description }}</p>
-                    </div>
-
-                    <!-- Details grid -->
-                    <div class="detail-card">
-                        <h3 class="detail-card-title">Item Details</h3>
-                        <div class="details-grid">
-                            <div class="detail-item">
-                                <p class="detail-label">Current Value</p>
-                                <p class="detail-value">kr {{ item.currentValue }}</p>
-                            </div>
-                            <div class="detail-item">
-                                <p class="detail-label">Min Loan Days</p>
-                                <p class="detail-value">{{ item.minLoanDays ?? '—' }}</p>
-                            </div>
-                            <div class="detail-item">
-                                <p class="detail-label">Max Loan Days</p>
-                                <p class="detail-value">{{ item.maxLoanDays ?? '—' }}</p>
-                            </div>
-                            <div class="detail-item">
-                                <p class="detail-label">Available From</p>
-                                <p class="detail-value">{{ item.availableFrom | date:'MMM d, yyyy' }}</p>
-                            </div>
-                            <div class="detail-item">
-                                <p class="detail-label">Available Until</p>
-                                <p class="detail-value">{{ item.availableUntil | date:'MMM d, yyyy' }}</p>
-                            </div>
-                            <div class="detail-item detail-item--full">
-                                <p class="detail-label">Pickup Address</p>
-                                <p class="detail-value">📍 {{ item.pickupAddress }}</p>
-                            </div>
-                            <div class="detail-item">
-                                <p class="detail-label">Requires Verification</p>
-                                <p class="detail-value" [class.detail-value--amber]="item.requiresVerification">
-                                    {{ item.requiresVerification ? 'Yes' : 'No' }}
-                                </p>
-                            </div>
-                            <div class="detail-item">
-                                <p class="detail-label">Listed</p>
-                                <p class="detail-value">{{ item.createdAt | date:'MMM d, yyyy' }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Reviews -->
-                    <div class="reviews-section">
-                        <div class="reviews-header">
-                            <h3 class="reviews-title">
-                                Reviews <span class="reviews-count">({{ reviews.length }})</span>
-                            </h3>
-                            <div *ngIf="reviews.length > 0" class="reviews-avg">
-                                <div class="stars">
-                                    <span *ngFor="let s of [1,2,3,4,5]" class="star"
-                                        [class.star--on]="s <= averageRating">★</span>
-                                </div>
-                                <span class="reviews-score">{{ averageRating.toFixed(1) }}</span>
-                            </div>
-                        </div>
-
-                        <div *ngIf="isLoadingReviews" class="reviews-skeleton">
-                            <div *ngFor="let _ of [1,2]" class="skeleton-review"></div>
-                        </div>
-
-                        <div *ngIf="!isLoadingReviews && reviews.length === 0" class="reviews-empty">
-                            <span class="reviews-empty-icon">⭐</span>
-                            <p class="reviews-empty-text">No reviews for this item yet.</p>
-                        </div>
-
-                        <div *ngIf="!isLoadingReviews && reviews.length > 0" class="reviews-list">
-                            <div *ngFor="let review of displayedReviews" class="review-card"
-                                [class.review-card--admin]="review.isAdminReview">
-                                <div class="review-top">
-                                    <div class="review-author">
-                                        <div class="review-avatar">
-                                            <img *ngIf="review.reviewerAvatarUrl" [src]="review.reviewerAvatarUrl"
-                                                class="avatar-img" />
-                                            <span *ngIf="!review.reviewerAvatarUrl">{{
-                                                review.reviewerName.charAt(0).toUpperCase() }}</span>
-                                        </div>
-                                        <p class="review-name">{{ review.reviewerName }}</p>
-                                        <span *ngIf="review.isAdminReview" class="admin-badge">Admin</span>
-                                        <span *ngIf="review.isEdited" class="edited-tag">(edited)</span>
-                                    </div>
-                                    <div class="review-rating">
-                                        <div class="stars">
-                                            <span *ngFor="let s of [1,2,3,4,5]" class="star"
-                                                [class.star--on]="s <= review.rating">★</span>
-                                        </div>
-                                        <span class="review-date">{{ review.createdAt | date:'MMM d, yyyy' }}</span>
-                                    </div>
-                                </div>
-                                <p *ngIf="review.comment" class="review-comment">{{ review.comment }}</p>
-                                <p *ngIf="!review.comment" class="review-no-comment">No comment left.</p>
-                            </div>
-
-                            <button *ngIf="visibleReviews < reviews.length" (click)="loadMoreReviews()"
-                                class="load-more-btn">
-                                Load more ({{ reviews.length - visibleReviews }} remaining)
-                            </button>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- RIGHT SIDEBAR -->
-                <div class="item-sidebar">
-
-                    <!-- Owner card -->
-                    <div class="detail-card">
-                        <p class="sidebar-section-label">Owner</p>
-                        <div class="owner-row">
-                            <div class="owner-avatar" (click)="router.navigate(['/users', item.ownerId])">
-                                <img *ngIf="item.ownerAvatarUrl" [src]="item.ownerAvatarUrl" class="avatar-img" />
-                                <span *ngIf="!item.ownerAvatarUrl">{{ getInitials(item.ownerName || '') }}</span>
-                            </div>
-                            <div class="owner-info">
-                                <div class="owner-name-row">
-                                    <p class="owner-name" (click)="router.navigate(['/users', item.ownerId])">{{
-                                        item.ownerName}}</p>
-                                    <span *ngIf="item.isOwnerVerified" class="verified-badge">
-                                        <svg class="verified-icon" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd"
-                                                d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                                clip-rule="evenodd" />
-                                        </svg>
-                                        Verified
-                                    </span>
-                                </div>
-                                <p class="owner-username" (click)="router.navigate(['/users', item.ownerId])">@{{
-                                    item.ownerUserName }}</p>
-                            </div>
-                            <div class="owner-score">
-                                <p class="score-label">Score</p>
-                                <p class="score-value" [class.score--green]="(item.ownerScore) >= 70"
-                                    [class.score--amber]="(item.ownerScore) >= 40 && (item.ownerScore) < 70"
-                                    [class.score--red]="(item.ownerScore) < 40">
-                                    {{ item.ownerScore }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Availability -->
-                    <div class="detail-card">
-                        <p class="sidebar-section-label">Availability</p>
-                        <div class="avail-row">
-                            <span class="avail-label">Status</span>
-                            <span class="avail-badge"
-                                [class.avail-badge--available]="!item.isCurrentlyOnLoan && item.isActive && item.status === 'Approved'"
-                                [class.avail-badge--onloan]="item.isCurrentlyOnLoan"
-                                [class.avail-badge--unavailable]="!item.isActive || item.status !== 'Approved'">
-                                {{ item.isCurrentlyOnLoan ? 'On Loan' : (item.isActive && item.status === 'Approved') ?
-                                'Available' : 'Unavailable' }}
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Dispute History -->
-                    <div *ngIf="isOwner || isAdmin" class="collapsible-card">
-                        <button (click)="disputesCollapsed = !disputesCollapsed" class="collapsible-header">
-                            <h3 class="collapsible-title">
-                                Dispute History
-                                <span class="collapsible-count">({{ disputeHistory.length }})</span>
-                            </h3>
-                            <svg class="collapsible-chevron" [class.collapsible-chevron--open]="!disputesCollapsed"
-                                fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-
-                        <div *ngIf="!disputesCollapsed" class="collapsible-body">
-                            <div *ngIf="isLoadingDisputes" class="collapsible-skeleton">
-                                <div *ngFor="let _ of [1,2]" class="skeleton-row"></div>
-                            </div>
-                            <div *ngIf="!isLoadingDisputes && disputeHistory.length === 0" class="collapsible-empty">
-                                <span>⚖️</span>
-                                <p>No disputes for this item.</p>
-                            </div>
-                            <div *ngIf="!isLoadingDisputes && disputeHistory.length > 0" class="history-list">
-                                <div *ngFor="let dispute of displayedDisputes"
-                                    (click)="router.navigate(['/my-resolution-center'], { queryParams: { tab: 'disputes', disputeId: dispute.id } })"
-                                    class="history-item">
-                                    <div class="history-item-top">
-                                        <span class="history-status-tag"
-                                            [class.history-status-tag--pending]="dispute.status === 'AwaitingResponse' || dispute.status === 'PendingAdminReview'"
-                                            [class.history-status-tag--resolved]="dispute.status === 'Resolved'">
-                                            {{ dispute.status }}
-                                        </span>
-                                        <span class="history-date">{{ dispute.createdAt | date:'MMM d, yyyy' }}</span>
-                                    </div>
-                                    <p class="history-sub">Filed by <span class="history-name">{{ dispute.filedByName
-                                            }}</span></p>
-                                    <p class="history-meta">Loan #{{ dispute.loanId }}</p>
-                                </div>
-                                <button *ngIf="visibleDisputes < disputeHistory.length" (click)="loadMoreDisputes()"
-                                    class="load-more-btn">
-                                    Load more ({{ disputeHistory.length - visibleDisputes }} remaining)
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Loan History -->
-                    <div *ngIf="isOwner || isAdmin" class="collapsible-card">
-                        <button (click)="historyCollapsed = !historyCollapsed" class="collapsible-header">
-                            <h3 class="collapsible-title">
-                                Loan History
-                                <span class="collapsible-count">({{ loanHistory.length }})</span>
-                            </h3>
-                            <svg class="collapsible-chevron" [class.collapsible-chevron--open]="!historyCollapsed"
-                                fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-
-                        <div *ngIf="!historyCollapsed" class="collapsible-body">
-                            <div *ngIf="isLoadingHistory" class="collapsible-skeleton">
-                                <div *ngFor="let _ of [1,2]" class="skeleton-row"></div>
-                            </div>
-                            <div *ngIf="!isLoadingHistory && loanHistory.length === 0" class="collapsible-empty">
-                                <span>📋</span>
-                                <p>No loan history for this item.</p>
-                            </div>
-                            <div *ngIf="!isLoadingHistory && loanHistory.length > 0" class="history-list">
-                                <div *ngFor="let loan of displayedLoanHistory"
-                                    (click)="router.navigate(['/loans', loan.id])"
-                                    class="history-item history-item--clickable">
-                                    <div class="history-item-top">
-                                        <span class="history-status-tag" [ngClass]="getLoanStatusClass(loan.status)">{{
-                                            loan.status }}</span>
-                                        <span *ngIf="loan.isOverdue" class="overdue-tag">⚠️ Overdue</span>
-                                    </div>
-                                    <p class="history-name">{{ loan.otherPartyName }}</p>
-                                    <p class="history-meta">#{{ loan.id }} · {{ loan.startDate | date:'MMM d' }} → {{
-                                        loan.actualReturnDate ? (loan.actualReturnDate | date:'MMM d, yyyy') :
-                                        (loan.endDate | date:'MMM d, yyyy') }}</p>
-                                </div>
-                                <button *ngIf="visibleLoans < loanHistory.length" (click)="loadMoreLoanHistory()"
-                                    class="load-more-btn">
-                                    Load more ({{ loanHistory.length - visibleLoans }} remaining)
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Rating summary -->
-                    <div *ngIf="reviews.length > 0" class="detail-card">
-                        <p class="sidebar-section-label">Rating</p>
-                        <div class="rating-summary">
-                            <span class="rating-big">{{ averageRating.toFixed(1) }}</span>
-                            <div>
-                                <div class="stars stars--lg">
-                                    <span *ngFor="let s of [1,2,3,4,5]" class="star"
-                                        [class.star--on]="s <= averageRating">★</span>
-                                </div>
-                                <p class="rating-count">{{ reviews.length }} review{{ reviews.length !== 1 ? 's' : '' }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Existing loan request -->
-                    <div *ngIf="hasActiveLoanRequest && existingLoan" class="detail-card">
-                        <p class="sidebar-section-label">Your Loan Request</p>
-                        <div class="loan-status-row">
-                            <span class="avail-label">Status</span>
-                            <span class="history-status-tag" [ngClass]="getLoanStatusClass(existingLoan.status)">{{
-                                existingLoan.status }}</span>
-                        </div>
-                        <div class="loan-status-row">
-                            <span class="avail-label">Total Price</span>
-                            <span class="detail-value" [class.detail-value--amber]="existingLoan.totalPrice > 0">
-                                {{ existingLoan.totalPrice === 0 ? 'Free' : 'kr ' + existingLoan.totalPrice }}
-                            </span>
-                        </div>
-                        <div class="loan-status-row">
-                            <span class="avail-label">Start</span>
-                            <span class="detail-value">{{ existingLoan.startDate | date:'MMM d, yyyy' }}</span>
-                        </div>
-                        <div class="loan-status-row">
-                            <span class="avail-label">End</span>
-                            <span class="detail-value">{{ existingLoan.endDate | date:'MMM d, yyyy' }}</span>
-                        </div>
-                        <p *ngIf="cancelError" class="error-msg">{{ cancelError }}</p>
-                        <div class="loan-actions">
-                            <button (click)="router.navigate(['/loans', existingLoan.id])"
-                                class="btn-action btn-secondary">View Loan</button>
-                            <button
-                                *ngIf="existingLoan.status === 'Pending' || existingLoan.status === 'AdminPending' || existingLoan.status === 'Approved'"
-                                (click)="cancelLoan()" [disabled]="isCancellingLoan" class="btn-action btn-danger">
-                                {{ isCancellingLoan ? 'Cancelling...' : 'Cancel' }}
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Request CTA -->
-                    <div *ngIf="canRequestLoan" class="cta-card">
-                        <p class="cta-title">Interested?</p>
-                        <p class="cta-sub">Send a loan request to the owner.</p>
-                        <button (click)="openLoanModal()" class="btn-loan btn-loan--full">Request Loan</button>
-                    </div>
-
-                    <!-- Verification required CTA (sidebar) -->
-                    <div *ngIf="item.requiresVerification && !isOwner && !isAdmin && !isVerified && !existingLoan && !item.isCurrentlyOnLoan && item.status === 'Approved' && item.isActive"
-                        class="verification-required-card">
-                        <div class="verification-required-icon">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
-                            </svg>
-                        </div>
-                        <p class="verification-required-title">Verified account required</p>
-                        <p class="verification-required-sub">This item can only be requested by verified users. Visit
-                            your profile to request verification.</p>
-                    </div>
-
-                    <!-- On loan by someone else -->
-                    <div *ngIf="item.isCurrentlyOnLoan && !isOwner && !hasActiveLoanRequest" class="onloan-card">
-                        <p class="onloan-title">Currently On Loan</p>
-                        <p class="onloan-sub">This item is currently borrowed by someone else.</p>
-                    </div>
-
-                </div>
-            </div>
+        <div class="item-meta-tags">
+          <span class="meta-tag">{{ item.categoryName }}</span>
+          <span class="meta-dot">·</span>
+          <span class="condition-badge" [ngClass]="getConditionClass(item.condition)">{{
+            item.condition
+          }}</span>
+          <span *ngIf="item.isCurrentlyOnLoan" class="status-chip status-chip--warning"
+            >På lån</span
+          >
+          <span
+            *ngIf="item.status !== 'Approved'"
+            class="status-chip"
+            [class.status-chip--warning]="item.status === 'Pending'"
+            [class.status-chip--danger]="item.status === 'Rejected'"
+          >
+            {{ item.status }}
+          </span>
         </div>
-    </div>
+      </div>
 
-    <!-- Not found -->
-    <div *ngIf="!isLoading && !item" class="not-found">
-        <p class="not-found-icon">📦</p>
-        <h3 class="not-found-title">Item not found</h3>
-        <p class="not-found-sub">This item doesn't exist or you don't have access to it.</p>
-        <a routerLink="/home" class="btn-loan">Browse items</a>
-    </div>
+      <div class="item-header-actions">
+        <button *ngIf="canRequestLoan" (click)="openLoanModal()" class="btn btn-primary">
+          <svg
+            class="icon-sm"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+          Anmod om lån
+        </button>
 
+        <button
+          *ngIf="!isOwner && !isAdmin"
+          (click)="toggleFavorite()"
+          [disabled]="isTogglingFavorite"
+          class="btn btn-outline"
+          [class.btn-favorited]="isFavorited"
+          [title]="isFavorited ? 'Fjern fra favoritter' : 'Gem'"
+        >
+          <svg class="icon-sm" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              *ngIf="isFavorited"
+              fill="currentColor"
+              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+            />
+            <path
+              *ngIf="!isFavorited"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+            />
+          </svg>
+          {{ isTogglingFavorite ? '...' : isFavorited ? 'Gemt' : 'Gem' }}
+        </button>
+
+        <button *ngIf="!isOwner && !isAdmin" (click)="openReportModal()" class="btn btn-outline">
+          <svg
+            class="icon-sm"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z"
+            />
+          </svg>
+          Rapportér
+        </button>
+
+        <div
+          *ngIf="
+            item.requiresVerification &&
+            !isOwner &&
+            !isAdmin &&
+            !isVerified &&
+            !existingLoan &&
+            !item.isCurrentlyOnLoan &&
+            item.status === 'Approved' &&
+            item.isActive
+          "
+          class="verification-notice-inline"
+        >
+          <svg
+            class="icon-sm"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z"
+            />
+          </svg>
+          Verificeret konto kræves
+        </div>
+
+        <button *ngIf="isOwner || isAdmin" (click)="openEditModal()" class="btn btn-outline">
+          <svg
+            class="icon-sm"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            />
+          </svg>
+          Rediger genstand
+        </button>
+      </div>
+    </header>
+
+    <!-- ===== Body: 2-column grid ===== -->
+    <div class="item-grid">
+      <!-- LEFT: photos + description + details + reviews -->
+      <div class="item-main">
+        <!-- Photos -->
+        <div *ngIf="item.photos && item.photos.length > 0" class="photos-wrap">
+          <div class="photo-primary">
+            <img
+              [src]="item.photos[activePhotoIndex]?.photoUrl"
+              [alt]="item.title"
+              class="photo-primary-img"
+              (click)="selectedPhoto = item.photos[activePhotoIndex]?.photoUrl ?? null"
+            />
+
+            <button
+              *ngIf="item.photos.length > 1"
+              (click)="prevPhoto(item.photos.length)"
+              class="photo-nav photo-nav--prev"
+              aria-label="Forrige billede"
+            >
+              <svg
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2.5"
+                aria-hidden="true"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
+            <button
+              *ngIf="item.photos.length > 1"
+              (click)="nextPhoto(item.photos.length)"
+              class="photo-nav photo-nav--next"
+              aria-label="Næste billede"
+            >
+              <svg
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2.5"
+                aria-hidden="true"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            <div *ngIf="item.photos.length > 1" class="photo-dots">
+              <span
+                *ngFor="let photo of item.photos; let i = index"
+                class="photo-dot"
+                [class.photo-dot--active]="i === activePhotoIndex"
+                (click)="activePhotoIndex = i"
+              ></span>
+            </div>
+          </div>
+
+          <div *ngIf="item.photos.length > 1" class="photo-thumbs">
+            <div
+              *ngFor="let photo of item.photos; let i = index"
+              (click)="activePhotoIndex = i"
+              class="photo-thumb"
+              [class.photo-thumb--active]="i === activePhotoIndex"
+            >
+              <img [src]="photo.photoUrl" alt="" />
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="!item.photos || item.photos.length === 0" class="photo-placeholder">
+          {{ getCategoryEmoji(item.categoryName || '') }}
+        </div>
+
+        <!-- Description -->
+        <div class="detail-card">
+          <h3 class="detail-card-title">Beskrivelse</h3>
+          <p class="detail-card-text">{{ item.description }}</p>
+        </div>
+
+        <!-- Details grid -->
+        <div class="detail-card">
+          <h3 class="detail-card-title">Detaljer</h3>
+          <div class="details-grid">
+            <div class="detail-item">
+              <p class="detail-label">Aktuel værdi</p>
+              <p class="detail-value">kr {{ item.currentValue }}</p>
+            </div>
+            <div class="detail-item">
+              <p class="detail-label">Min. lånedage</p>
+              <p class="detail-value">{{ item.minLoanDays ?? '—' }}</p>
+            </div>
+            <div class="detail-item">
+              <p class="detail-label">Maks. lånedage</p>
+              <p class="detail-value">{{ item.maxLoanDays ?? '—' }}</p>
+            </div>
+            <div class="detail-item">
+              <p class="detail-label">Tilgængelig fra</p>
+              <p class="detail-value">{{ item.availableFrom | date: 'd MMM yyyy' }}</p>
+            </div>
+            <div class="detail-item">
+              <p class="detail-label">Tilgængelig til</p>
+              <p class="detail-value">{{ item.availableUntil | date: 'd MMM yyyy' }}</p>
+            </div>
+            <div class="detail-item detail-item--full">
+              <p class="detail-label">Afhentningsadresse</p>
+              <p class="detail-value">
+                <span class="pin" aria-hidden="true">📍</span> {{ item.pickupAddress }}
+              </p>
+            </div>
+            <div class="detail-item">
+              <p class="detail-label">Kræver verifikation</p>
+              <p class="detail-value" [class.detail-value--warn]="item.requiresVerification">
+                {{ item.requiresVerification ? 'Ja' : 'Nej' }}
+              </p>
+            </div>
+            <div class="detail-item">
+              <p class="detail-label">Oprettet</p>
+              <p class="detail-value">{{ item.createdAt | date: 'd MMM yyyy' }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reviews -->
+        <div class="detail-card">
+          <div class="reviews-header">
+            <h3 class="detail-card-title">
+              Anmeldelser <span class="reviews-count">({{ reviews.length }})</span>
+            </h3>
+            <div *ngIf="reviews.length > 0" class="reviews-avg">
+              <span class="stars" aria-hidden="true">
+                <span
+                  *ngFor="let s of [1, 2, 3, 4, 5]"
+                  [class.star--on]="s <= averageRating"
+                  [class.star--off]="s > averageRating"
+                  >★</span
+                >
+              </span>
+              <span class="reviews-score">{{ averageRating.toFixed(1) }}</span>
+            </div>
+          </div>
+
+          <div *ngIf="isLoadingReviews" class="reviews-skeleton">
+            <div *ngFor="let _ of [1, 2]" class="skeleton-review"></div>
+          </div>
+
+          <div *ngIf="!isLoadingReviews && reviews.length === 0" class="reviews-empty">
+            <span class="reviews-empty-icon">⭐</span>
+            <p>Ingen anmeldelser af denne genstand endnu.</p>
+          </div>
+
+          <div *ngIf="!isLoadingReviews && reviews.length > 0" class="reviews-list">
+            <div
+              *ngFor="let review of displayedReviews"
+              class="review-card"
+              [class.review-card--admin]="review.isAdminReview"
+            >
+              <div class="review-top">
+                <div class="review-author">
+                  <div class="review-avatar">
+                    <img *ngIf="review.reviewerAvatarUrl" [src]="review.reviewerAvatarUrl" alt="" />
+                    <span *ngIf="!review.reviewerAvatarUrl">{{
+                      review.reviewerName.charAt(0).toUpperCase()
+                    }}</span>
+                  </div>
+                  <p class="review-name">{{ review.reviewerName }}</p>
+                  <span *ngIf="review.isAdminReview" class="badge badge--admin">Admin</span>
+                  <span *ngIf="review.isEdited" class="review-edited">(redigeret)</span>
+                </div>
+                <div class="review-rating">
+                  <span class="stars" aria-hidden="true">
+                    <span
+                      *ngFor="let s of [1, 2, 3, 4, 5]"
+                      [class.star--on]="s <= review.rating"
+                      [class.star--off]="s > review.rating"
+                      >★</span
+                    >
+                  </span>
+                  <span class="review-date">{{ review.createdAt | date: 'd MMM yyyy' }}</span>
+                </div>
+              </div>
+              <p *ngIf="review.comment" class="review-comment">{{ review.comment }}</p>
+              <p *ngIf="!review.comment" class="review-no-comment">Ingen kommentar efterladt.</p>
+            </div>
+
+            <button
+              *ngIf="visibleReviews < reviews.length"
+              (click)="loadMoreReviews()"
+              class="btn btn-outline load-more-btn"
+            >
+              Indlæs flere ({{ reviews.length - visibleReviews }} tilbage)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT SIDEBAR -->
+      <aside class="item-sidebar">
+        <!-- Owner card -->
+        <div class="detail-card">
+          <p class="sidebar-label">Ejer</p>
+          <div class="owner-row">
+            <div class="owner-avatar" (click)="router.navigate(['/users', item.ownerId])">
+              <img *ngIf="item.ownerAvatarUrl" [src]="item.ownerAvatarUrl" alt="" />
+              <span *ngIf="!item.ownerAvatarUrl">{{ getInitials(item.ownerName || '') }}</span>
+            </div>
+            <div class="owner-info">
+              <div class="owner-name-row">
+                <p class="owner-name" (click)="router.navigate(['/users', item.ownerId])">
+                  {{ item.ownerName }}
+                </p>
+                <span *ngIf="item.isOwnerVerified" class="badge badge--verified">
+                  <svg
+                    class="badge-icon"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  Verificeret
+                </span>
+              </div>
+              <p class="owner-username" (click)="router.navigate(['/users', item.ownerId])">
+                &#64;{{ item.ownerUserName }}
+              </p>
+            </div>
+            <div class="owner-score">
+              <p class="owner-score-label">Score</p>
+              <p
+                class="owner-score-value"
+                [class.score-text--good]="item.ownerScore >= 70"
+                [class.score-text--medium]="item.ownerScore >= 40 && item.ownerScore < 70"
+                [class.score-text--low]="item.ownerScore < 40"
+              >
+                {{ item.ownerScore }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Availability -->
+        <div class="detail-card">
+          <p class="sidebar-label">Tilgængelighed</p>
+          <div class="info-row">
+            <span class="info-label">Status</span>
+            <span
+              class="status-chip"
+              [class.status-chip--success]="
+                !item.isCurrentlyOnLoan && item.isActive && item.status === 'Approved'
+              "
+              [class.status-chip--warning]="item.isCurrentlyOnLoan"
+              [class.status-chip--muted]="!item.isActive || item.status !== 'Approved'"
+            >
+              {{
+                item.isCurrentlyOnLoan
+                  ? 'På lån'
+                  : item.isActive && item.status === 'Approved'
+                    ? 'Tilgængelig'
+                    : 'Utilgængelig'
+              }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Dispute History (owner/admin) -->
+        <div *ngIf="isOwner || isAdmin" class="detail-card">
+          <button (click)="disputesCollapsed = !disputesCollapsed" class="collapsible-header">
+            <h3 class="detail-card-title">
+              Tvister <span class="reviews-count">({{ disputeHistory.length }})</span>
+            </h3>
+            <svg
+              class="collapsible-chevron"
+              [class.collapsible-chevron--open]="!disputesCollapsed"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <div *ngIf="!disputesCollapsed" class="collapsible-body">
+            <div *ngIf="isLoadingDisputes" class="collapsible-skeleton">
+              <div *ngFor="let _ of [1, 2]" class="skeleton-row"></div>
+            </div>
+            <div
+              *ngIf="!isLoadingDisputes && disputeHistory.length === 0"
+              class="collapsible-empty"
+            >
+              <span>⚖️</span>
+              <p>Ingen tvister for denne genstand.</p>
+            </div>
+            <div *ngIf="!isLoadingDisputes && disputeHistory.length > 0" class="history-list">
+              <div
+                *ngFor="let dispute of displayedDisputes"
+                (click)="
+                  router.navigate(['/my-resolution-center'], {
+                    queryParams: { tab: 'disputes', disputeId: dispute.id },
+                  })
+                "
+                class="history-item"
+              >
+                <div class="history-item-top">
+                  <span
+                    class="status-chip"
+                    [class.status-chip--warning]="
+                      dispute.status === 'AwaitingResponse' ||
+                      dispute.status === 'PendingAdminReview'
+                    "
+                    [class.status-chip--success]="dispute.status === 'Resolved'"
+                  >
+                    {{ dispute.status }}
+                  </span>
+                  <span class="history-date">{{ dispute.createdAt | date: 'd MMM yyyy' }}</span>
+                </div>
+                <p class="history-sub">
+                  Indgivet af <span class="history-name">{{ dispute.filedByName }}</span>
+                </p>
+                <p class="history-meta">Lån #{{ dispute.loanId }}</p>
+              </div>
+              <button
+                *ngIf="visibleDisputes < disputeHistory.length"
+                (click)="loadMoreDisputes()"
+                class="btn btn-outline load-more-btn"
+              >
+                Indlæs flere ({{ disputeHistory.length - visibleDisputes }} tilbage)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loan History (owner/admin) -->
+        <div *ngIf="isOwner || isAdmin" class="detail-card">
+          <button (click)="historyCollapsed = !historyCollapsed" class="collapsible-header">
+            <h3 class="detail-card-title">
+              Lånehistorik <span class="reviews-count">({{ loanHistory.length }})</span>
+            </h3>
+            <svg
+              class="collapsible-chevron"
+              [class.collapsible-chevron--open]="!historyCollapsed"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <div *ngIf="!historyCollapsed" class="collapsible-body">
+            <div *ngIf="isLoadingHistory" class="collapsible-skeleton">
+              <div *ngFor="let _ of [1, 2]" class="skeleton-row"></div>
+            </div>
+            <div *ngIf="!isLoadingHistory && loanHistory.length === 0" class="collapsible-empty">
+              <span>📋</span>
+              <p>Ingen lånehistorik for denne genstand.</p>
+            </div>
+            <div *ngIf="!isLoadingHistory && loanHistory.length > 0" class="history-list">
+              <div
+                *ngFor="let loan of displayedLoanHistory"
+                (click)="router.navigate(['/loans', loan.id])"
+                class="history-item history-item--clickable"
+              >
+                <div class="history-item-top">
+                  <span class="status-chip" [ngClass]="getLoanStatusClass(loan.status)">{{
+                    loan.status
+                  }}</span>
+                  <span *ngIf="loan.isOverdue" class="overdue-tag">⚠️ Overskredet</span>
+                </div>
+                <p class="history-name">{{ loan.otherPartyName }}</p>
+                <p class="history-meta">
+                  #{{ loan.id }} · {{ loan.startDate | date: 'd MMM' }} →
+                  {{
+                    loan.actualReturnDate
+                      ? (loan.actualReturnDate | date: 'd MMM yyyy')
+                      : (loan.endDate | date: 'd MMM yyyy')
+                  }}
+                </p>
+              </div>
+              <button
+                *ngIf="visibleLoans < loanHistory.length"
+                (click)="loadMoreLoanHistory()"
+                class="btn btn-outline load-more-btn"
+              >
+                Indlæs flere ({{ loanHistory.length - visibleLoans }} tilbage)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rating summary -->
+        <div *ngIf="reviews.length > 0" class="detail-card">
+          <p class="sidebar-label">Bedømmelse</p>
+          <div class="rating-summary">
+            <span class="rating-big">{{ averageRating.toFixed(1) }}</span>
+            <div>
+              <span class="stars stars--lg" aria-hidden="true">
+                <span
+                  *ngFor="let s of [1, 2, 3, 4, 5]"
+                  [class.star--on]="s <= averageRating"
+                  [class.star--off]="s > averageRating"
+                  >★</span
+                >
+              </span>
+              <p class="rating-count">
+                {{ reviews.length }} anmeldelse{{ reviews.length !== 1 ? 'r' : '' }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Existing loan request -->
+        <div *ngIf="hasActiveLoanRequest && existingLoan" class="detail-card">
+          <p class="sidebar-label">Din låneanmodning</p>
+          <div class="info-row">
+            <span class="info-label">Status</span>
+            <span class="status-chip" [ngClass]="getLoanStatusClass(existingLoan.status)">{{
+              existingLoan.status
+            }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Start</span>
+            <span class="info-value">{{ existingLoan.startDate | date: 'd MMM yyyy' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Slut</span>
+            <span class="info-value">{{ existingLoan.endDate | date: 'd MMM yyyy' }}</span>
+          </div>
+          <p *ngIf="cancelError" class="form-error">{{ cancelError }}</p>
+          <div class="loan-actions">
+            <button
+              (click)="router.navigate(['/loans', existingLoan.id])"
+              class="btn btn-outline btn-sm"
+            >
+              Se lån
+            </button>
+            <button
+              *ngIf="
+                existingLoan.status === 'Pending' ||
+                existingLoan.status === 'AdminPending' ||
+                existingLoan.status === 'Approved'
+              "
+              (click)="cancelLoan()"
+              [disabled]="isCancellingLoan"
+              class="btn btn-danger-outline btn-sm"
+            >
+              {{ isCancellingLoan ? 'Annullerer...' : 'Annullér' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Request CTA -->
+        <div *ngIf="canRequestLoan" class="cta-card">
+          <p class="cta-title">Interesseret?</p>
+          <p class="cta-sub">Send en låneanmodning til ejeren.</p>
+          <button (click)="openLoanModal()" class="btn btn-primary btn-block">Anmod om lån</button>
+        </div>
+
+        <!-- Verification required CTA (sidebar) -->
+        <div
+          *ngIf="
+            item.requiresVerification &&
+            !isOwner &&
+            !isAdmin &&
+            !isVerified &&
+            !existingLoan &&
+            !item.isCurrentlyOnLoan &&
+            item.status === 'Approved' &&
+            item.isActive
+          "
+          class="verification-card"
+        >
+          <div class="verification-icon">
+            <svg
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z"
+              />
+            </svg>
+          </div>
+          <p class="verification-title">Verificeret konto kræves</p>
+          <p class="verification-sub">
+            Denne genstand kan kun anmodes om af verificerede brugere. Besøg din profil for at
+            anmode om verifikation.
+          </p>
+        </div>
+
+        <!-- On loan by someone else -->
+        <div
+          *ngIf="item.isCurrentlyOnLoan && !isOwner && !hasActiveLoanRequest"
+          class="cta-card cta-card--muted"
+        >
+          <p class="cta-title">På lån</p>
+          <p class="cta-sub">Denne genstand er i øjeblikket lånt ud til en anden.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Not found -->
+  <div *ngIf="!isLoading && !item" class="not-found">
+    <p class="not-found-icon">📦</p>
+    <h2>Genstand ikke fundet</h2>
+    <p>Genstanden du leder efter findes ikke eller er blevet fjernet.</p>
+  </div>
 </main>
 
-<!-- ─── Edit Modal ─────────────────────────────────────────────────────────── -->
-<div *ngIf="showEditModal" class="modal-overlay">
-    <div class="modal-backdrop" (click)="closeEditModal()"></div>
-    <div class="modal modal--lg">
+<!-- ===== Edit Modal ===== -->
+<div *ngIf="showEditModal" class="modal-overlay" (click)="closeEditModal()">
+  <div class="modal modal--lg" (click)="$event.stopPropagation()">
+    <header class="modal-header">
+      <div>
+        <h2 class="modal-title">Rediger genstand</h2>
+        <p class="modal-sub">{{ item?.title }} · #{{ item?.id }}</p>
+      </div>
+      <button (click)="closeEditModal()" class="modal-close" aria-label="Luk">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+    </header>
 
-        <div class="modal-header">
-            <div>
-                <h2 class="modal-title">Edit Item</h2>
-                <p class="modal-sub">{{ item?.title }} - #{{ item?.id }}</p>
+    <div class="modal-body">
+      <!-- Photos -->
+      <div class="field">
+        <label>Billeder</label>
+        <p class="field-hint">Træk for at omrokere · Første billede er det primære</p>
+
+        <div class="photo-editor">
+          <div
+            *ngFor="let photo of editPhotos; let i = index"
+            class="photo-editor-thumb"
+            [class.photo-editor-thumb--primary]="i === 0"
+            [class.photo-editor-thumb--uploading]="photo.uploading"
+            [class.photo-editor-thumb--drag-over]="isDraggingOver === i"
+            draggable="true"
+            (dragstart)="onDragStart(i)"
+            (dragover)="onDragOver($event, i)"
+            (dragleave)="onDragLeave()"
+            (drop)="onDrop($event, i)"
+            (dragend)="onDragEnd()"
+          >
+            <div *ngIf="photo.uploading" class="photo-thumb-spinner">
+              <div class="mini-spinner"></div>
             </div>
-            <button (click)="closeEditModal()" class="modal-close">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+
+            <img *ngIf="!photo.uploading" [src]="photo.photoUrl" alt="" />
+
+            <span *ngIf="i === 0 && !photo.uploading" class="primary-badge">
+              <svg
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                class="primary-badge-icon"
+                aria-hidden="true"
+              >
+                <path
+                  d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
+                />
+              </svg>
+              Primær
+            </span>
+
+            <button
+              *ngIf="!photo.uploading"
+              type="button"
+              (click)="removeEditPhoto(i)"
+              class="photo-remove-btn"
+              title="Fjern billede"
+            >
+              <svg
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2.5"
+                aria-hidden="true"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
+          </div>
+
+          <!-- Add-more tile -->
+          <label class="photo-add-tile">
+            <input type="file" accept="image/*" multiple (change)="onPhotosSelected($event)" />
+            <svg
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="1.5"
+              class="photo-add-icon"
+              aria-hidden="true"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Tilføj billeder</span>
+          </label>
         </div>
+      </div>
 
-        <div class="modal-body">
+      <div class="field">
+        <label>Titel <span class="required">*</span></label>
+        <input type="text" [(ngModel)]="editForm.title" placeholder="Genstandstitel" />
+      </div>
 
-            <!-- ── Photos ── -->
-            <div class="form-group">
-                <label class="form-label">Photos</label>
-                <p class="form-hint">Drag to reorder · First image is the primary thumbnail</p>
-
-                <div class="photo-editor">
-
-                    <div *ngFor="let photo of editPhotos; let i = index" class="photo-editor-thumb"
-                        [class.photo-editor-thumb--primary]="i === 0"
-                        [class.photo-editor-thumb--uploading]="photo.uploading"
-                        [class.photo-editor-thumb--drag-over]="isDraggingOver === i" draggable="true"
-                        (dragstart)="onDragStart(i)" (dragover)="onDragOver($event, i)" (dragleave)="onDragLeave()"
-                        (drop)="onDrop($event, i)" (dragend)="onDragEnd()">
-
-                        <div *ngIf="photo.uploading" class="photo-thumb-spinner">
-                            <div class="mini-spinner"></div>
-                        </div>
-
-                        <img *ngIf="!photo.uploading" [src]="photo.photoUrl" class="photo-editor-img" />
-
-                        <span *ngIf="i === 0 && !photo.uploading" class="primary-badge">
-                            <svg fill="currentColor" viewBox="0 0 20 20" class="primary-badge-icon">
-                                <path
-                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            Primary
-                        </span>
-
-                        <button *ngIf="!photo.uploading" type="button" (click)="removeEditPhoto(i)"
-                            class="photo-remove-btn" title="Remove photo">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-
-                        <div *ngIf="!photo.uploading" class="drag-handle" title="Drag to reorder">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 8h16M4 16h16" />
-                            </svg>
-                        </div>
-                    </div>
-
-                    <!-- Add-more tile -->
-                    <label class="photo-add-tile">
-                        <input type="file" accept="image/*" multiple style="display:none"
-                            (change)="onPhotosSelected($event)" />
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
-                            class="photo-add-icon">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                        </svg>
-                        <span>Add photos</span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Title -->
-            <div class="form-group">
-                <label class="form-label">Title <span class="required">*</span></label>
-                <input type="text" [(ngModel)]="editForm.title" placeholder="Item title" class="form-input" />
-            </div>
-
-            <!-- Description -->
-            <div class="form-group">
-                <div class="form-label-row">
-                    <label class="form-label">Description</label>
-                    <button type="button" (click)="descriptionExpanded = !descriptionExpanded" class="expand-btn">
-                        {{ descriptionExpanded ? 'Collapse' : 'Expand' }}
-                        <svg class="expand-icon" [class.expand-icon--open]="descriptionExpanded" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </button>
-                </div>
-                <textarea [(ngModel)]="editForm.description" placeholder="Describe the item..."
-                    [rows]="descriptionExpanded ? 10 : 3" class="form-input form-textarea"></textarea>
-            </div>
-
-            <!-- Condition + Value -->
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">Condition</label>
-                    <select [(ngModel)]="editForm.condition" class="form-input form-select">
-                        <option value="Excellent">Excellent</option>
-                        <option value="Good">Good</option>
-                        <option value="Fair">Fair</option>
-                        <option value="Poor">Poor</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Current Value (kr)</label>
-                    <input type="number" [(ngModel)]="editForm.currentValue" placeholder="0" class="form-input" />
-                </div>
-            </div>
-
-            <!-- Dates -->
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">Available From</label>
-                    <input type="date" [(ngModel)]="editForm.availableFrom" class="form-input" />
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Available Until</label>
-                    <input type="date" [(ngModel)]="editForm.availableUntil" class="form-input" />
-                </div>
-            </div>
-
-            <!-- Min and max Loan Days -->
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">Min Loan Days</label>
-                    <input type="number" [(ngModel)]="editForm.minLoanDays" placeholder="—" class="form-input" />
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Max Loan Days</label>
-                    <input type="number" [(ngModel)]="editForm.maxLoanDays" placeholder="—" class="form-input" />
-                </div>
-            </div>
-
-            <!-- Pickup Address (Geoapify) -->
-            <div class="form-group">
-                <label class="form-label">Pickup Address</label>
-                <div class="address-wrap">
-                    <input type="text" [ngModel]="editForm.pickupAddress"
-                        (ngModelChange)="editForm.pickupAddress = $event; onAddressInput($event)"
-                        (blur)="showAddressSuggestions = false" placeholder="Start typing an address..."
-                        class="form-input" autocomplete="off" />
-                    <div *ngIf="showAddressSuggestions && addressSuggestions.length > 0" class="address-dropdown">
-                        <button *ngFor="let s of addressSuggestions" type="button" (mousedown)="selectAddress(s)"
-                            class="address-option">
-                            📍 {{ s.properties.formatted }}
-                        </button>
-                    </div>
-                </div>
-                <p *ngIf="editForm.pickupLatitude && editForm.pickupLongitude" class="coords-hint">
-                    📍 {{ editForm.pickupLatitude.toFixed(5) }}, {{ editForm.pickupLongitude.toFixed(5) }}
-                </p>
-            </div>
-
-            <!-- Toggles -->
-            <div class="toggles-row">
-
-                <!-- Requires Verification -->
-                <div class="toggle-item" (click)="editForm.requiresVerification = !editForm.requiresVerification">
-                    <div class="toggle-pill" [class.toggle-pill--amber]="editForm.requiresVerification">
-                        <div class="toggle-knob" [class.toggle-knob--on]="editForm.requiresVerification"></div>
-                    </div>
-                    <span class="toggle-text">Requires Verification</span>
-                </div>
-
-                <!-- Set Active -->
-                <div class="toggle-item" (click)="editForm.isActive = !editForm.isActive">
-                    <div class="toggle-pill" [class.toggle-pill--green]="editForm.isActive">
-                        <div class="toggle-knob" [class.toggle-knob--on]="editForm.isActive"></div>
-                    </div>
-                    <span class="toggle-text">
-                        Set Active
-                        <span class="toggle-sub">{{ editForm.isActive ? 'Listed &amp; available' : 'Unlisted /
-                            unavailable' }}</span>
-                    </span>
-                </div>
-
-            </div>
-
-            <p *ngIf="editError" class="error-msg">{{ editError }}</p>
-            <p *ngIf="editSuccess" class="success-msg">{{ editSuccess }}</p>
+      <div class="field">
+        <div class="field-label-row">
+          <label>Beskrivelse</label>
+          <button
+            type="button"
+            (click)="descriptionExpanded = !descriptionExpanded"
+            class="expand-btn"
+          >
+            {{ descriptionExpanded ? 'Skjul' : 'Udvid' }}
+            <svg
+              class="expand-icon"
+              [class.expand-icon--open]="descriptionExpanded"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
         </div>
+        <textarea
+          [(ngModel)]="editForm.description"
+          [rows]="descriptionExpanded ? 10 : 3"
+          placeholder="Beskriv genstanden..."
+        ></textarea>
+      </div>
 
-        <div class="modal-footer">
-            <button (click)="closeEditModal()" class="btn-secondary">Cancel</button>
-            <button (click)="saveEdit()" [disabled]="isSavingEdit" class="btn-loan">
-                <div *ngIf="isSavingEdit" class="btn-spinner"></div>
-                {{ isSavingEdit ? 'Saving...' : 'Save Changes' }}
-            </button>
+      <div class="field-row">
+        <div class="field">
+          <label>Tilstand</label>
+          <select [(ngModel)]="editForm.condition">
+            <option value="Excellent">Fremragende</option>
+            <option value="Good">God</option>
+            <option value="Fair">Rimelig</option>
+            <option value="Poor">Slidt</option>
+          </select>
         </div>
+        <div class="field">
+          <label>Aktuel værdi (kr)</label>
+          <input type="number" [(ngModel)]="editForm.currentValue" placeholder="0" />
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Tilgængelig fra</label>
+          <input type="date" [(ngModel)]="editForm.availableFrom" />
+        </div>
+        <div class="field">
+          <label>Tilgængelig til</label>
+          <input type="date" [(ngModel)]="editForm.availableUntil" />
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Min. lånedage</label>
+          <input type="number" [(ngModel)]="editForm.minLoanDays" placeholder="—" />
+        </div>
+        <div class="field">
+          <label>Maks. lånedage</label>
+          <input type="number" [(ngModel)]="editForm.maxLoanDays" placeholder="—" />
+        </div>
+      </div>
+
+      <div class="field address-field">
+        <label>Afhentningsadresse</label>
+        <input
+          type="text"
+          [ngModel]="editForm.pickupAddress"
+          (ngModelChange)="editForm.pickupAddress = $event; onAddressInput($event)"
+          (blur)="showAddressSuggestions = false"
+          placeholder="Begynd at skrive en adresse..."
+          autocomplete="off"
+        />
+        <ul *ngIf="showAddressSuggestions && addressSuggestions.length > 0" class="suggestions">
+          <li *ngFor="let s of addressSuggestions" (mousedown)="selectAddress(s)">
+            <span class="pin" aria-hidden="true">📍</span> {{ s.properties.formatted }}
+          </li>
+        </ul>
+        <p *ngIf="editForm.pickupLatitude && editForm.pickupLongitude" class="field-hint">
+          <span class="pin" aria-hidden="true">📍</span> {{ editForm.pickupLatitude.toFixed(5) }},
+          {{ editForm.pickupLongitude.toFixed(5) }}
+        </p>
+      </div>
+
+      <!-- Toggles -->
+      <div class="toggles-row">
+        <label class="toggle-item">
+          <input
+            type="checkbox"
+            [(ngModel)]="editForm.requiresVerification"
+            class="toggle-checkbox"
+          />
+          <span class="toggle-pill" [class.toggle-pill--on]="editForm.requiresVerification"></span>
+          <span class="toggle-text">Kræver verifikation</span>
+        </label>
+
+        <label class="toggle-item">
+          <input type="checkbox" [(ngModel)]="editForm.isActive" class="toggle-checkbox" />
+          <span class="toggle-pill" [class.toggle-pill--on]="editForm.isActive"></span>
+          <span class="toggle-text">
+            Aktiv
+            <span class="toggle-sub">{{
+              editForm.isActive ? 'Opslået og tilgængelig' : 'Skjult / utilgængelig'
+            }}</span>
+          </span>
+        </label>
+      </div>
+
+      <p *ngIf="editError" class="form-error">{{ editError }}</p>
+      <p *ngIf="editSuccess" class="form-success">{{ editSuccess }}</p>
     </div>
+
+    <footer class="modal-footer">
+      <button (click)="closeEditModal()" class="btn btn-outline">Annullér</button>
+      <button (click)="saveEdit()" [disabled]="isSavingEdit" class="btn btn-primary">
+        <span *ngIf="isSavingEdit" class="mini-spinner" aria-hidden="true"></span>
+        {{ isSavingEdit ? 'Gemmer...' : 'Gem ændringer' }}
+      </button>
+    </footer>
+  </div>
 </div>
 
-<!-- ─── Loan Modal ──────────────────────────────────────────────────────────── -->
-<div *ngIf="showLoanModal" class="modal-overlay">
-    <div class="modal-backdrop" (click)="showLoanModal = false"></div>
-    <div class="modal">
-        <div class="modal-header">
-            <div>
-                <h2 class="modal-title">Request Loan</h2>
-                <p class="modal-sub">{{ item?.title }}</p>
-            </div>
-            <button (click)="showLoanModal = false" class="modal-close">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
+<!-- ===== Loan Modal ===== -->
+<div *ngIf="showLoanModal" class="modal-overlay" (click)="showLoanModal = false">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <header class="modal-header">
+      <div>
+        <h2 class="modal-title">Anmod om lån</h2>
+        <p class="modal-sub">{{ item?.title }}</p>
+      </div>
+      <button (click)="showLoanModal = false" class="modal-close" aria-label="Luk">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+    </header>
+
+    <div class="modal-body">
+      <div class="field-row">
+        <div class="field">
+          <label>Startdato <span class="required">*</span></label>
+          <input type="date" [(ngModel)]="loanForm.startDate" />
         </div>
-
-        <div class="modal-body">
-
-            <!-- Date pickers -->
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">Start Date <span class="required">*</span></label>
-                    <input type="date" [(ngModel)]="loanForm.startDate" class="form-input" />
-                </div>
-                <div class="form-group">
-                    <label class="form-label">End Date <span class="required">*</span></label>
-                    <input type="date" [(ngModel)]="loanForm.endDate" class="form-input" />
-                </div>
-            </div>
-
-            <!-- Min loan days hint -->
-            <div *ngIf="item?.minLoanDays" class="min-days-hint">
-                <span class="hint-label">Minimum loan period:</span>
-                <span class="hint-value">{{ item?.minLoanDays }} days</span>
-            </div>
-
-            <!-- Price summary -->
-            <div *ngIf="!item?.isFree && loanDays > 0" class="price-summary">
-                <div class="price-summary-row">
-                    <span class="price-summary-label">Rate</span>
-                    <span class="price-summary-value">kr {{ item?.pricePerDay }}<span
-                            class="price-per-day">/day</span></span>
-                </div>
-                <div class="price-summary-row">
-                    <span class="price-summary-label">Duration</span>
-                    <span class="price-summary-value">{{ loanDays }} day{{ loanDays !== 1 ? 's' : '' }}</span>
-                </div>
-                <div class="price-summary-divider"></div>
-                <div class="price-summary-row price-summary-row--total">
-                    <span class="price-summary-total-label">Total</span>
-                    <span class="price-summary-total-value">kr {{ totalLoanPrice }}</span>
-                </div>
-            </div>
-
-            <!-- Free item badge -->
-            <div *ngIf="item?.isFree" class="free-badge">
-                🎉 This item is free to borrow
-            </div>
-
-            <p *ngIf="loanError" class="error-msg">{{ loanError }}</p>
-            <p *ngIf="loanSuccess" class="success-msg">{{ loanSuccess }}</p>
+        <div class="field">
+          <label>Slutdato <span class="required">*</span></label>
+          <input type="date" [(ngModel)]="loanForm.endDate" />
         </div>
+      </div>
 
-        <div class="modal-footer">
-            <button (click)="showLoanModal = false" class="btn-secondary">Cancel</button>
-            <button (click)="requestLoan()" [disabled]="isRequesting" class="btn-loan">
-                {{ isRequesting ? 'Requesting...' : 'Send Request' }}
-            </button>
+      <div *ngIf="item?.minLoanDays" class="hint-row">
+        <span class="hint-label">Minimum låneperiode:</span>
+        <span class="hint-value">{{ item?.minLoanDays }} dage</span>
+      </div>
+
+      <div *ngIf="item?.maxLoanDays" class="hint-row">
+        <span class="hint-label">Maksimum låneperiode:</span>
+        <span class="hint-value">{{ item?.maxLoanDays }} dage</span>
+      </div>
+
+      <!-- Price summary -->
+      <div *ngIf="!item?.isFree && loanDays > 0" class="price-summary">
+        <div class="price-row">
+          <span class="price-label">Rate</span>
+          <span class="price-value"
+            >kr {{ item?.pricePerDay }}<span class="price-unit">/dag</span></span
+          >
         </div>
+        <div class="price-row">
+          <span class="price-label">Varighed</span>
+          <span class="price-value">{{ loanDays }} dag{{ loanDays !== 1 ? 'e' : '' }}</span>
+        </div>
+        <div class="price-divider"></div>
+        <div class="price-row price-row--total">
+          <span>Total</span>
+          <span>kr {{ totalLoanPrice }}</span>
+        </div>
+      </div>
+
+      <div *ngIf="item?.isFree" class="free-badge">🎉 Denne genstand er gratis at låne</div>
+
+      <p *ngIf="loanError" class="form-error">{{ loanError }}</p>
+      <p *ngIf="loanSuccess" class="form-success">{{ loanSuccess }}</p>
     </div>
+
+    <footer class="modal-footer">
+      <button (click)="showLoanModal = false" class="btn btn-outline">Annullér</button>
+      <button (click)="requestLoan()" [disabled]="isRequesting" class="btn btn-primary">
+        {{ isRequesting ? 'Sender...' : 'Send anmodning' }}
+      </button>
+    </footer>
+  </div>
 </div>
 
-<!-- ─── Report Modal ───────────────────────────────────────────── -->
-<div *ngIf="showReportModal" class="modal-overlay">
-    <div class="modal-backdrop" (click)="showReportModal = false"></div>
-    <div class="modal">
-        <div class="modal-header">
-            <div>
-                <h2 class="modal-title">Report Item</h2>
-                <p class="modal-sub">{{ item?.title }}</p>
-            </div>
-            <button (click)="showReportModal = false" class="modal-close">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label class="form-label">Reason <span class="required">*</span></label>
-                <select [(ngModel)]="reportReason" class="form-input form-select">
-                    <option value="">Select a reason...</option>
-                    <option value="FakeListing">Fake Listing</option>
-                    <option value="ProhibitedItem">Prohibited Item</option>
-                    <option value="MisleadingDescription">Misleading Description</option>
-                    <option value="Spam">Spam</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Additional details</label>
-                <textarea [(ngModel)]="reportDetails" rows="3" placeholder="Describe the issue..."
-                    class="form-input form-textarea"></textarea>
-            </div>
-            <p *ngIf="reportError" class="error-msg">{{ reportError }}</p>
-            <p *ngIf="reportSuccess" class="success-msg">{{ reportSuccess }}</p>
-        </div>
-        <div class="modal-footer">
-            <button (click)="showReportModal = false" class="btn-secondary">Cancel</button>
-            <button (click)="submitReport()" [disabled]="isSubmittingReport" class="btn-report-submit">
-                {{ isSubmittingReport ? 'Submitting...' : 'Submit Report' }}
-            </button>
-        </div>
+<!-- ===== Report Modal ===== -->
+<div *ngIf="showReportModal" class="modal-overlay" (click)="showReportModal = false">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <header class="modal-header">
+      <div>
+        <h2 class="modal-title">Rapportér genstand</h2>
+        <p class="modal-sub">{{ item?.title }}</p>
+      </div>
+      <button (click)="showReportModal = false" class="modal-close" aria-label="Luk">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+    </header>
+    <div class="modal-body">
+      <div class="field">
+        <label>Årsag <span class="required">*</span></label>
+        <select [(ngModel)]="reportReason">
+          <option value="">Vælg en årsag...</option>
+          <option value="FakeListing">Falsk opslag</option>
+          <option value="ProhibitedItem">Forbudt genstand</option>
+          <option value="MisleadingDescription">Vildledende beskrivelse</option>
+          <option value="Spam">Spam</option>
+          <option value="Other">Andet</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Yderligere detaljer</label>
+        <textarea
+          [(ngModel)]="reportDetails"
+          rows="3"
+          placeholder="Beskriv problemet..."
+        ></textarea>
+      </div>
+      <p *ngIf="reportError" class="form-error">{{ reportError }}</p>
+      <p *ngIf="reportSuccess" class="form-success">{{ reportSuccess }}</p>
     </div>
+    <footer class="modal-footer">
+      <button (click)="showReportModal = false" class="btn btn-outline">Annullér</button>
+      <button (click)="submitReport()" [disabled]="isSubmittingReport" class="btn btn-danger">
+        {{ isSubmittingReport ? 'Sender...' : 'Send rapport' }}
+      </button>
+    </footer>
+  </div>
 </div>
 
-<!-- Lightbox -->
+<!-- ===== Lightbox ===== -->
 <div *ngIf="selectedPhoto" class="lightbox" (click)="selectedPhoto = null">
-    <div class="lightbox-backdrop"></div>
-    <img [src]="selectedPhoto" class="lightbox-img" />
+  <img [src]="selectedPhoto" class="lightbox-img" alt="" />
 </div>

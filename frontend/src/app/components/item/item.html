@@ -1,435 +1,482 @@
-<!-- Background -->
-<div class="bg-base"></div>
-<div class="bg-grid"></div>
-
 <app-navbar></app-navbar>
 
-<main class="main-content">
+<main class="page">
+  <!-- Header -->
+  <header class="page-header item-page-header">
+    <div>
+      <p class="eyebrow">Dine opslag</p>
+      <h1 class="page-title">Mine genstande</h1>
+    </div>
+    <button (click)="openAddModal()" class="btn btn-primary">
+      <svg
+        class="icon-sm"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+      </svg>
+      Opslå genstand
+    </button>
+  </header>
 
-    <!-- Header -->
-    <div class="page-header">
-        <div class="page-header__row">
-            <div>
-                <p class="page-header__sub">Manage your listings</p>
-                <h1 class="page-header__title">My Items</h1>
-            </div>
-            <button (click)="openAddModal()" class="btn-primary">
-                <svg class="btn-primary__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                List a new item
-            </button>
-        </div>
-        <div class="stats-row">
-            <div class="stat-dot">
-                <span class="stat-dot__indicator stat-dot__indicator--green"></span>
-                <span class="stat-dot__text"><span class="stat-dot__value">{{ approvedCount }}</span> Active</span>
-            </div>
-            <div class="stat-dot">
-                <span class="stat-dot__indicator stat-dot__indicator--amber"></span>
-                <span class="stat-dot__text"><span class="stat-dot__value">{{ pendingCount }}</span> Pending</span>
-            </div>
-            <div class="stat-dot">
-                <span class="stat-dot__indicator stat-dot__indicator--red"></span>
-                <span class="stat-dot__text"><span class="stat-dot__value">{{ rejectedCount }}</span> Rejected</span>
-            </div>
-            <div class="stat-dot">
-                <span class="stat-dot__indicator stat-dot__indicator--zinc"></span>
-                <span class="stat-dot__text"><span class="stat-dot__value">{{ inactiveCount }}</span> Inactive</span>
-            </div>
-        </div>
+  <!-- Count summary -->
+  <div class="count-bar">
+    <span class="count-item"
+      ><strong>{{ approvedCount }}</strong> Aktive</span
+    >
+    <span class="count-sep">·</span>
+    <span class="count-item"
+      ><strong>{{ pendingCount }}</strong> Afventer</span
+    >
+    <span class="count-sep">·</span>
+    <span class="count-item"
+      ><strong>{{ rejectedCount }}</strong> Afvist</span
+    >
+    <span class="count-sep">·</span>
+    <span class="count-item"
+      ><strong>{{ inactiveCount }}</strong> Inaktive</span
+    >
+  </div>
+
+  <!-- Controls: tabs + search + sort -->
+  <div class="controls-row">
+    <div class="tab-bar">
+      <button
+        *ngFor="let tab of tabs"
+        (click)="onTabChange(tab.key)"
+        class="tab-pill"
+        [class.tab-pill--active]="activeTab === tab.key"
+      >
+        {{ tab.label }}
+        <span class="tab-pill-count">{{ getTabCount(tab.key) }}</span>
+      </button>
     </div>
 
-    <div class="page-body">
-
-        <!-- Tabs + Search -->
-        <div class="toolbar">
-            <div class="tab-group">
-                <button *ngFor="let tab of tabs" (click)="onTabChange(tab.key)" class="tab-btn"
-                    [class.tab-btn--active]="activeTab === tab.key">
-                    {{ tab.label }}
-                    <span class="tab-btn__count" [class.tab-btn__count--active]="activeTab === tab.key">
-                        {{ getTabCount(tab.key) }}
-                    </span>
-                </button>
-            </div>
-
-            <div class="toolbar-actions" style="display: flex; gap: 0.75rem; align-items: center;">
-                <div class="sort-wrapper">
-                    <select [ngModel]="sortLabel" (ngModelChange)="onSortChange($event)" class="form-input form-select"
-                        style="padding: 0.5rem 2rem 0.5rem 0.75rem; font-size: 0.75rem; width: auto; background-color: #18181b;">
-                        <option value="newest">Newest first</option>
-                        <option value="oldest">Oldest first</option>
-                        <option value="az">Name: A → Z</option>
-                        <option value="za">Name: Z → A</option>
-                        <option value="price_asc">Price: Low to High</option>
-                        <option value="price_desc">Price: High to Low</option>
-                        <option value="rating">Top Rated</option>
-                    </select>
-                </div>
-
-                <div class="search-wrapper">
-                    <svg class="search-wrapper__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-                    </svg>
-                    <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()"
-                        placeholder="Search your items..." class="search-input" />
-                </div>
-            </div>
-        </div>
-
-        <!-- Loading skeleton -->
-        <div *ngIf="isLoading" class="grid-grid">
-            <div *ngFor="let _ of [1,2,3,4,5,6]" class="skeleton-card">
-                <div class="skeleton-card__image"></div>
-                <div class="skeleton-card__body">
-                    <div class="skeleton skeleton--line-sm"></div>
-                    <div class="skeleton skeleton--line-lg"></div>
-                    <div class="skeleton skeleton--line-md"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Empty state -->
-        <div *ngIf="!isLoading && filteredItems.length === 0" class="empty-state">
-            <div class="empty-icon">📦</div>
-            <h3 class="empty-title">No items found</h3>
-            <p class="empty-sub">
-                {{ activeTab === 'all' ? "You haven't listed any items yet." : "No items in this category." }}
-            </p>
-            <button (click)="openAddModal()" class="btn-primary">List your first item</button>
-        </div>
-
-        <!-- Items grid -->
-        <div *ngIf="!isLoading && filteredItems.length > 0" class="grid-grid">
-            <div *ngFor="let item of pagedItems" (click)="goToItem(item.slug)" class="card">
-
-                <!-- Image -->
-                <div class="card-image">
-                    <img *ngIf="item.mainPhotoUrl" [src]="item.mainPhotoUrl" [alt]="item.title"
-                        class="card-image__img" />
-                    <div *ngIf="!item.mainPhotoUrl" class="card-fallback">
-                        {{ getCategoryEmoji(item.categoryName) }}
-                    </div>
-                    <span class="status-badge" [ngClass]="getStatusClass(item)">
-                        {{ getStatusLabel(item) }}
-                    </span>
-                </div>
-
-                <!-- Body -->
-                <div class="card-body">
-                    <div class="card-header">
-                        <div class="card-header__info">
-                            <p class="card-category">{{ item.categoryName }}</p>
-                            <h3 class="card-title">{{ item.title }}</h3>
-                        </div>
-                        <span class="card-condition" [ngClass]="getConditionClass(item.condition)">
-                            {{ item.condition }}
-                        </span>
-                    </div>
-
-                    <p class="card-location">📍 {{ item.pickupAddress }}</p>
-                    <p *ngIf="item.description" class="card-desc">{{ item.description }}</p>
-
-                    <div class="card-rating">
-                        <span class="card-rating__star">★</span>
-                        <span class="card-rating__value">{{ item.averageRating ? item.averageRating.toFixed(1) : 'New'
-                            }}</span>
-                        <span *ngIf="item.totalReviews" class="card-rating__count">({{ item.totalReviews }})</span>
-                    </div>
-
-                    <div class="card-price-row">
-                        <span class="card-price">{{ item.isFree ? 'Free' : item.pricePerDay + ' kr/day' }}</span>
-                        <span *ngIf="item.requiresVerification" class="verification-badge">
-                            ⚠️ Verification required
-                        </span>
-                    </div>
-
-                    <div class="card-actions" (click)="$event.stopPropagation()">
-                        <button (click)="copyShareLink(item.slug, $event)" class="action-btn"
-                            [class.action-btn--copied]="copiedSlug === item.slug">
-                            <svg *ngIf="copiedSlug !== item.slug" class="action-btn__icon" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 100-5.368 3 3 0 000 5.368zm0 10.736a3 3 0 100-5.368 3 3 0 000 5.368z" />
-                            </svg>
-                            <svg *ngIf="copiedSlug === item.slug" class="action-btn__icon" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M5 13l4 4L19 7" />
-                            </svg>
-                            {{ copiedSlug === item.slug ? 'Copied!' : 'Share' }}
-                        </button>
-
-                        <button (click)="toggleActive(item)" [disabled]="item.status !== 'Approved'" class="action-btn"
-                            [class.action-btn--activate]="item.isActive === false">
-                            <svg *ngIf="item.isActive !== false" class="action-btn__icon" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                            </svg>
-                            <svg *ngIf="item.isActive === false" class="action-btn__icon" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            {{ item.isActive === false ? 'Activate' : 'Deactivate' }}
-                        </button>
-
-                        <button (click)="confirmDelete(item)" class="action-btn--delete">
-                            <svg class="action-btn__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pagination -->
-        <div *ngIf="totalPages > 1" class="pagination">
-            <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1" class="page-btn">← Prev</button>
-            <ng-container *ngFor="let page of pageNumbers">
-                <span *ngIf="page === -1" class="page-ellipsis">…</span>
-                <button *ngIf="page !== -1" (click)="goToPage(page)" class="page-btn"
-                    [class.page-btn--active]="page === currentPage">{{ page }}</button>
-            </ng-container>
-            <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages" class="page-btn">Next
-                →</button>
-        </div>
-
+    <div class="search-sort">
+      <div class="search-bar search-bar--inline">
+        <span class="search-icon" aria-hidden="true">🔍</span>
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearchChange()"
+          placeholder="Søg i dine opslag..."
+          class="search-input"
+        />
+      </div>
+      <select [ngModel]="sortLabel" (ngModelChange)="onSortChange($event)" class="select">
+        <option value="newest">Nyeste</option>
+        <option value="oldest">Ældste</option>
+        <option value="rating">Bedst bedømt</option>
+        <option value="az">A → Z</option>
+        <option value="za">Z → A</option>
+        <option value="price_asc">Pris: lav til høj</option>
+        <option value="price_desc">Pris: høj til lav</option>
+      </select>
     </div>
+  </div>
 
-    <!-- ── Add Item Modal ── -->
-    <div *ngIf="showAddModal" class="modal-overlay">
-        <div class="modal-backdrop"></div>
-        <div class="modal modal--wide" (click)="$event.stopPropagation()">
+  <!-- Loading skeleton -->
+  <div *ngIf="isLoading" class="items-grid">
+    <div *ngFor="let _ of [1, 2, 3, 4, 5, 6, 7, 8]" class="skeleton-card"></div>
+  </div>
 
-            <div class="modal-header modal-header--sticky">
-                <div>
-                    <h2 class="modal-title">List a new item</h2>
-                    <p class="modal-sub">Fill in the details to list your item for borrowing</p>
-                </div>
-                <button (click)="showAddModal = false" class="modal-close">
-                    <svg style="width:1.25rem;height:1.25rem" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
+  <!-- Empty state -->
+  <div *ngIf="!isLoading && filteredItems.length === 0" class="empty-state">
+    <span class="empty-icon">📦</span>
+    <h3>Ingen genstande fundet</h3>
+    <p *ngIf="allItems.length === 0">
+      Du har ikke opslået nogen genstande endnu. Kom i gang ved at oprette dit første opslag.
+    </p>
+    <p *ngIf="allItems.length > 0">Ingen genstande matcher dine filtre.</p>
+    <button
+      *ngIf="allItems.length === 0"
+      (click)="openAddModal()"
+      class="btn btn-primary empty-action"
+    >
+      Opslå første genstand
+    </button>
+  </div>
 
-            <div class="modal-body modal-body--form">
-
-                <!-- Title -->
-                <div class="form-group">
-                    <label class="form-label">Title <span class="required">*</span></label>
-                    <input type="text" [(ngModel)]="createForm.title" placeholder="e.g. Makita Cordless Drill"
-                        class="form-input" />
-                </div>
-
-                <!-- Category + Condition -->
-                <div class="form-grid-2">
-                    <div class="form-group">
-                        <label class="form-label">Category <span class="required">*</span></label>
-                        <select [(ngModel)]="createForm.categoryId" class="form-input form-select">
-                            <option [value]="0" disabled>Select category</option>
-                            <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.icon }} {{ cat.name }}
-                            </option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Condition <span class="required">*</span></label>
-                        <select [(ngModel)]="createForm.condition" class="form-input form-select">
-                            <option value="Excellent">Excellent</option>
-                            <option value="Good">Good</option>
-                            <option value="Fair">Fair</option>
-                            <option value="Poor">Poor</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Description -->
-                <div class="form-group">
-                    <label class="form-label">Description <span class="required">*</span></label>
-                    <textarea [(ngModel)]="createForm.description" rows="3" placeholder="Describe your item..."
-                        class="form-input form-textarea"></textarea>
-                </div>
-
-                <!-- Value + Price -->
-                <div class="form-grid-2">
-                    <div class="form-group">
-                        <label class="form-label">Current Value (kr) <span class="required">*</span></label>
-                        <input type="number" [(ngModel)]="createForm.currentValue" placeholder="0" class="form-input" />
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Price per Day (kr)</label>
-                        <input type="number" [(ngModel)]="createForm.pricePerDay" [disabled]="createForm.isFree"
-                            placeholder="0" class="form-input" [class.form-input--disabled]="createForm.isFree" />
-                    </div>
-                </div>
-
-                <!-- Free toggle -->
-                <div class="toggle-row">
-                    <div>
-                        <p class="toggle-row__title">List as Free</p>
-                        <p class="toggle-row__sub">Borrowers won't be charged anything</p>
-                    </div>
-                    <button (click)="createForm.isFree = !createForm.isFree; createForm.pricePerDay = 0" class="toggle"
-                        [class.toggle--on]="createForm.isFree">
-                        <span class="toggle__knob" [class.toggle__knob--on]="createForm.isFree"></span>
-                    </button>
-                </div>
-
-                <!-- Loan days -->
-                <div class="form-grid-2">
-                    <div class="form-group">
-                        <label class="form-label">Min Loan Days</label>
-                        <input type="number" [(ngModel)]="createForm.minLoanDays" placeholder="No minimum" min="1"
-                            class="form-input" />
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Max Loan Days</label>
-                        <input type="number" [(ngModel)]="createForm.maxLoanDays" placeholder="No maximum" min="1"
-                            class="form-input" />
-                    </div>
-                </div>
-
-                <!-- Dates -->
-                <div class="form-grid-2">
-                    <div class="form-group">
-                        <label class="form-label">Available From <span class="required">*</span></label>
-                        <input type="date" [(ngModel)]="createForm.availableFrom" class="form-input" />
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Available Until <span class="required">*</span></label>
-                        <input type="date" [(ngModel)]="createForm.availableUntil" class="form-input" />
-                    </div>
-                </div>
-
-                <!-- Pickup Address -->
-                <div class="form-group form-group--relative">
-                    <label class="form-label">Pickup Address <span class="required">*</span></label> <input type="text"
-                        [(ngModel)]="createForm.pickupAddress" (ngModelChange)="onAddressInput($event)"
-                        autocomplete="off" placeholder="Start typing your address..." class="form-input" />
-                    <ul *ngIf="showAddressSuggestions && addressSuggestions.length" class="address-dropdown">
-                        <li *ngFor="let place of addressSuggestions"
-                            (mousedown)="$event.preventDefault(); selectAddress(place)" class="address-dropdown__item">
-                            {{ place.properties.formatted }}
-                        </li>
-                    </ul>
-                    <p *ngIf="createForm.pickupLatitude && createForm.pickupLongitude" class="coords-hint">
-                        📍 {{ createForm.pickupLatitude?.toFixed(4) }}, {{ createForm.pickupLongitude?.toFixed(4) }}
-                    </p>
-                </div>
-
-                <!-- ── Photos ── -->
-                <div class="form-group">
-                    <label class="form-label">Photos</label>
-                    <p class="form-hint">Drag to reorder · First image becomes the primary thumbnail</p>
-
-                    <div class="photo-editor">
-
-                        <div *ngFor="let photo of createPhotos; let i = index" class="photo-editor-thumb"
-                            [class.photo-editor-thumb--primary]="i === 0"
-                            [class.photo-editor-thumb--uploading]="photo.uploading"
-                            [class.photo-editor-thumb--drag-over]="isDraggingOver === i" draggable="true"
-                            (dragstart)="onCreateDragStart(i)" (dragover)="onCreateDragOver($event, i)"
-                            (dragleave)="onCreateDragLeave()" (drop)="onCreateDrop($event, i)"
-                            (dragend)="onCreateDragEnd()">
-
-                            <div *ngIf="photo.uploading" class="photo-thumb-spinner">
-                                <div class="mini-spinner"></div>
-                            </div>
-
-                            <img *ngIf="!photo.uploading" [src]="photo.photoUrl" class="photo-editor-img" />
-
-                            <span *ngIf="i === 0 && !photo.uploading" class="primary-badge">
-                                <svg fill="currentColor" viewBox="0 0 20 20" class="primary-badge-icon">
-                                    <path
-                                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                </svg>
-                                Primary
-                            </span>
-
-                            <button *ngIf="!photo.uploading" type="button" (click)="removeCreatePhoto(i)"
-                                class="photo-remove-btn" title="Remove photo">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-
-                            <div *ngIf="!photo.uploading" class="drag-handle" title="Drag to reorder">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 8h16M4 16h16" />
-                                </svg>
-                            </div>
-                        </div>
-
-                        <!-- Add tile -->
-                        <label class="photo-add-tile">
-                            <input type="file" accept="image/*" multiple style="display:none"
-                                (change)="onCreatePhotosSelected($event)" />
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
-                                class="photo-add-icon">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                            </svg>
-                            <span>Add photos</span>
-                        </label>
-
-                    </div>
-                </div>
-
-                <!-- Requires Verification toggle -->
-                <div class="toggle-row">
-                    <div>
-                        <p class="toggle-row__title">Requires Verification</p>
-                        <p class="toggle-row__sub">Only verified users can borrow this item</p>
-                    </div>
-                    <button (click)="createForm.requiresVerification = !createForm.requiresVerification" class="toggle"
-                        [class.toggle--on]="createForm.requiresVerification">
-                        <span class="toggle__knob" [class.toggle__knob--on]="createForm.requiresVerification"></span>
-                    </button>
-                </div>
-
-                <p *ngIf="createError" class="error-msg">{{ createError }}</p>
-                <p *ngIf="!isAdmin" class="info-msg">ℹ️ Your item will be reviewed by an admin before becoming visible
-                    to others.</p>
-
-            </div>
-
-            <div class="modal-footer modal-footer--sticky">
-                <button (click)="showAddModal = false" class="btn-secondary">Cancel</button>
-                <button (click)="createItem()" [disabled]="isCreating" class="btn-primary">
-                    {{ isCreating ? 'Listing...' : 'List item' }}
-                </button>
-            </div>
+  <!-- Items grid -->
+  <div *ngIf="!isLoading && filteredItems.length > 0" class="items-grid">
+    <article *ngFor="let item of pagedItems" class="item-card" (click)="goToItem(item.slug)">
+      <!-- Image -->
+      <div class="item-card-image">
+        <img *ngIf="item.mainPhotoUrl" [src]="item.mainPhotoUrl" [alt]="item.title" />
+        <div *ngIf="!item.mainPhotoUrl" class="item-card-fallback">
+          {{ getCategoryEmoji(item.categoryName) }}
         </div>
-    </div>
 
+        <span class="status-chip item-status-chip" [ngClass]="getStatusClass(item)">
+          {{ getStatusLabel(item) }}
+        </span>
+
+        <button
+          class="share-btn"
+          (click)="copyShareLink(item.slug, $event)"
+          [attr.aria-label]="'Kopiér link til ' + item.title"
+        >
+          <svg
+            *ngIf="copiedSlug !== item.slug"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M16 3h5v5M21 3l-9 9"
+            />
+          </svg>
+          <svg
+            *ngIf="copiedSlug === item.slug"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="item-card-body">
+        <div class="item-card-header">
+          <h3 class="item-card-title">{{ item.title }}</h3>
+          <span class="condition-badge" [ngClass]="getConditionClass(item.condition)">
+            {{ item.condition }}
+          </span>
+        </div>
+
+        <p class="item-card-location">
+          <span class="pin" aria-hidden="true">📍</span>
+          {{ item.pickupAddress }}
+        </p>
+
+        <div class="item-card-meta">
+          <span class="item-card-category">{{ item.categoryName }}</span>
+          <span class="item-card-rating">
+            <span class="star">★</span>
+            {{ item.averageRating ? item.averageRating.toFixed(1) : 'Ny' }}
+            <span *ngIf="item.totalReviews" class="rating-count">({{ item.totalReviews }})</span>
+          </span>
+        </div>
+
+        <div class="item-card-price">
+          <span>{{ item.isFree ? 'Gratis' : item.pricePerDay + ' kr/dag' }}</span>
+          <span *ngIf="item.requiresVerification" class="verification-badge">
+            <span aria-hidden="true">⚠️</span> Verifikation
+          </span>
+        </div>
+
+        <!-- Admin actions -->
+        <div class="item-card-actions" (click)="$event.stopPropagation()">
+          <button (click)="toggleActive(item)" class="item-action-btn">
+            {{ item.isActive === false ? 'Aktivér' : 'Deaktivér' }}
+          </button>
+          <button (click)="confirmDelete(item)" class="item-action-btn item-action-btn--danger">
+            Slet
+          </button>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <!-- Pagination -->
+  <nav *ngIf="totalPages > 1" class="pagination" aria-label="Pagination">
+    <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1" class="page-btn">
+      ← Forrige
+    </button>
+    <ng-container *ngFor="let page of pageNumbers">
+      <span *ngIf="page === -1" class="page-ellipsis">…</span>
+      <button
+        *ngIf="page !== -1"
+        (click)="goToPage(page)"
+        class="page-btn"
+        [class.page-btn--active]="page === currentPage"
+      >
+        {{ page }}
+      </button>
+    </ng-container>
+    <button
+      (click)="goToPage(currentPage + 1)"
+      [disabled]="currentPage === totalPages"
+      class="page-btn"
+    >
+      Næste →
+    </button>
+  </nav>
 </main>
 
-<!-- Delete modal -->
-<div *ngIf="showDeleteModal" class="modal-overlay" (click)="showDeleteModal = false">
-    <div class="modal-backdrop"></div>
-    <div class="modal modal--sm" (click)="$event.stopPropagation()">
-        <div class="delete-icon-wrap">
-            <svg class="delete-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
+<!-- ===== Add Item Modal ===== -->
+<div *ngIf="showAddModal" class="modal-overlay" (click)="showAddModal = false">
+  <div class="modal modal--lg" (click)="$event.stopPropagation()">
+    <header class="modal-header">
+      <div>
+        <h2 class="modal-title">Opslå ny genstand</h2>
+        <p class="modal-sub">Udfyld detaljerne om din genstand</p>
+      </div>
+      <button (click)="showAddModal = false" class="modal-close" aria-label="Luk">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+    </header>
+
+    <div class="modal-body">
+      <!-- Title -->
+      <div class="field">
+        <label>Titel <span class="required">*</span></label>
+        <input type="text" [(ngModel)]="createForm.title" placeholder="Fx. 'Bosch skruemaskine'" />
+      </div>
+
+      <!-- Category + Condition -->
+      <div class="field-row">
+        <div class="field">
+          <label>Kategori <span class="required">*</span></label>
+          <select [(ngModel)]="createForm.categoryId">
+            <option [ngValue]="0">Vælg kategori...</option>
+            <option *ngFor="let cat of categories" [ngValue]="cat.id">{{ cat.name }}</option>
+          </select>
         </div>
-        <h3 class="modal-title">Delete item?</h3>
-        <p class="modal-delete-text">
-            "<span class="modal-delete-text__name">{{ itemToDelete?.title }}</span>" will be permanently deleted. This
-            cannot be undone.
+        <div class="field">
+          <label>Tilstand</label>
+          <select [(ngModel)]="createForm.condition">
+            <option value="Excellent">Fremragende</option>
+            <option value="Good">God</option>
+            <option value="Fair">Rimelig</option>
+            <option value="Poor">Slidt</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="field">
+        <label>Beskrivelse <span class="required">*</span></label>
+        <textarea
+          [(ngModel)]="createForm.description"
+          rows="4"
+          placeholder="Beskriv genstanden, dens tilstand og eventuelle vigtige detaljer..."
+        ></textarea>
+      </div>
+
+      <!-- Value + Price -->
+      <div class="field-row">
+        <div class="field">
+          <label>Aktuel værdi (kr)</label>
+          <input type="number" [(ngModel)]="createForm.currentValue" placeholder="0" />
+        </div>
+        <div class="field">
+          <label>Pris pr. dag (kr)</label>
+          <input
+            type="number"
+            [(ngModel)]="createForm.pricePerDay"
+            [disabled]="createForm.isFree"
+            placeholder="0"
+          />
+        </div>
+      </div>
+
+      <!-- Free toggle -->
+      <label class="toggle-item">
+        <input type="checkbox" [(ngModel)]="createForm.isFree" class="toggle-checkbox" />
+        <span class="toggle-pill" [class.toggle-pill--on]="createForm.isFree"></span>
+        <span class="toggle-text">
+          Gratis at låne
+          <span class="toggle-sub">{{
+            createForm.isFree ? 'Ingen pris pr. dag' : 'Indtast en pris ovenfor'
+          }}</span>
+        </span>
+      </label>
+
+      <!-- Loan days -->
+      <div class="field-row">
+        <div class="field">
+          <label>Min. lånedage</label>
+          <input type="number" [(ngModel)]="createForm.minLoanDays" placeholder="—" />
+        </div>
+        <div class="field">
+          <label>Maks. lånedage</label>
+          <input type="number" [(ngModel)]="createForm.maxLoanDays" placeholder="—" />
+        </div>
+      </div>
+
+      <!-- Dates -->
+      <div class="field-row">
+        <div class="field">
+          <label>Tilgængelig fra <span class="required">*</span></label>
+          <input type="date" [(ngModel)]="createForm.availableFrom" />
+        </div>
+        <div class="field">
+          <label>Tilgængelig til <span class="required">*</span></label>
+          <input type="date" [(ngModel)]="createForm.availableUntil" />
+        </div>
+      </div>
+
+      <!-- Pickup Address -->
+      <div class="field address-field">
+        <label>Afhentningsadresse <span class="required">*</span></label>
+        <input
+          type="text"
+          [ngModel]="createForm.pickupAddress"
+          (ngModelChange)="createForm.pickupAddress = $event; onAddressInput($event)"
+          (blur)="showAddressSuggestions = false"
+          placeholder="Begynd at skrive en adresse..."
+          autocomplete="off"
+        />
+        <ul *ngIf="showAddressSuggestions && addressSuggestions.length" class="suggestions">
+          <li *ngFor="let place of addressSuggestions" (mousedown)="selectAddress(place)">
+            <span class="pin" aria-hidden="true">📍</span> {{ place.properties.formatted }}
+          </li>
+        </ul>
+        <p *ngIf="createForm.pickupLatitude && createForm.pickupLongitude" class="field-hint">
+          <span class="pin" aria-hidden="true">📍</span>
+          {{ createForm.pickupLatitude.toFixed(5) }}, {{ createForm.pickupLongitude.toFixed(5) }}
         </p>
-        <div class="modal-footer">
-            <button (click)="showDeleteModal = false" class="btn-secondary">Cancel</button>
-            <button (click)="deleteItem()" [disabled]="isDeleting" class="btn-danger">
-                {{ isDeleting ? 'Deleting...' : 'Delete' }}
+      </div>
+
+      <!-- Photos -->
+      <div class="field">
+        <label>Billeder</label>
+        <p class="field-hint">Træk for at omrokere · Første billede er det primære</p>
+
+        <div class="photo-editor">
+          <div
+            *ngFor="let photo of createPhotos; let i = index"
+            class="photo-editor-thumb"
+            [class.photo-editor-thumb--primary]="i === 0"
+            [class.photo-editor-thumb--uploading]="photo.uploading"
+            [class.photo-editor-thumb--drag-over]="isDraggingOver === i"
+            draggable="true"
+            (dragstart)="onCreateDragStart(i)"
+            (dragover)="onCreateDragOver($event, i)"
+            (dragleave)="onCreateDragLeave()"
+            (drop)="onCreateDrop($event, i)"
+            (dragend)="onCreateDragEnd()"
+          >
+            <div *ngIf="photo.uploading" class="photo-thumb-spinner">
+              <div class="mini-spinner"></div>
+            </div>
+
+            <img *ngIf="!photo.uploading" [src]="photo.photoUrl" alt="" />
+
+            <span *ngIf="i === 0 && !photo.uploading" class="primary-badge">
+              <svg fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <path
+                  d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
+                />
+              </svg>
+              Primær
+            </span>
+
+            <button
+              *ngIf="!photo.uploading"
+              type="button"
+              (click)="removeCreatePhoto(i)"
+              class="photo-remove-btn"
+              title="Fjern billede"
+            >
+              <svg
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2.5"
+                aria-hidden="true"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
+          </div>
+
+          <label class="photo-add-tile">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              (change)="onCreatePhotosSelected($event)"
+            />
+            <svg
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Tilføj billeder</span>
+          </label>
         </div>
+      </div>
+
+      <!-- Requires verification toggle -->
+      <label class="toggle-item">
+        <input
+          type="checkbox"
+          [(ngModel)]="createForm.requiresVerification"
+          class="toggle-checkbox"
+        />
+        <span class="toggle-pill" [class.toggle-pill--on]="createForm.requiresVerification"></span>
+        <span class="toggle-text">
+          Kræver verificeret konto
+          <span class="toggle-sub">Kun verificerede brugere kan anmode om denne genstand</span>
+        </span>
+      </label>
+
+      <p *ngIf="createError" class="form-error">{{ createError }}</p>
     </div>
+
+    <footer class="modal-footer">
+      <button (click)="showAddModal = false" class="btn btn-outline">Annullér</button>
+      <button (click)="createItem()" [disabled]="isCreating" class="btn btn-primary">
+        {{ isCreating ? 'Opslår...' : 'Opslå genstand' }}
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- ===== Delete Modal ===== -->
+<div *ngIf="showDeleteModal" class="modal-overlay" (click)="showDeleteModal = false">
+  <div class="modal modal--sm" (click)="$event.stopPropagation()">
+    <div class="modal-body modal-body--center">
+      <div class="delete-icon">
+        <svg
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+          />
+        </svg>
+      </div>
+      <h3 class="modal-title modal-title--center">Slet denne genstand?</h3>
+      <p class="modal-sub modal-sub--center">
+        Er du sikker på at du vil slette <strong>{{ itemToDelete?.title }}</strong
+        >? Dette kan ikke fortrydes.
+      </p>
+    </div>
+    <footer class="modal-footer">
+      <button (click)="showDeleteModal = false" class="btn btn-outline">Annullér</button>
+      <button (click)="deleteItem()" [disabled]="isDeleting" class="btn btn-danger">
+        {{ isDeleting ? 'Sletter...' : 'Ja, slet' }}
+      </button>
+    </footer>
+  </div>
 </div>

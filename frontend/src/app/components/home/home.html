@@ -1,210 +1,252 @@
-<div class="fixed inset-0 bg-zinc-950 -z-10"></div>
-<div
-  class="fixed inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:52px_52px] -z-10">
-</div>
-
 <app-navbar></app-navbar>
 
-<main class="pt-16 min-h-screen">
+<main class="page">
+  <!-- Greeting -->
+  <header class="page-header">
+    <p class="greeting-sub">Godt at se dig igen,</p>
+    <h1 class="greeting">
+      {{ userName }} <span class="greeting-wave" aria-hidden="true">👋</span>
+    </h1>
+  </header>
 
-  <!-- Hero strip -->
-  <div class="hero-strip">
-    <div class="hero-inner">
-      <div>
-        <p class="hero-sub">Good to see you back,</p>
-        <h1 class="hero-title">{{ userName }} <span class="hero-wave">👋</span></h1>
-      </div>
+  <!-- Search bar -->
+  <div class="search-bar">
+    <span class="search-icon" aria-hidden="true">🔍</span>
+    <input
+      type="text"
+      [(ngModel)]="searchQuery"
+      (ngModelChange)="onSearch()"
+      placeholder="Søg efter værktøj..."
+      class="search-input"
+    />
+  </div>
+
+  <!-- Category filter strip (horizontal, draggable) -->
+  <div class="category-wrap">
+    <button
+      *ngIf="showLeftArrow"
+      (click)="scrollCategories('left')"
+      class="scroll-btn scroll-btn--left"
+      aria-label="Scroll left"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg>
+    </button>
+
+    <div
+      #categoryStrip
+      class="category-strip"
+      (mousedown)="onDragStart($event)"
+      (mousemove)="onDragMove($event)"
+      (mouseup)="onDragEnd()"
+      (mouseleave)="onDragEnd()"
+    >
+      <button
+        (click)="selectCategory(null)"
+        [class.active]="selectedCategory === null"
+        class="category-btn"
+      >
+        Alle
+      </button>
+      <button
+        *ngFor="let cat of categories"
+        (click)="selectCategory(cat.name)"
+        [class.active]="selectedCategory === cat.name"
+        class="category-btn"
+      >
+        <span>{{ cat.icon }}</span
+        >{{ cat.name }}
+      </button>
+    </div>
+
+    <button
+      *ngIf="showRightArrow"
+      (click)="scrollCategories('right')"
+      class="scroll-btn scroll-btn--right"
+      aria-label="Scroll right"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <p class="results-count">
+      <strong>{{ totalCount }}</strong> genstande
+    </p>
+
+    <div class="toolbar-controls">
+      <label class="sort-label">
+        Sortér:
+        <select [ngModel]="sortLabel" (ngModelChange)="onSortChange($event)" class="select">
+          <option value="newest">Nyeste</option>
+          <option value="oldest">Ældste</option>
+          <option value="rating">Bedst bedømt</option>
+          <option value="az">A → Z</option>
+          <option value="za">Z → A</option>
+          <option value="price_asc">Pris: lav til høj</option>
+          <option value="price_desc">Pris: høj til lav</option>
+        </select>
+      </label>
+
+      <button (click)="onAvailableToggle()" [class.active]="availableOnly" class="filter-btn">
+        Kun tilgængelige
+      </button>
+      <button (click)="onFreeToggle()" [class.active]="freeOnly" class="filter-btn">
+        Kun gratis
+      </button>
+      <button (click)="router.navigate(['/maps'])" class="filter-btn map-view-btn" aria-label="Vis kort">
+        <span aria-hidden="true">🗺️</span> Kort-visning
+      </button>
     </div>
   </div>
 
-  <div class="page-body">
+  <!-- Loading skeleton — first load only -->
+  <div *ngIf="isLoading" class="items-grid">
+    <div *ngFor="let _ of [1, 2, 3, 4, 5, 6, 7, 8]" class="skeleton-card"></div>
+  </div>
 
-    <!-- Category filter -->
-    <div class="category-wrap">
-      <button *ngIf="showLeftArrow" (click)="scrollCategories('left')" class="scroll-btn left">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
+  <!-- Empty state -->
+  <div *ngIf="!isLoading && items.length === 0" class="empty-state">
+    <span class="empty-icon">📦</span>
+    <h3>Ingen genstande fundet</h3>
+    <p>Prøv en anden kategori eller søgeord.</p>
+  </div>
 
-      <div #categoryStrip class="category-strip" (mousedown)="onDragStart($event)" (mousemove)="onDragMove($event)"
-        (mouseup)="onDragEnd()" (mouseleave)="onDragEnd()">
-        <button (click)="selectCategory(null)" [class.active]="selectedCategory === null" class="category-btn">
-          All items
-        </button>
-        <button *ngFor="let cat of categories" (click)="selectCategory(cat.name)"
-          [class.active]="selectedCategory === cat.name" class="category-btn">
-          <span>{{ cat.icon }}</span>{{ cat.name }}
-        </button>
-      </div>
+  <!-- Items grid -->
+  <div *ngIf="!isLoading && items.length > 0" class="items-grid">
+    <article *ngFor="let item of items" class="item-card" (click)="goToItem(item.slug)">
+      <!-- Image -->
+      <div class="item-card-image">
+        <img *ngIf="item.mainPhotoUrl" [src]="item.mainPhotoUrl" [alt]="item.title" />
+        <div *ngIf="!item.mainPhotoUrl" class="item-card-fallback">
+          {{ getCategoryEmoji(item.categoryName) }}
+        </div>
 
-      <button *ngIf="showRightArrow" (click)="scrollCategories('right')" class="scroll-btn right">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
-    </div>
+        <span class="availability-badge" [ngClass]="getAvailabilityClass(item.availability)">
+          {{ getAvailabilityLabel(item.availability) }}
+        </span>
 
-    <!-- Search bar -->
-    <div class="search-bar">
-      <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearch()" placeholder="Search items..."
-        class="search-input search-input--full" />
-    </div>
-
-    <!-- Toolbar -->
-    <div class="toolbar">
-      <p class="toolbar-count">
-        <span class="toolbar-count-num">{{ totalCount }}</span> items found
-      </p>
-      <div class="toolbar-controls">
-
-         <button (click)="router.navigate(['/maps'])" class="map-view-btn">
-          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 13l4.553 2.276A1 1 0 0021 21.382V10.618a1 1 0 00-.553-.894L15 7m0 13V7m0 0L9 7" />
+        <button
+          *ngIf="item.ownerId !== currentUserId"
+          class="fav-btn"
+          [class.fav-btn--active]="favoriteIds.has(item.id)"
+          [disabled]="togglingIds.has(item.id)"
+          (click)="toggleFavorite(item.id, $event)"
+          [attr.aria-label]="
+            favoriteIds.has(item.id) ? 'Fjern fra favoritter' : 'Tilføj til favoritter'
+          "
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path
+              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+            />
           </svg>
-          Map view
-        </button>
-
-        <select [ngModel]="sortLabel" (ngModelChange)="onSortChange($event)" class="select">
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
-          <option value="rating">Top rated</option>
-          <option value="az">A → Z</option>
-          <option value="za">Z → A</option>
-          <option value="price_asc">Price: Low to high</option>
-          <option value="price_desc">Price: High to low</option>
-        </select>
-        <button (click)="onAvailableToggle()" [class.active]="availableOnly" class="filter-btn">
-          Available only
-        </button>
-        <button (click)="onFreeToggle()" [class.active]="freeOnly" class="filter-btn">
-          Free only
         </button>
       </div>
-    </div>
 
-    <!-- Loading skeleton — only shown on very first page load -->
-    <div *ngIf="isLoading" class="grid-grid">
-      <div *ngFor="let _ of [1,2,3,4,5,6,7,8]" class="skeleton-card"></div>
-    </div>
-
-    <!-- Empty state -->
-    <div *ngIf="!isLoading && items.length === 0" class="empty-state">
-      <div class="empty-icon">📦</div>
-      <h3 class="empty-title">No items found</h3>
-      <p class="empty-sub">Try a different category or search term.</p>
-    </div>
-
-    <!-- Item grid — always rendered after first load, swaps silently on filter/search/page changes -->
-    <div *ngIf="!isLoading && items.length > 0" class="grid-grid">
-      <div *ngFor="let item of items" (click)="goToItem(item.slug)" class="card">
-        <div class="card-image">
-          <img *ngIf="item.mainPhotoUrl" [src]="item.mainPhotoUrl" [alt]="item.title" />
-          <div *ngIf="!item.mainPhotoUrl" class="card-fallback">
-            {{ getCategoryEmoji(item.categoryName) }}
-          </div>
-
-          <span class="card-badge" [ngClass]="getAvailabilityClass(item.availability)">
-            {{ getAvailabilityLabel(item.availability) }}
+      <!-- Body -->
+      <div class="item-card-body">
+        <div class="item-card-header">
+          <h3 class="item-card-title">{{ item.title }}</h3>
+          <span class="condition-badge" [ngClass]="getConditionClass(item.condition)">
+            {{ item.condition }}
           </span>
-          <button *ngIf="item.ownerId !== currentUserId" (click)="toggleFavorite(item.id, $event)"
-            [disabled]="togglingIds.has(item.id)" class="card-fav" [class.card-fav--active]="favoriteIds.has(item.id)"
-            [class.card-fav--inactive]="!favoriteIds.has(item.id)">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path
-                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-            </svg>
-          </button>
         </div>
 
-        <div class="card-body">
-          <div class="card-header">
-            <h3 class="card-title">{{ item.title }}</h3>
-            <span class="card-condition" [class]="getConditionClass(item.condition)">
-              {{ item.condition }}
-            </span>
-          </div>
-          <p class="card-location">📍 {{ item.pickupAddress }}</p>
-          <p *ngIf="item.description" class="text-zinc-400 text-xs mb-3 line-clamp-2 leading-relaxed">
-            {{ item.description }}
-          </p>
-          <div class="card-meta">
-            <div class="card-owner">
-              <div class="owner-avatar">
-                <img *ngIf="item.ownerAvatarUrl" [src]="item.ownerAvatarUrl" class="avatar-img" />
-                <span *ngIf="!item.ownerAvatarUrl">{{ getInitials(item.ownerName) }}</span>
-              </div>
-              <span class="owner-name">{{ item.ownerName }}</span>
+        <p class="item-card-location">
+          <span class="pin" aria-hidden="true">📍</span>
+          {{ item.pickupAddress }}
+        </p>
+
+        <p *ngIf="item.description" class="item-card-description">{{ item.description }}</p>
+
+        <div class="item-card-meta">
+          <div class="item-card-owner">
+            <div class="owner-avatar">
+              <img *ngIf="item.ownerAvatarUrl" [src]="item.ownerAvatarUrl" [alt]="item.ownerName" />
+              <span *ngIf="!item.ownerAvatarUrl">{{ getInitials(item.ownerName) }}</span>
             </div>
-            <span class="card-rating">
-              <span class="star">★</span>
-              {{ item.averageRating ? item.averageRating.toFixed(1) : 'New' }}
-              <span *ngIf="item.totalReviews">({{ item.totalReviews }})</span>
-            </span>
+            <span class="owner-name">{{ item.ownerName }}</span>
           </div>
-          <div class="card-price">
-            <span class="price-text">
-              {{ item.isFree ? 'Free' : item.pricePerDay + ' kr/day' }}
-            </span>
-            <span *ngIf="item.requiresVerification" class="verification-badge">
-              <span>⚠️</span>
-              <span>Verification required</span>
-            </span>
-          </div>
+          <span class="item-card-rating">
+            <span class="star">★</span>
+            {{ item.averageRating ? item.averageRating.toFixed(1) : 'Ny' }}
+            <span *ngIf="item.totalReviews" class="rating-count">({{ item.totalReviews }})</span>
+          </span>
+        </div>
+
+        <div class="item-card-price">
+          <span class="price-text">
+            {{ item.isFree ? 'Gratis' : item.pricePerDay + ' kr/dag' }}
+          </span>
+          <span *ngIf="item.requiresVerification" class="verification-badge">
+            <span aria-hidden="true">⚠️</span>
+            Verifikation kræves
+          </span>
         </div>
       </div>
-    </div>
+    </article>
+  </div>
 
-    <!-- Pagination -->
-    <div *ngIf="totalPages > 1" class="pagination">
-      <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1" class="page-btn">← Prev</button>
-
-      <ng-container *ngFor="let page of pageNumbers">
-        <span *ngIf="page === -1" class="page-ellipsis">…</span>
-        <button *ngIf="page !== -1" (click)="goToPage(page)" class="page-btn"
-          [class.page-btn--active]="page === currentPage">
-          {{ page }}
-        </button>
-      </ng-container>
-
-      <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages" class="page-btn">Next
-        →</button>
-    </div>
-      <!-- Recently Viewed -->
-  <!-- <div *ngIf="recentlyViewed.length > 0" class="recently-viewed">
-    <div class="rv-header">
-      <h2 class="rv-title">Recently viewed</h2>
-      <span class="rv-count">{{ recentlyViewed.length }} items</span>
-    </div>
+  <!-- Senest set — markup beholdt og oversat, men deaktiveret indtil feature aktiveres
+       (matcher friends version: kommenteret ud i ngOnInit + skabelon).
+  <section *ngIf="recentlyViewed.length > 0" class="recently-viewed">
+    <h2>Senest set</h2>
     <div class="rv-strip">
-      <div
+      <article
         *ngFor="let item of recentlyViewed"
-        (click)="goToItem(item.itemSlug)"
         class="rv-card"
+        (click)="goToItem(item.itemSlug)"
       >
         <div class="rv-image">
           <img *ngIf="item.itemMainPhotoUrl" [src]="item.itemMainPhotoUrl" [alt]="item.itemTitle" />
           <div *ngIf="!item.itemMainPhotoUrl" class="rv-fallback">📦</div>
           <span class="rv-badge" [class.rv-badge--unavailable]="!item.isAvailable">
-            {{ item.isAvailable ? 'Available' : 'Unavailable' }}
+            {{ item.isAvailable ? 'Tilgængelig' : 'Utilgængelig' }}
           </span>
         </div>
         <div class="rv-body">
           <p class="rv-item-title">{{ item.itemTitle }}</p>
           <p class="rv-owner">{{ item.ownerName }}</p>
-          <p class="rv-price">{{ item.isFree ? 'Free' : item.pricePerDay + ' kr/day' }}</p>
-          <p class="rv-time">{{ item.viewedAt | date:'MMM d, HH:mm' }}</p>
+          <p class="rv-price">{{ item.isFree ? 'Gratis' : item.pricePerDay + ' kr/dag' }}</p>
+          <p class="rv-time">{{ item.viewedAt | date:'d MMM, HH:mm' }}</p>
         </div>
-      </div>
+      </article>
     </div>
-  </div> -->
+  </section>
+  -->
 
-  </div>
+  <!-- Pagination -->
+  <nav *ngIf="totalPages > 1" class="pagination" aria-label="Pagination">
+    <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+      ← Forrige
+    </button>
+
+    <ng-container *ngFor="let page of pageNumbers">
+      <span *ngIf="page === -1" class="page-ellipsis">…</span>
+      <button
+        *ngIf="page !== -1"
+        class="page-btn"
+        [class.page-btn--active]="page === currentPage"
+        (click)="goToPage(page)"
+      >
+        {{ page }}
+      </button>
+    </ng-container>
+
+    <button
+      class="page-btn"
+      (click)="goToPage(currentPage + 1)"
+      [disabled]="currentPage === totalPages"
+    >
+      Næste →
+    </button>
+  </nav>
 
   <!-- Toast -->
-  <div *ngIf="toastVisible" class="toast">{{ toastMessage }}</div>
-
-
-
+  <div *ngIf="toastVisible" class="toast" role="status">{{ toastMessage }}</div>
 </main>

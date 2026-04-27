@@ -1,0 +1,227 @@
+/* Dispute — split list/detail. Most styles from styles.css. */
+
+.dispute-shell {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.dispute-list-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dispute-toolbar {
+  display: flex;
+  gap: 8px;
+}
+
+.dispute-toolbar .input { flex: 1; }
+.dispute-toolbar .select { width: auto; min-width: 120px; }
+
+.dispute-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dispute-list .list-row {
+  text-align: left;
+  background: var(--color-surface);
+}
+
+.dispute-list .list-row--active {
+  border-color: var(--color-border);
+  background: var(--color-surface-alt);
+}
+
+.dispute-detail-pane {
+  min-height: 320px;
+}
+
+.dispute-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dispute-message {
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  color: var(--color-text);
+}
+
+.dispute-message--response {
+  border-left: 3px solid var(--color-info);
+}
+
+.tab-count {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 9999px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border-soft);
+  line-height: 1.4;
+}
+
+.subnav-item--active .tab-count { color: var(--color-text); }
+
+/* Evidence photo grid */
+.evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.evidence-tile {
+  position: relative;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.evidence-img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--color-surface-alt);
+  padding: 0;
+}
+
+.evidence-img:hover { border-color: var(--color-border); }
+
+.evidence-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.evidence-caption {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  line-height: 1.3;
+}
+
+.evidence-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: none;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.evidence-remove:hover { background: rgba(0, 0, 0, 0.8); }
+
+.evidence-preview {
+  margin-top: 8px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--color-surface-alt);
+}
+
+.evidence-preview img {
+  width: 100%;
+  max-height: 240px;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.extra-evidence {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border-soft);
+}
+
+.lightbox-img {
+  max-width: 95vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  cursor: zoom-out;
+  display: block;
+  margin: 0 auto;
+}
+
+.lightbox-caption {
+  margin-top: 8px;
+  color: #fff;
+  font-size: 13px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: var(--color-surface-alt);
+  border-color: var(--color-border);
+}
+
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.page-btn--active {
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  border-color: var(--color-primary);
+}
+
+.page-ellipsis {
+  padding: 0 4px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 800px) {
+  .dispute-shell {
+    grid-template-columns: 1fr;
+  }
+}

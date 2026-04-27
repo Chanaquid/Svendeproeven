@@ -1,0 +1,150 @@
+/* Notifications list page. */
+
+.notif-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.notif-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  position: relative;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.notif-row--unread {
+  background: var(--color-surface-alt);
+  border-color: var(--color-border);
+}
+
+.notif-row--clickable {
+  cursor: pointer;
+}
+
+.notif-row--clickable:hover {
+  background: var(--color-surface-alt);
+}
+
+.notif-icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  border-radius: 9999px;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border-soft);
+}
+
+/* Coloured backgrounds via CSS vars (defined in styles.css badges) */
+.notif-icon--success { background: var(--color-success-bg, rgba(16, 185, 129, 0.1)); border-color: transparent; }
+.notif-icon--danger  { background: var(--color-danger-bg,  rgba(239, 68, 68, 0.1)); border-color: transparent; }
+.notif-icon--warning { background: var(--color-warning-bg, rgba(245, 158, 11, 0.1)); border-color: transparent; }
+.notif-icon--info    { background: var(--color-info-bg,    rgba(59, 130, 246, 0.1)); border-color: transparent; }
+
+.notif-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.notif-message {
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--color-text);
+  margin: 0;
+  word-break: break-word;
+}
+
+.notif-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.notif-delete {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.notif-delete:hover:not(:disabled) {
+  background: var(--color-surface-alt);
+  color: var(--color-danger, #ef4444);
+}
+
+.notif-delete:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.tab-count {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 9999px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border-soft);
+  line-height: 1.4;
+}
+
+.subnav-item--active .tab-count { color: var(--color-text); }
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: var(--color-surface-alt);
+  border-color: var(--color-border);
+}
+
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.page-btn--active {
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  border-color: var(--color-primary);
+}
+
+.page-ellipsis {
+  padding: 0 6px;
+  color: var(--color-text-muted);
+}

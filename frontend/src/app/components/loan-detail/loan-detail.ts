@@ -23,7 +23,6 @@ import { UserReviewService } from '../../services/userReviewService';
 import { LoanChatHubService } from '../../services/loanChatHubService';
 import { UploadImageService } from '../../services/uploadImageService';
 
-
 @Component({
   selector: 'app-loan-detail',
   imports: [CommonModule, RouterLink, FormsModule, Navbar],
@@ -85,11 +84,11 @@ export class LoanDetail implements OnInit, OnDestroy {
   // Dispute
   showDisputeModal = false;
   disputeForm = { description: '', photoUrl: '', photoCaption: '' };
-  isFilingDispute = false;
-  disputeError = '';
   disputePhotoFiles: File[] = [];
   disputePhotoPreviews: string[] = [];
   disputePhotoCaptions: string[] = [];
+  isFilingDispute = false;
+  disputeError = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -103,7 +102,7 @@ export class LoanDetail implements OnInit, OnDestroy {
     private itemService: ItemService,
     private disputeService: DisputeService,
     private loanChatHubService: LoanChatHubService,
-      private uploadService: UploadImageService,
+    private uploadService: UploadImageService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -141,9 +140,7 @@ export class LoanDetail implements OnInit, OnDestroy {
         this.cdr.detectChanges();
         this.triggerScroll();
         if (msg.senderId !== this.currentUserId) {
-          this.loanMessageService
-            .markAsRead(loanId, { upToMessageId: msg.id })
-            .subscribe();
+          this.loanMessageService.markAsRead(loanId, { upToMessageId: msg.id }).subscribe();
         }
       }
       this.cdr.detectChanges();
@@ -172,7 +169,6 @@ export class LoanDetail implements OnInit, OnDestroy {
       next: (res) => {
         this.loan = res.data;
         this.isLoading = false;
-        console.log(this.loan)
         this.cdr.detectChanges();
         this.loadMessages(id);
         this.startSignalR(id);
@@ -190,16 +186,14 @@ export class LoanDetail implements OnInit, OnDestroy {
   }
 
   private loadMessages(loanId: number): void {
-    this.loanMessageService
-      .getMessages(loanId, { page: 1, pageSize: 100 })
-      .subscribe({
-        next: (res) => {
-          this.messages = res.data?.items ?? [];
-          this.cdr.detectChanges();
-          this.triggerScroll();
-        },
-        error: () => {},
-      });
+    this.loanMessageService.getMessages(loanId, { page: 1, pageSize: 100 }).subscribe({
+      next: (res) => {
+        this.messages = res.data?.items ?? [];
+        this.cdr.detectChanges();
+        this.triggerScroll();
+      },
+      error: () => {},
+    });
   }
 
   get isChatLocked(): boolean {
@@ -213,31 +207,23 @@ export class LoanDetail implements OnInit, OnDestroy {
   private checkExistingReviews(): void {
     if (!this.loan) return;
 
-    this.itemReviewService
-      .getByItem(this.loan.itemId, {}, { page: 1, pageSize: 100 })
-      .subscribe({
-        next: (res) => {
-          this.hasReviewedItem =
-            res.data?.items.some(
-              (r) => r.reviewerId === this.currentUserId,
-            ) ?? false;
-          this.cdr.detectChanges();
-        },
-        error: () => {},
-      });
+    this.itemReviewService.getByItem(this.loan.itemId, {}, { page: 1, pageSize: 100 }).subscribe({
+      next: (res) => {
+        this.hasReviewedItem =
+          res.data?.items.some((r) => r.reviewerId === this.currentUserId) ?? false;
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
 
-    const otherPartyId = this.isOwner
-      ? this.loan.borrowerId
-      : this.loan.lenderId;
+    const otherPartyId = this.isOwner ? this.loan.borrowerId : this.loan.lenderId;
 
     this.userReviewService
       .getReviewsForUser(otherPartyId, {}, { page: 1, pageSize: 100 })
       .subscribe({
         next: (res) => {
           this.hasReviewedUser =
-            res.data?.items.some(
-              (r) => r.reviewerId === this.currentUserId,
-            ) ?? false;
+            res.data?.items.some((r) => r.reviewerId === this.currentUserId) ?? false;
           this.cdr.detectChanges();
         },
         error: () => {},
@@ -312,28 +298,25 @@ export class LoanDetail implements OnInit, OnDestroy {
     const content = this.newMessage.trim();
     this.newMessage = '';
 
-    this.loanMessageService
-      .sendMessage(this.loan.id, { content })
-      .subscribe({
-        next: (res) => {
-          // Optimistically push the sent message immediately
-          if (res?.data) {
-            const exists = this.messages.some((m) => m.id === res.data?.id);
-            if (!exists) {
-              this.messages.push(res.data);
-              this.cdr.detectChanges();
-              this.triggerScroll();
-            }
+    this.loanMessageService.sendMessage(this.loan.id, { content }).subscribe({
+      next: (res) => {
+        if (res?.data) {
+          const exists = this.messages.some((m) => m.id === res.data?.id);
+          if (!exists) {
+            this.messages.push(res.data);
+            this.cdr.detectChanges();
+            this.triggerScroll();
           }
-          this.isSending = false;
-          this.cdr.detectChanges();
-        },
-        error: () => {
-          this.newMessage = content;
-          this.isSending = false;
-          this.cdr.detectChanges();
-        },
-      });
+        }
+        this.isSending = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.newMessage = content;
+        this.isSending = false;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   activateLoan(): void {
@@ -341,20 +324,18 @@ export class LoanDetail implements OnInit, OnDestroy {
     this.isActivatingLoan = true;
     this.activateError = '';
 
-    this.loanService
-      .confirmPickup({ qrCode: this.qrCodeInput.trim().toUpperCase() })
-      .subscribe({
-        next: () => {
-          this.isActivatingLoan = false;
-          this.qrCodeInput = '';
-          this.loadLoan(this.loan!.id);
-        },
-        error: (err) => {
-          this.activateError = err.error?.message ?? 'Invalid QR code.';
-          this.isActivatingLoan = false;
-          this.cdr.detectChanges();
-        },
-      });
+    this.loanService.confirmPickup({ qrCode: this.qrCodeInput.trim().toUpperCase() }).subscribe({
+      next: () => {
+        this.isActivatingLoan = false;
+        this.qrCodeInput = '';
+        this.loadLoan(this.loan!.id);
+      },
+      error: (err) => {
+        this.activateError = err.error?.message ?? 'Invalid QR code.';
+        this.isActivatingLoan = false;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   cancelLoan(): void {
@@ -362,20 +343,18 @@ export class LoanDetail implements OnInit, OnDestroy {
     this.isCancellingLoan = true;
     this.cancelLoanError = '';
 
-    this.loanService
-      .cancel(this.loan.id, { loanId: this.loan.id, reason: '' })
-      .subscribe({
-        next: () => {
-          this.isCancellingLoan = false;
-          this.showCancelConfirm = false;
-          this.loadLoan(this.loan!.id);
-        },
-        error: (err) => {
-          this.cancelLoanError = err.error?.message ?? 'Failed to cancel loan.';
-          this.isCancellingLoan = false;
-          this.cdr.detectChanges();
-        },
-      });
+    this.loanService.cancel(this.loan.id, { loanId: this.loan.id, reason: '' }).subscribe({
+      next: () => {
+        this.isCancellingLoan = false;
+        this.showCancelConfirm = false;
+        this.loadLoan(this.loan!.id);
+      },
+      error: (err) => {
+        this.cancelLoanError = err.error?.message ?? 'Failed to cancel loan.';
+        this.isCancellingLoan = false;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   completeLoan(): void {
@@ -383,29 +362,27 @@ export class LoanDetail implements OnInit, OnDestroy {
     this.isCompletingLoan = true;
     this.completeError = '';
 
-    this.loanService
-      .confirmReturn({ qrCode: this.qrCodeInput.trim().toUpperCase() })
-      .subscribe({
-        next: () => {
-          this.isCompletingLoan = false;
-          this.qrCodeInput = '';
-          this.loadLoan(this.loan!.id);
-        },
-        error: (err) => {
-          this.completeError = err.error?.message ?? 'Invalid QR code.';
-          this.isCompletingLoan = false;
-          this.cdr.detectChanges();
-        },
-      });
+    this.loanService.confirmReturn({ qrCode: this.qrCodeInput.trim().toUpperCase() }).subscribe({
+      next: () => {
+        this.isCompletingLoan = false;
+        this.qrCodeInput = '';
+        this.loadLoan(this.loan!.id);
+      },
+      error: (err) => {
+        this.completeError = err.error?.message ?? 'Invalid QR code.';
+        this.isCompletingLoan = false;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   fileDispute(): void {
     if (!this.loan || !this.disputeForm.description.trim()) {
-      this.disputeError = 'Please describe the issue.';
+      this.disputeError = 'Beskriv venligst problemet.';
       return;
     }
     if (this.disputeForm.description.trim().length < 20) {
-      this.disputeError = 'Description must be at least 20 characters.';
+      this.disputeError = 'Beskrivelsen skal være mindst 20 tegn.';
       return;
     }
     this.isFilingDispute = true;
@@ -440,7 +417,7 @@ export class LoanDetail implements OnInit, OnDestroy {
           this.onDisputeSuccess();
         },
         error: (err) => {
-          this.disputeError = err.error?.message ?? 'Failed to file dispute.';
+          this.disputeError = err.error?.message ?? 'Kunne ikke indsende tvist.';
           this.isFilingDispute = false;
           this.cdr.detectChanges();
         },
@@ -456,6 +433,29 @@ export class LoanDetail implements OnInit, OnDestroy {
     this.disputePhotoCaptions = [];
     this.cdr.detectChanges();
     this.loadLoan(this.loan!.id);
+  }
+
+  onDisputePhotoSelected(event: Event): void {
+    const files = Array.from((event.target as HTMLInputElement).files || []);
+    if (files.length === 0) return;
+
+    files.forEach((file) => {
+      this.disputePhotoFiles.push(file);
+      this.disputePhotoCaptions.push('');
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.disputePhotoPreviews.push(e.target!.result as string);
+        this.cdr.detectChanges();
+      };
+      reader.readAsDataURL(file);
+    });
+    (event.target as HTMLInputElement).value = '';
+  }
+
+  removeDisputePhoto(i: number): void {
+    this.disputePhotoFiles.splice(i, 1);
+    this.disputePhotoPreviews.splice(i, 1);
+    this.disputePhotoCaptions.splice(i, 1);
   }
 
   setItemRating(r: number): void {
@@ -513,9 +513,7 @@ export class LoanDetail implements OnInit, OnDestroy {
     this.isSubmittingUserReview = true;
     this.userReviewError = '';
 
-    const reviewedUserId = this.isOwner
-      ? this.loan.borrowerId
-      : this.loan.lenderId;
+    const reviewedUserId = this.isOwner ? this.loan.borrowerId : this.loan.lenderId;
 
     this.userReviewService
       .createReview({
@@ -533,9 +531,9 @@ export class LoanDetail implements OnInit, OnDestroy {
           this.userReviewComment = '';
 
           setTimeout(() => {
-          this.userReviewSuccess = '';
-          this.cdr.detectChanges();
-        }, 2000);
+            this.userReviewSuccess = '';
+            this.cdr.detectChanges();
+          }, 2000);
           this.cdr.detectChanges();
         },
         error: (err) => {
@@ -577,35 +575,6 @@ export class LoanDetail implements OnInit, OnDestroy {
     return 'Borrower';
   }
 
-  get activeDispute(): any {
-    //Only statuses that currently "lock" the loan
-    const ongoingStatuses = ['AwaitingResponse', 'PendingAdminReview', 'PastDeadline'];
-    return this.loan?.disputes?.find(d => ongoingStatuses.includes(d.status));
-  }
-
-  get resolvedDisputes(): any[] {
-    return this.loan?.disputes?.filter(d => d.status === 'Resolved' || d.status === 'Cancelled') ?? [];
-  }
-
-  get hasAlreadyFiledDispute(): boolean {
-    return this.loan?.disputes?.some(d => d.filedById === this.currentUserId) ?? false;
-  }
-
-  get canUserFileNewDispute(): boolean {
-    if (!this.loan || this.effectiveRole === 'Admin') return false;
-    if (this.isDisputeLocked) return false;
-    
-    // Rule: Cannot file if a dispute is currently being investigated
-    if (this.activeDispute) return false;
-
-    // Rule: Cannot file if user already reached their quota (1 per party, 2 total)
-    if (this.hasAlreadyFiledDispute || (this.loan.disputes?.length ?? 0) >= 2) return false;
-
-    const disputableStatuses = ['Active', 'Late', 'Completed'];
-    return disputableStatuses.includes(this.loan.status);
-  }
-
-
   goToItem(): void {
     if (this.loan) this.router.navigate(['/items', this.loan.itemSlug]);
   }
@@ -625,41 +594,44 @@ export class LoanDetail implements OnInit, OnDestroy {
     );
   }
 
+  /**
+   * Status class using Monday's design language (status-chip--* pattern).
+   */
   getLoanStatusClass(status: string): string {
     switch (status?.toLowerCase()) {
       case 'active':
-        return 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20';
+        return 'status-chip--info';
       case 'approved':
-        return 'bg-blue-400/10 text-blue-400 border-blue-400/20';
+        return 'status-chip--info';
       case 'completed':
-        return 'bg-cyan-300/10 text-cyan-300 border-cyan-300/20';
+        return 'status-chip--success';
       case 'late':
       case 'overdue':
-        return 'bg-red-400/10 text-red-400 border-red-400/20';
+        return 'status-chip--danger';
       case 'pending':
-        return 'bg-amber-400/10 text-amber-400 border-amber-400/20';
+        return 'status-chip--warning';
       case 'adminpending':
-        return 'bg-amber-400/10 text-amber-400 border-amber-400/20';
+        return 'status-chip--warning';
       case 'cancelled':
       case 'rejected':
-        return 'bg-rose-400/10 text-rose-400 border-rose-400/20';
+        return 'status-chip--danger';
       default:
-        return 'bg-zinc-800 text-zinc-400 border-zinc-700';
+        return 'status-chip--muted';
     }
   }
 
   getConditionClass(condition: string): string {
     switch (condition?.toLowerCase()) {
       case 'excellent':
-        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+        return 'status-chip--success';
       case 'good':
-        return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+        return 'status-chip--info';
       case 'fair':
-        return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+        return 'status-chip--warning';
       case 'poor':
-        return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+        return 'status-chip--danger';
       default:
-        return 'bg-zinc-800 text-zinc-400 border-zinc-700';
+        return 'status-chip--muted';
     }
   }
 
@@ -669,39 +641,5 @@ export class LoanDetail implements OnInit, OnDestroy {
     const completedAt = this.loan.actualReturnDate ?? this.loan.updatedAt;
     if (!completedAt) return false;
     return new Date(completedAt) < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  }
-
-
-  onDisputePhotoSelected(event: Event): void {
-    const files = Array.from((event.target as HTMLInputElement).files || []);
-    if (files.length === 0) return;
-    
-    files.forEach(file => {
-      this.disputePhotoFiles.push(file);
-      this.disputePhotoCaptions.push('');
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.disputePhotoPreviews.push(e.target!.result as string);
-        this.cdr.detectChanges();
-      };
-      reader.readAsDataURL(file);
-    });
-    // Reset input so same file can be re-selected
-    (event.target as HTMLInputElement).value = '';
-  }
-
-  removeDisputePhoto(i: number): void {
-    this.disputePhotoFiles.splice(i, 1);
-    this.disputePhotoPreviews.splice(i, 1);
-    this.disputePhotoCaptions.splice(i, 1);
-  }
-
-
-  getDisputeMiniClass(status: string): string {
-    switch (status) {
-      case 'Resolved': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-      case 'Cancelled': return 'bg-zinc-700 text-zinc-400 border-zinc-700';
-      default: return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-    }
   }
 }

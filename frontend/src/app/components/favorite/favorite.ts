@@ -1,9 +1,11 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { AuthService } from '../../services/authService';
-import { UserFavoriteService } from '../../services/userFavoriteService';
-import { Router, RouterLink } from '@angular/router';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { Subject } from 'rxjs';
+import { debounceTime, takeUntil } from 'rxjs/operators';
+import { AuthService } from '../../services/authService';
+import { UserFavoriteService } from '../../services/userFavoriteService';
 import { ItemAvailability, ItemCondition } from '../../dtos/enums';
 import { Navbar } from '../navbar/navbar';
 import {
@@ -13,8 +15,6 @@ import {
   getAvailabilityLabel,
 } from '../../utils/item.utils';
 import { getPageNumbers, getTotalPages } from '../../utils/pagination.utils';
-import { Subject } from 'rxjs';
-import { debounceTime, takeUntil } from 'rxjs/operators';
 import { UserFavoriteItemListDto } from '../../dtos/userFavoriteItemDto';
 
 @Component({
@@ -22,15 +22,15 @@ import { UserFavoriteItemListDto } from '../../dtos/userFavoriteItemDto';
   standalone: true,
   imports: [CommonModule, RouterLink, Navbar, FormsModule],
   templateUrl: './favorite.html',
+  // Reuses home's grid/card styles for visual consistency with the browse page.
   styleUrls: ['./favorite.css', '../home/home.css'],
 })
-export class Favorite implements OnInit {
+export class Favorite implements OnInit, OnDestroy {
   allFavorites: UserFavoriteItemListDto[] = [];
   favorites: UserFavoriteItemListDto[] = [];
   pagedFavorites: UserFavoriteItemListDto[] = [];
   isLoading = true;
   removingIds = new Set<number>();
-
 
   searchQuery = '';
   sortLabel = 'newest';
@@ -48,7 +48,7 @@ export class Favorite implements OnInit {
     private favoriteService: UserFavoriteService,
     public router: Router,
     private cdr: ChangeDetectorRef,
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     if (!this.authService.isLoggedIn()) {
@@ -56,13 +56,12 @@ export class Favorite implements OnInit {
       return;
     }
 
-    this.searchSubject.pipe(
-      debounceTime(300),
-      takeUntil(this.destroy$)
-    ).subscribe(() => {
-      this.currentPage = 1;
-      this.applyFilters();
-    });
+    this.searchSubject
+      .pipe(debounceTime(300), takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.currentPage = 1;
+        this.applyFilters();
+      });
 
     this.loadFavorites();
   }
@@ -77,7 +76,6 @@ export class Favorite implements OnInit {
     this.favoriteService.getMyFavorites({ page: 1, pageSize: 100 }).subscribe({
       next: (res) => {
         this.allFavorites = res.data?.items ?? [];
-        console.log(this.allFavorites);
         this.isLoading = false;
         this.applyFilters();
         this.cdr.detectChanges();
@@ -85,45 +83,53 @@ export class Favorite implements OnInit {
       error: () => {
         this.isLoading = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
   applyFilters(): void {
     let result = [...this.allFavorites];
 
-    // Search
     if (this.searchQuery.trim()) {
       const q = this.searchQuery.toLowerCase();
-      result = result.filter(f =>
-        f.title.toLowerCase().includes(q) ||
-        f.categoryName.toLowerCase().includes(q) ||
-        f.ownerName.toLowerCase().includes(q) ||
-        f.pickupAddress?.toLowerCase().includes(q)
+      result = result.filter(
+        (f) =>
+          f.title.toLowerCase().includes(q) ||
+          f.categoryName.toLowerCase().includes(q) ||
+          f.ownerName.toLowerCase().includes(q) ||
+          f.pickupAddress?.toLowerCase().includes(q),
       );
     }
 
-    // Filters
     if (this.availableOnly) {
-      result = result.filter(f => f.availability === ItemAvailability.Available);
+      result = result.filter((f) => f.availability === ItemAvailability.Available);
     }
     if (this.freeOnly) {
-      result = result.filter(f => f.isFree);
+      result = result.filter((f) => f.isFree);
     }
 
-    // Sort
     switch (this.sortLabel) {
-      case 'newest': result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); break;
-      case 'oldest': result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()); break;
-      case 'rating': result.sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0)); break;
-      case 'az': result.sort((a, b) => a.title.localeCompare(b.title)); break;
-      case 'za': result.sort((a, b) => b.title.localeCompare(a.title)); break;
+      case 'newest':
+        result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        break;
+      case 'oldest':
+        result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        break;
+      case 'rating':
+        result.sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0));
+        break;
+      case 'az':
+        result.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case 'za':
+        result.sort((a, b) => b.title.localeCompare(a.title));
+        break;
       case 'price_asc':
-        result = result.filter(f => !f.isFree);
+        result = result.filter((f) => !f.isFree);
         result.sort((a, b) => a.pricePerDay - b.pricePerDay);
         break;
       case 'price_desc':
-        result = result.filter(f => !f.isFree);
+        result = result.filter((f) => !f.isFree);
         result.sort((a, b) => b.pricePerDay - a.pricePerDay);
         break;
     }
@@ -133,9 +139,7 @@ export class Favorite implements OnInit {
     this.cdr.detectChanges();
   }
 
-  onSearch(): void {
-    this.searchSubject.next(this.searchQuery);
-  }
+  onSearch(): void { this.searchSubject.next(this.searchQuery); }
 
   onSortChange(value: string): void {
     this.sortLabel = value;
@@ -161,7 +165,7 @@ export class Favorite implements OnInit {
     this.favoriteService.toggle(itemId).subscribe({
       next: (res) => {
         if (!res.data?.isFavorited) {
-          this.allFavorites = this.allFavorites.filter(f => f.id !== itemId);
+          this.allFavorites = this.allFavorites.filter((f) => f.id !== itemId);
           this.applyFilters();
         }
         this.removingIds.delete(itemId);
@@ -170,7 +174,7 @@ export class Favorite implements OnInit {
       error: () => {
         this.removingIds.delete(itemId);
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -196,6 +200,6 @@ export class Favorite implements OnInit {
   getAvailabilityClass(availability: ItemAvailability): string { return getAvailabilityClass(availability); }
   getAvailabilityLabel(availability: ItemAvailability): string { return getAvailabilityLabel(availability); }
   getInitials(name: string): string {
-    return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
+    return name?.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) || '??';
   }
 }

@@ -15,7 +15,7 @@ import {
   DisputePenaltyDto,
 } from '../../dtos/disputeDto';
 import { DisputeFilter } from '../../dtos/filterDto';
-import { DisputeFiledAs, DisputeStatus, DisputeVerdict, ItemCondition } from '../../dtos/enums';
+import { DisputeFiledAs, DisputeStatus, DisputeVerdict } from '../../dtos/enums';
 import { PagedRequest } from '../../dtos/paginationDto';
 import { getPageNumbers, getTotalPages } from '../../utils/pagination.utils';
 
@@ -23,12 +23,11 @@ type TabKey = 'all' | 'awaiting' | 'pending' | 'overdue' | 'resolved' | 'cancell
 
 @Component({
   selector: 'app-admin-dispute',
-  imports: [CommonModule, RouterLink, FormsModule, Navbar],
+  imports: [CommonModule, FormsModule, Navbar],
   templateUrl: './admin-dispute.html',
   styleUrl: './admin-dispute.css',
 })
 export class AdminDispute implements OnInit, OnDestroy {
-
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
   private resizeHandler = () => { this.currentPage = 1; this.loadDisputes(); };
@@ -39,11 +38,9 @@ export class AdminDispute implements OnInit, OnDestroy {
   searchQuery = '';
   activeTab: TabKey = 'pending';
 
-  // Pagination
   currentPage = 1;
   totalCount = 0;
 
-  // Modal
   showModal = false;
   isLoadingDetail = false;
   selectedItem: DisputeListDto | null = null;
@@ -51,13 +48,10 @@ export class AdminDispute implements OnInit, OnDestroy {
   selectedPhoto: string | null = null;
   selectedPhotoCaption: string | null = null;
 
-  // Resolve
   resolveVerdict: DisputeVerdict | '' = '';
   resolveAdminNote = '';
-  // Owner penalty
   ownerFine: number | null = null;
   ownerScore: number | null = null;
-  // Borrower penalty
   borrowerFine: number | null = null;
   borrowerScore: number | null = null;
 
@@ -67,23 +61,23 @@ export class AdminDispute implements OnInit, OnDestroy {
   showResolveForm = false;
 
   tabs: { key: TabKey; label: string; count?: number }[] = [
-    { key: 'all',      label: 'All' },
-    { key: 'awaiting', label: 'Awaiting Response' },
-    { key: 'pending',  label: 'Under Review' },
-    { key: 'overdue',  label: 'Overdue' },
-    { key: 'resolved', label: 'Resolved' },
-    { key: 'cancelled',label: 'Cancelled' },
+    { key: 'all',      label: 'Alle' },
+    { key: 'awaiting', label: 'Afventer svar' },
+    { key: 'pending',  label: 'Under gennemgang' },
+    { key: 'overdue',  label: 'Overskredet' },
+    { key: 'resolved', label: 'Afgjort' },
+    { key: 'cancelled',label: 'Annulleret' },
   ];
 
-  readonly DisputeStatus  = DisputeStatus;
+  readonly DisputeStatus = DisputeStatus;
   readonly DisputeVerdict = DisputeVerdict;
   readonly DisputeFiledAs = DisputeFiledAs;
 
   verdictOptions = [
-    { value: DisputeVerdict.NoPenalty,         label: 'No Penalty',          desc: 'Close without penalising either party' },
-    { value: DisputeVerdict.OwnerPenalized,    label: 'Owner Penalised',     desc: 'The owner bears responsibility' },
-    { value: DisputeVerdict.BorrowerPenalized, label: 'Borrower Penalised',  desc: 'The borrower bears responsibility' },
-    { value: DisputeVerdict.BothPenalized,     label: 'Both Penalised',      desc: 'Both parties share responsibility' },
+    { value: DisputeVerdict.NoPenalty,         label: 'Ingen straf',          desc: 'Luk uden straf til nogen part' },
+    { value: DisputeVerdict.OwnerPenalized,    label: 'Ejer straffes',        desc: 'Ejeren bærer ansvaret' },
+    { value: DisputeVerdict.BorrowerPenalized, label: 'Låner straffes',       desc: 'Låneren bærer ansvaret' },
+    { value: DisputeVerdict.BothPenalized,     label: 'Begge straffes',       desc: 'Begge parter deler ansvaret' },
   ];
 
   constructor(
@@ -93,10 +87,6 @@ export class AdminDispute implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
   ) {}
 
-  // ─── Dynamic page size ────────────────────────────────────────────────────
-  // navbar 64 + header ~200 + tabs 48 + search 52 + pagination 56 + padding 80
-  // Each card ~96px
-
   get pageSize(): number {
     const available = window.innerHeight - 64 - 200 - 48 - 52 - 56 - 80;
     return Math.max(5, Math.floor(available / 96));
@@ -104,8 +94,6 @@ export class AdminDispute implements OnInit, OnDestroy {
 
   get totalPages(): number { return getTotalPages(this.totalCount, this.pageSize); }
   get pageNumbers(): number[] { return getPageNumbers(this.currentPage, this.totalPages); }
-
-  // ─── Lifecycle ───────────────────────────────────────────────────────────
 
   ngOnInit(): void {
     if (!this.authService.isAdmin()) {
@@ -116,11 +104,12 @@ export class AdminDispute implements OnInit, OnDestroy {
     this.loadDisputes();
     this.loadTabCounts();
 
-    this.searchSubject.pipe(
-      debounceTime(350),
-      distinctUntilChanged(),
-      takeUntil(this.destroy$)
-    ).subscribe(() => { this.currentPage = 1; this.loadDisputes(); });
+    this.searchSubject
+      .pipe(debounceTime(350), distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.currentPage = 1;
+        this.loadDisputes();
+      });
 
     window.addEventListener('resize', this.resizeHandler);
   }
@@ -130,8 +119,6 @@ export class AdminDispute implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
   }
-
-  // ─── Load ────────────────────────────────────────────────────────────────
 
   loadDisputes(): void {
     this.isLoading = true;
@@ -146,7 +133,7 @@ export class AdminDispute implements OnInit, OnDestroy {
     };
 
     const filter: DisputeFilter = {
-      status: this.activeTab !== 'all' ? (statusMap[this.activeTab] ?? null) : null,
+      status: this.activeTab !== 'all' ? statusMap[this.activeTab] ?? null : null,
       search: this.searchQuery.trim() || null,
     };
 
@@ -157,31 +144,43 @@ export class AdminDispute implements OnInit, OnDestroy {
       sortDescending: true,
     };
 
-    this.disputeService.adminGetAll(filter, request)
-      .pipe(takeUntil(this.destroy$), finalize(() => {
-        this.isLoading = false;
-        this.cdr.detectChanges();
-      }))
+    this.disputeService
+      .adminGetAll(filter, request)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }),
+      )
       .subscribe({
         next: (res) => {
           this.disputes = res.data?.items ?? [];
           this.totalCount = res.data?.totalCount ?? 0;
-          const tab = this.tabs.find(t => t.key === this.activeTab);
+          const tab = this.tabs.find((t) => t.key === this.activeTab);
           if (tab) tab.count = this.totalCount;
         },
-        error: () => { this.listError = 'Failed to load disputes. Please try again.'; },
+        error: () => {
+          this.listError = 'Kunne ikke hente tvister. Prøv igen.';
+        },
       });
   }
 
   private loadTabCounts(): void {
     const request: PagedRequest = { page: 1, pageSize: 1, sortBy: 'createdAt', sortDescending: true };
 
-    this.disputeService.adminGetAll(null, request).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (res) => {
-        const tab = this.tabs.find(t => t.key === 'all');
-        if (tab) { tab.count = res.data?.totalCount ?? 0; this.cdr.detectChanges(); }
-      }
-    });
+    this.disputeService
+      .adminGetAll(null, request)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          const tab = this.tabs.find((t) => t.key === 'all');
+          if (tab) {
+            tab.count = res.data?.totalCount ?? 0;
+            this.cdr.detectChanges();
+          }
+        },
+      });
 
     const statusTabs: { key: TabKey; status: DisputeStatus }[] = [
       { key: 'awaiting', status: DisputeStatus.AwaitingResponse },
@@ -192,16 +191,20 @@ export class AdminDispute implements OnInit, OnDestroy {
     ];
 
     for (const { key, status } of statusTabs) {
-      this.disputeService.adminGetAll({ status }, request).pipe(takeUntil(this.destroy$)).subscribe({
-        next: (res) => {
-          const tab = this.tabs.find(t => t.key === key);
-          if (tab) { tab.count = res.data?.totalCount ?? 0; this.cdr.detectChanges(); }
-        }
-      });
+      this.disputeService
+        .adminGetAll({ status }, request)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (res) => {
+            const tab = this.tabs.find((t) => t.key === key);
+            if (tab) {
+              tab.count = res.data?.totalCount ?? 0;
+              this.cdr.detectChanges();
+            }
+          },
+        });
     }
   }
-
-  // ─── Filters / Pagination ─────────────────────────────────────────────────
 
   switchTab(key: TabKey): void {
     this.activeTab = key;
@@ -217,8 +220,6 @@ export class AdminDispute implements OnInit, OnDestroy {
     this.loadDisputes();
   }
 
-  // ─── Modal ───────────────────────────────────────────────────────────────
-
   openModal(item: DisputeListDto): void {
     this.selectedItem = item;
     this.detail = null;
@@ -227,11 +228,15 @@ export class AdminDispute implements OnInit, OnDestroy {
     this.resetResolveForm();
     this.selectedPhoto = null;
 
-    this.disputeService.adminGetById(item.id)
-      .pipe(takeUntil(this.destroy$), finalize(() => {
-        this.isLoadingDetail = false;
-        this.cdr.detectChanges();
-      }))
+    this.disputeService
+      .adminGetById(item.id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.isLoadingDetail = false;
+          this.cdr.detectChanges();
+        }),
+      )
       .subscribe({
         next: (res) => { this.detail = res.data ?? null; },
         error: () => { this.showModal = false; },
@@ -244,22 +249,26 @@ export class AdminDispute implements OnInit, OnDestroy {
     this.selectedPhoto = null;
   }
 
-  // ─── Resolve ─────────────────────────────────────────────────────────────
-
   get canResolve(): boolean {
-    return this.detail?.status === DisputeStatus.PendingAdminReview
-        || this.detail?.status === DisputeStatus.PastDeadline
-        || this.detail?.status === DisputeStatus.AwaitingResponse;
+    return (
+      this.detail?.status === DisputeStatus.PendingAdminReview ||
+      this.detail?.status === DisputeStatus.PastDeadline ||
+      this.detail?.status === DisputeStatus.AwaitingResponse
+    );
   }
 
   get showOwnerPenalty(): boolean {
-    return this.resolveVerdict === DisputeVerdict.OwnerPenalized
-        || this.resolveVerdict === DisputeVerdict.BothPenalized;
+    return (
+      this.resolveVerdict === DisputeVerdict.OwnerPenalized ||
+      this.resolveVerdict === DisputeVerdict.BothPenalized
+    );
   }
 
   get showBorrowerPenalty(): boolean {
-    return this.resolveVerdict === DisputeVerdict.BorrowerPenalized
-        || this.resolveVerdict === DisputeVerdict.BothPenalized;
+    return (
+      this.resolveVerdict === DisputeVerdict.BorrowerPenalized ||
+      this.resolveVerdict === DisputeVerdict.BothPenalized
+    );
   }
 
   private resetResolveForm(): void {
@@ -295,15 +304,19 @@ export class AdminDispute implements OnInit, OnDestroy {
       borrowerPenalty,
     };
 
-    this.disputeService.adminResolve(this.detail.id, dto)
-      .pipe(takeUntil(this.destroy$), finalize(() => {
-        this.isResolving = false;
-        this.cdr.detectChanges();
-      }))
+    this.disputeService
+      .adminResolve(this.detail.id, dto)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.isResolving = false;
+          this.cdr.detectChanges();
+        }),
+      )
       .subscribe({
         next: (res) => {
           this.detail = res.data!;
-          this.resolveSuccess = 'Dispute resolved successfully.';
+          this.resolveSuccess = 'Tvist afgjort.';
           this.showResolveForm = false;
           this.loadDisputes();
           this.loadTabCounts();
@@ -313,53 +326,60 @@ export class AdminDispute implements OnInit, OnDestroy {
             this.cdr.detectChanges();
           }, 1500);
         },
-        error: (err) => { this.resolveError = err.error?.message ?? 'Failed to resolve dispute.'; },
+        error: (err) => {
+          this.resolveError = err.error?.message ?? 'Kunne ikke afgøre tvist.';
+        },
       });
   }
-
-  // ─── UI helpers ──────────────────────────────────────────────────────────
 
   openPhoto(url: string, caption?: string | null): void {
     this.selectedPhoto = url;
     this.selectedPhotoCaption = caption ?? null;
   }
 
-  getStatusClass(status: string): string {
+  getStatusBadge(status: string): string {
     switch (status) {
-      case DisputeStatus.AwaitingResponse:   return 'bg-amber-400/10 text-amber-400 border-amber-400/20';
-      case DisputeStatus.PendingAdminReview: return 'bg-blue-400/10 text-blue-400 border-blue-400/20';
-      case DisputeStatus.Resolved:           return 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20';
-      case DisputeStatus.PastDeadline:       return 'bg-red-400/10 text-red-400 border-red-400/20';
-      case DisputeStatus.Cancelled:          return 'bg-zinc-700/50 text-zinc-500 border-zinc-600/50';
-      default:                               return 'bg-zinc-800 text-zinc-400 border-zinc-700';
+      case DisputeStatus.AwaitingResponse:   return 'badge badge-warning';
+      case DisputeStatus.PendingAdminReview: return 'badge badge-info';
+      case DisputeStatus.Resolved:           return 'badge badge-success';
+      case DisputeStatus.PastDeadline:       return 'badge badge-danger';
+      case DisputeStatus.Cancelled:          return 'badge';
+      default:                               return 'badge';
     }
   }
 
-  getVerdictClass(verdict: string): string {
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case DisputeStatus.AwaitingResponse:   return 'Afventer svar';
+      case DisputeStatus.PendingAdminReview: return 'Under gennemgang';
+      case DisputeStatus.Resolved:           return 'Afgjort';
+      case DisputeStatus.PastDeadline:       return 'Overskredet';
+      case DisputeStatus.Cancelled:          return 'Annulleret';
+      default:                               return status;
+    }
+  }
+
+  getVerdictBadge(verdict: string): string {
     switch (verdict) {
-      case DisputeVerdict.NoPenalty:         return 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20';
-      case DisputeVerdict.OwnerPenalized:    return 'bg-amber-400/10 text-amber-400 border-amber-400/20';
-      case DisputeVerdict.BorrowerPenalized: return 'bg-red-400/10 text-red-400 border-red-400/20';
-      case DisputeVerdict.BothPenalized:     return 'bg-purple-400/10 text-purple-400 border-purple-400/20';
-      default:                               return 'bg-zinc-800 text-zinc-400 border-zinc-700';
+      case DisputeVerdict.NoPenalty:         return 'badge badge-success';
+      case DisputeVerdict.OwnerPenalized:    return 'badge badge-warning';
+      case DisputeVerdict.BorrowerPenalized: return 'badge badge-danger';
+      case DisputeVerdict.BothPenalized:     return 'badge badge-warning';
+      default:                               return 'badge';
     }
   }
 
-  getConditionClass(condition: string): string {
-    switch (condition?.toLowerCase()) {
-      case 'excellent': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-      case 'good':      return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-      case 'fair':      return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-      case 'poor':      return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-      default:          return 'bg-zinc-800 text-zinc-400 border-zinc-700';
+  getVerdictLabel(verdict: string): string {
+    switch (verdict) {
+      case DisputeVerdict.NoPenalty:         return 'Ingen straf';
+      case DisputeVerdict.OwnerPenalized:    return 'Ejer straffet';
+      case DisputeVerdict.BorrowerPenalized: return 'Låner straffet';
+      case DisputeVerdict.BothPenalized:     return 'Begge straffet';
+      default:                               return verdict;
     }
   }
 
   getInitials(name: string): string {
-    return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) ?? '';
-  }
-
-  getDefaultAvatar(name: string): string {
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=27272a&color=a1a1aa&size=80`;
+    return name?.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) ?? '';
   }
 }

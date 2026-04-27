@@ -1,15 +1,32 @@
-<input type="file" multiple (change)="onFileSelected($event)" />
+<main class="page page-narrow">
+  <header class="page-header">
+    <h1>Upload-test</h1>
+    <p class="subtitle">Intern udviklingsside til billed-upload.</p>
+  </header>
 
-<button (click)="upload()" [disabled]="isUploading">
-  Upload
-</button>
+  <div class="card">
+    <div class="field">
+      <label for="files">Vælg filer</label>
+      <input id="files" type="file" multiple (change)="onFileSelected($event)" />
+    </div>
 
-<div *ngIf="uploadResponses.length">
-  <p>Uploaded Images:</p>
+    <p *ngIf="selectedFiles.length" class="muted" style="margin-top: 8px; font-size: 13px;">
+      {{ selectedFiles.length }} {{ selectedFiles.length === 1 ? 'fil valgt' : 'filer valgt' }}
+    </p>
 
-  <div *ngFor="let url of uploadResponses">
-    <img [src]="url" width="150" />
+    <button class="btn btn-primary" style="margin-top: 16px;" (click)="upload()" [disabled]="isUploading">
+      {{ isUploading ? 'Uploader…' : 'Upload' }}
+    </button>
+
+    <p *ngIf="errorMessage" class="form-error" style="margin-top: 12px;">{{ errorMessage }}</p>
   </div>
-</div>
 
-<p *ngIf="errorMessage">{{ errorMessage }}</p>
+  <section *ngIf="uploadResponses.length" class="card-soft" style="margin-top: 16px;">
+    <h2 class="card-title">Uploadede billeder</h2>
+    <div class="upload-grid">
+      <a *ngFor="let url of uploadResponses" [href]="url" target="_blank" rel="noopener" class="upload-tile">
+        <img [src]="url" alt="Uploadet billede" />
+      </a>
+    </div>
+  </section>
+</main>

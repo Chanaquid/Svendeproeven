@@ -2,6 +2,7 @@ import {
   ChangeDetectorRef,
   Component,
   Input,
+  OnChanges,
   OnDestroy,
   OnInit,
   SimpleChanges,
@@ -9,14 +10,19 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { firstValueFrom, Subject } from 'rxjs';
+import { Subject, firstValueFrom } from 'rxjs';
 import { takeUntil, finalize, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { AuthService } from '../../services/authService';
 import { DisputeService } from '../../services/disputeService';
 import { UploadImageService } from '../../services/uploadImageService';
 
-import { DisputeDto, DisputeListDto, SubmitDisputeResponseDto, EditDisputeDto } from '../../dtos/disputeDto';
+import {
+  DisputeDto,
+  DisputeListDto,
+  SubmitDisputeResponseDto,
+  EditDisputeDto,
+} from '../../dtos/disputeDto';
 import { AddDisputePhotoDto } from '../../dtos/disputePhotoDto';
 import { DisputeStatus } from '../../dtos/enums';
 import { DisputeFilter } from '../../dtos/filterDto';
@@ -39,8 +45,7 @@ interface Tab {
   templateUrl: './dispute.html',
   styleUrl: './dispute.css',
 })
-export class Dispute implements OnInit, OnDestroy {
-
+export class Dispute implements OnInit, OnChanges, OnDestroy {
   @Input() openDisputeId: number | null = null;
 
   private destroy$ = new Subject<void>();
@@ -53,16 +58,15 @@ export class Dispute implements OnInit, OnDestroy {
   isLoading = true;
 
   tabs: Tab[] = [
-    { id: 'all',       label: 'All',               icon: '▤' },
-    { id: 'awaiting',  label: 'Awaiting Response',  icon: '⏳', status: DisputeStatus.AwaitingResponse },
-    { id: 'pending',   label: 'Under Review',       icon: '🔍', status: DisputeStatus.PendingAdminReview },
-    { id: 'overdue',   label: 'Overdue',            icon: '⚠️', status: DisputeStatus.PastDeadline },
-    { id: 'resolved',  label: 'Resolved',           icon: '✓',  status: DisputeStatus.Resolved },
-    { id: 'cancelled', label: 'Cancelled',          icon: '✕',  status: DisputeStatus.Cancelled },
+    { id: 'all',       label: 'Alle',           icon: '▤' },
+    { id: 'awaiting',  label: 'Afventer svar',   icon: '⏳', status: DisputeStatus.AwaitingResponse },
+    { id: 'pending',   label: 'Under behandling', icon: '🔍', status: DisputeStatus.PendingAdminReview },
+    { id: 'overdue',   label: 'Overskredet',     icon: '⚠️', status: DisputeStatus.PastDeadline },
+    { id: 'resolved',  label: 'Afgjort',         icon: '✓',  status: DisputeStatus.Resolved },
+    { id: 'cancelled', label: 'Annulleret',      icon: '✕',  status: DisputeStatus.Cancelled },
   ];
   activeTab: TabId = 'all';
 
-  // List state
   disputes: DisputeListDto[] = [];
   listLoading = false;
   listError: string | null = null;
@@ -71,33 +75,27 @@ export class Dispute implements OnInit, OnDestroy {
   searchQuery = '';
   sortFilter = 'newest';
 
-  // Detail state
   selectedId: number | null = null;
   selectedDispute: DisputeDto | null = null;
   detailLoading = false;
 
-  // Photo lightbox
   selectedPhoto: string | null = null;
   selectedPhotoCaption: string | null = null;
 
-  // Edit claim
   editMode = false;
   editDescription = '';
   editError = '';
   isSavingEdit = false;
 
-  // Photo delete
   isDeletingPhoto: { [photoId: number]: boolean } = {};
   photoDeleteError = '';
 
-  // Extra evidence
   extraEvidenceFile: File | null = null;
   extraEvidencePreview: string | null = null;
   extraEvidenceCaption = '';
   uploadingExtraEvidence = false;
   extraEvidenceError = '';
 
-  // Submit response
   responseText = '';
   responseError = '';
   isSubmittingResponse = false;
@@ -106,14 +104,12 @@ export class Dispute implements OnInit, OnDestroy {
   responsePhotoError = '';
   responsePhotoCaptions: string[] = [];
 
-  // Evidence photo
   evidenceFile: File | null = null;
   evidencePreview: string | null = null;
   evidenceCaption = '';
   uploadingEvidence = false;
   evidenceError = '';
 
-  // Cancel
   showCancelConfirm = false;
   isCancelling = false;
 
@@ -123,11 +119,7 @@ export class Dispute implements OnInit, OnDestroy {
     private uploadService: UploadImageService,
     private cdr: ChangeDetectorRef,
     public router: Router,
-  ) { }
-
-  // ─── Dynamic page size ────────────────────────────────────────────────────────
-  // Height-driven: subtract navbar (64) + tabs (52) + search bar (48) + padding (80)
-  // Each dispute card is ~118px tall including gap
+  ) {}
 
   get pageSize(): number {
     const availableHeight = window.innerHeight - 64 - 52 - 48 - 80;
@@ -135,28 +127,19 @@ export class Dispute implements OnInit, OnDestroy {
     return Math.max(5, Math.floor(availableHeight / cardHeight));
   }
 
-  get totalPages(): number {
-    return getTotalPages(this.totalCount, this.pageSize);
-  }
-
-  get pageNumbers(): number[] {
-    return getPageNumbers(this.currentPage, this.totalPages);
-  }
-
-  // ─── Lifecycle ────────────────────────────────────────────────────────────────
+  get totalPages(): number { return getTotalPages(this.totalCount, this.pageSize); }
+  get pageNumbers(): number[] { return getPageNumbers(this.currentPage, this.totalPages); }
 
   ngOnInit(): void {
     this.loadDisputes();
     this.loadTabCounts();
 
-    this.searchSubject.pipe(
-      debounceTime(350),
-      distinctUntilChanged(),
-      takeUntil(this.destroy$)
-    ).subscribe(() => {
-      this.currentPage = 1;
-      this.loadDisputes();
-    });
+    this.searchSubject
+      .pipe(debounceTime(350), distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.currentPage = 1;
+        this.loadDisputes();
+      });
 
     window.addEventListener('resize', this.resizeHandler);
   }
@@ -173,15 +156,11 @@ export class Dispute implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // ─── Load ─────────────────────────────────────────────────────────────────────
-
   loadDisputes(): void {
-    if (this.isLoading) {
-      this.listLoading = true;
-    }
+    if (this.isLoading) this.listLoading = true;
     this.listError = null;
 
-    const status = this.tabs.find(t => t.id === this.activeTab)?.status ?? null;
+    const status = this.tabs.find((t) => t.id === this.activeTab)?.status ?? null;
 
     const filter: DisputeFilter = {
       search: this.searchQuery?.trim() || null,
@@ -195,37 +174,47 @@ export class Dispute implements OnInit, OnDestroy {
       sortDescending: this.sortFilter !== 'oldest',
     };
 
-    this.disputeService.getMyAll(filter, request)
-      .pipe(takeUntil(this.destroy$), finalize(() => {
-        this.listLoading = false;
-        this.isLoading = false;
-        this.cdr.markForCheck();
-      }))
+    this.disputeService
+      .getMyAll(filter, request)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.listLoading = false;
+          this.isLoading = false;
+          this.cdr.markForCheck();
+        }),
+      )
       .subscribe({
         next: (res) => {
           if (res.success && res.data) {
             this.disputes = res.data.items;
             this.totalCount = res.data.totalCount;
-            const tab = this.tabs.find(t => t.id === this.activeTab);
+            const tab = this.tabs.find((t) => t.id === this.activeTab);
             if (tab) tab.count = res.data.totalCount;
           } else {
-            this.listError = res.message || 'Failed to load disputes.';
+            this.listError = res.message || 'Kunne ikke hente tvister.';
           }
         },
-        error: () => { this.listError = 'An error occurred. Please try again.'; },
+        error: () => {
+          this.listError = 'Der opstod en fejl. Prøv igen.';
+        },
       });
   }
 
   private loadTabCounts(): void {
     const request: PagedRequest = { page: 1, pageSize: 1, sortBy: 'createdAt', sortDescending: true };
 
-    this.disputeService.getMyAll(null, request)
+    this.disputeService
+      .getMyAll(null, request)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          const tab = this.tabs.find(t => t.id === 'all');
-          if (tab && res.data) { tab.count = res.data.totalCount; this.cdr.markForCheck(); }
-        }
+          const tab = this.tabs.find((t) => t.id === 'all');
+          if (tab && res.data) {
+            tab.count = res.data.totalCount;
+            this.cdr.markForCheck();
+          }
+        },
       });
 
     const statusTabs: { id: TabId; status: DisputeStatus }[] = [
@@ -237,13 +226,17 @@ export class Dispute implements OnInit, OnDestroy {
     ];
 
     for (const { id, status } of statusTabs) {
-      this.disputeService.getMyAll({ status }, request)
+      this.disputeService
+        .getMyAll({ status }, request)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (res) => {
-            const tab = this.tabs.find(t => t.id === id);
-            if (tab && res.data) { tab.count = res.data.totalCount; this.cdr.markForCheck(); }
-          }
+            const tab = this.tabs.find((t) => t.id === id);
+            if (tab && res.data) {
+              tab.count = res.data.totalCount;
+              this.cdr.markForCheck();
+            }
+          },
         });
     }
   }
@@ -255,11 +248,15 @@ export class Dispute implements OnInit, OnDestroy {
     this.detailLoading = true;
     this.resetDetailForms();
 
-    this.disputeService.getById(id)
-      .pipe(takeUntil(this.destroy$), finalize(() => {
-        this.detailLoading = false;
-        this.cdr.markForCheck();
-      }))
+    this.disputeService
+      .getById(id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.detailLoading = false;
+          this.cdr.markForCheck();
+        }),
+      )
       .subscribe({
         next: (res) => {
           if (res.success && res.data) {
@@ -270,7 +267,7 @@ export class Dispute implements OnInit, OnDestroy {
         },
         error: (err) => {
           this.selectedId = null;
-          this.listError = err.error?.message ?? 'Failed to load dispute.';
+          this.listError = err.error?.message ?? 'Kunne ikke indlæse tvist.';
           this.cdr.markForCheck();
         },
       });
@@ -290,22 +287,14 @@ export class Dispute implements OnInit, OnDestroy {
     this.evidenceError = '';
   }
 
-  // ─── Tabs & filters ───────────────────────────────────────────────────────────
-
   switchTab(tab: TabId): void {
     this.activeTab = tab;
     this.currentPage = 1;
     this.loadDisputes();
   }
 
-  onSearch(): void {
-    this.searchSubject.next(this.searchQuery);
-  }
-
-  onFilterChange(): void {
-    this.currentPage = 1;
-    this.loadDisputes();
-  }
+  onSearch(): void { this.searchSubject.next(this.searchQuery); }
+  onFilterChange(): void { this.currentPage = 1; this.loadDisputes(); }
 
   goToPage(p: number): void {
     if (p < 1 || p > this.totalPages) return;
@@ -315,32 +304,32 @@ export class Dispute implements OnInit, OnDestroy {
 
   trackById(_: number, d: DisputeListDto): number { return d.id; }
 
-  // ─── Permission checks ────────────────────────────────────────────────────────
-
   canSubmitResponse(): boolean { return this.selectedDispute?.canRespond ?? false; }
-  canAddEvidence(): boolean    { return this.selectedDispute?.canAddEvidence ?? false; }
-  canEdit(): boolean           { return this.selectedDispute?.canEdit ?? false; }
-  canCancel(): boolean         { return this.selectedDispute?.canCancel ?? false; }
+  canAddEvidence(): boolean { return this.selectedDispute?.canAddEvidence ?? false; }
+  canEdit(): boolean { return this.selectedDispute?.canEdit ?? false; }
+  canCancel(): boolean { return this.selectedDispute?.canCancel ?? false; }
   canAddResponseEvidence(): boolean { return this.selectedDispute?.canAddResponseEvidence ?? false; }
-
-  // ─── Actions ──────────────────────────────────────────────────────────────────
 
   deleteFiledByPhoto(photoId: number): void {
     if (!this.selectedDispute) return;
     this.isDeletingPhoto[photoId] = true;
     this.photoDeleteError = '';
 
-    this.disputeService.deleteFiledByPhoto(this.selectedDispute.id, photoId)
-      .pipe(takeUntil(this.destroy$), finalize(() => {
-        this.isDeletingPhoto[photoId] = false;
-        this.cdr.markForCheck();
-      }))
+    this.disputeService
+      .deleteFiledByPhoto(this.selectedDispute.id, photoId)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.isDeletingPhoto[photoId] = false;
+          this.cdr.markForCheck();
+        }),
+      )
       .subscribe({
         next: () => this.reloadDispute(this.selectedDispute!.id),
         error: (err) => {
-          this.photoDeleteError = err.error?.message ?? 'Failed to delete photo.';
+          this.photoDeleteError = err.error?.message ?? 'Kunne ikke slette foto.';
           this.cdr.markForCheck();
-        }
+        },
       });
   }
 
@@ -365,9 +354,13 @@ export class Dispute implements OnInit, OnDestroy {
 
     try {
       const url = await this.uploadService.uploadImage(this.extraEvidenceFile);
-      const dto: AddDisputePhotoDto = { photoUrl: url, caption: this.extraEvidenceCaption.trim() || undefined };
+      const dto: AddDisputePhotoDto = {
+        photoUrl: url,
+        caption: this.extraEvidenceCaption.trim() || undefined,
+      };
 
-      this.disputeService.addFiledByPhoto(this.selectedDispute.id, dto)
+      this.disputeService
+        .addFiledByPhoto(this.selectedDispute.id, dto)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
@@ -377,12 +370,12 @@ export class Dispute implements OnInit, OnDestroy {
             this.reloadDispute(this.selectedDispute!.id);
           },
           error: (err) => {
-            this.extraEvidenceError = err.error?.message ?? 'Failed to upload photo.';
+            this.extraEvidenceError = err.error?.message ?? 'Kunne ikke uploade foto.';
             this.cdr.markForCheck();
-          }
+          },
         });
     } catch {
-      this.extraEvidenceError = 'Failed to upload image.';
+      this.extraEvidenceError = 'Kunne ikke uploade billede.';
     } finally {
       this.uploadingExtraEvidence = false;
       this.cdr.markForCheck();
@@ -401,7 +394,7 @@ export class Dispute implements OnInit, OnDestroy {
     if (!this.selectedDispute || !this.editDescription.trim()) return;
 
     if (this.editDescription.trim().length < 20) {
-      this.editError = 'Description must be at least 20 characters.';
+      this.editError = 'Beskrivelsen skal være mindst 20 tegn.';
       return;
     }
 
@@ -410,11 +403,15 @@ export class Dispute implements OnInit, OnDestroy {
 
     const dto: EditDisputeDto = { description: this.editDescription.trim() };
 
-    this.disputeService.editDispute(this.selectedDispute.id, dto)
-      .pipe(takeUntil(this.destroy$), finalize(() => {
-        this.isSavingEdit = false;
-        this.cdr.markForCheck();
-      }))
+    this.disputeService
+      .editDispute(this.selectedDispute.id, dto)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.isSavingEdit = false;
+          this.cdr.markForCheck();
+        }),
+      )
       .subscribe({
         next: (res) => {
           if (res.success && res.data) {
@@ -423,7 +420,9 @@ export class Dispute implements OnInit, OnDestroy {
             this.refreshListItem(res.data);
           }
         },
-        error: (err) => { this.editError = err.error?.message ?? 'Failed to save.'; },
+        error: (err) => {
+          this.editError = err.error?.message ?? 'Kunne ikke gemme.';
+        },
       });
   }
 
@@ -435,7 +434,7 @@ export class Dispute implements OnInit, OnDestroy {
     if (!this.selectedDispute || !this.responseText.trim()) return;
 
     if (this.responseText.trim().length < 20) {
-      this.responseError = 'Response must be at least 20 characters.';
+      this.responseError = 'Svaret skal være mindst 20 tegn.';
       return;
     }
 
@@ -445,11 +444,15 @@ export class Dispute implements OnInit, OnDestroy {
 
     const dto: SubmitDisputeResponseDto = { responseDescription: this.responseText.trim() };
 
-    this.disputeService.submitResponse(this.selectedDispute.id, dto)
-      .pipe(takeUntil(this.destroy$), finalize(() => {
-        this.isSubmittingResponse = false;
-        this.cdr.markForCheck();
-      }))
+    this.disputeService
+      .submitResponse(this.selectedDispute.id, dto)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.isSubmittingResponse = false;
+          this.cdr.markForCheck();
+        }),
+      )
       .subscribe({
         next: async (res) => {
           if (res.success && res.data) {
@@ -462,7 +465,7 @@ export class Dispute implements OnInit, OnDestroy {
           }
         },
         error: (err) => {
-          this.responseError = err.error?.message ?? 'Failed to submit response.';
+          this.responseError = err.error?.message ?? 'Kunne ikke indsende svar.';
         },
       });
   }
@@ -475,7 +478,10 @@ export class Dispute implements OnInit, OnDestroy {
     const uploadTasks = this.responsePhotoFiles.map(async (file, i) => {
       const url = await this.uploadService.uploadImage(file);
       return firstValueFrom(
-        this.disputeService.addResponsePhoto(disputeId, { photoUrl: url, caption: this.responsePhotoCaptions[i]?.trim() || undefined })
+        this.disputeService.addResponsePhoto(disputeId, {
+          photoUrl: url,
+          caption: this.responsePhotoCaptions[i]?.trim() || undefined,
+        }),
       );
     });
 
@@ -486,31 +492,35 @@ export class Dispute implements OnInit, OnDestroy {
       this.responsePhotoError = '';
       this.reloadDispute(disputeId);
     } catch (err: any) {
-      this.responsePhotoError = err?.error?.message ?? 'Failed to upload response photos.';
+      this.responsePhotoError = err?.error?.message ?? 'Kunne ikke uploade fotos.';
       this.cdr.markForCheck();
     }
   }
 
   private reloadDispute(id: number): void {
     this.detailLoading = true;
-    this.disputeService.getById(id)
-      .pipe(takeUntil(this.destroy$), finalize(() => {
-        this.detailLoading = false;
-        this.cdr.markForCheck();
-      }))
+    this.disputeService
+      .getById(id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.detailLoading = false;
+          this.cdr.markForCheck();
+        }),
+      )
       .subscribe({
         next: (res) => {
           if (res.success && res.data) {
             this.selectedDispute = res.data;
             this.cdr.markForCheck();
           }
-        }
+        },
       });
   }
 
   onResponsePhotosSelected(event: Event): void {
     const files = Array.from((event.target as HTMLInputElement).files || []);
-    files.forEach(file => {
+    files.forEach((file) => {
       this.responsePhotoFiles.push(file);
       this.responsePhotoCaptions.push('');
       const reader = new FileReader();
@@ -547,7 +557,10 @@ export class Dispute implements OnInit, OnDestroy {
 
     try {
       const url = await this.uploadService.uploadImage(this.evidenceFile);
-      const dto: AddDisputePhotoDto = { photoUrl: url, caption: this.evidenceCaption.trim() || undefined };
+      const dto: AddDisputePhotoDto = {
+        photoUrl: url,
+        caption: this.evidenceCaption.trim() || undefined,
+      };
 
       const upload$ = this.canAddEvidence()
         ? this.disputeService.addFiledByPhoto(this.selectedDispute.id, dto)
@@ -562,12 +575,12 @@ export class Dispute implements OnInit, OnDestroy {
           this.reloadDispute(this.selectedDispute!.id);
         },
         error: (err) => {
-          this.evidenceError = err.error?.message ?? 'Failed to upload photo.';
+          this.evidenceError = err.error?.message ?? 'Kunne ikke uploade foto.';
           this.cdr.markForCheck();
         },
       });
     } catch {
-      this.evidenceError = 'Failed to upload image.';
+      this.evidenceError = 'Kunne ikke uploade billede.';
     } finally {
       this.uploadingEvidence = false;
       this.cdr.markForCheck();
@@ -578,11 +591,15 @@ export class Dispute implements OnInit, OnDestroy {
     if (!this.selectedDispute) return;
     this.isCancelling = true;
 
-    this.disputeService.cancelDispute(this.selectedDispute.id)
-      .pipe(takeUntil(this.destroy$), finalize(() => {
-        this.isCancelling = false;
-        this.cdr.markForCheck();
-      }))
+    this.disputeService
+      .cancelDispute(this.selectedDispute.id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.isCancelling = false;
+          this.cdr.markForCheck();
+        }),
+      )
       .subscribe({
         next: (res) => {
           if (res.success) {
@@ -596,41 +613,56 @@ export class Dispute implements OnInit, OnDestroy {
   }
 
   private refreshListItem(dispute: DisputeDto): void {
-    const idx = this.disputes.findIndex(d => d.id === dispute.id);
+    const idx = this.disputes.findIndex((d) => d.id === dispute.id);
     if (idx !== -1) {
       this.disputes[idx] = { ...this.disputes[idx], status: dispute.status };
     }
   }
-
-  // ─── UI Helpers ───────────────────────────────────────────────────────────────
 
   openPhoto(url: string, caption?: string | null): void {
     this.selectedPhoto = url;
     this.selectedPhotoCaption = caption ?? null;
   }
 
-  getDefaultAvatar(name: string): string {
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=27272a&color=a1a1aa&size=80`;
-  }
-
-  getStatusClass(status: string): string {
+  getStatusBadge(status: string): string {
     switch (status) {
-      case DisputeStatus.AwaitingResponse:   return 'bg-amber-400/10 text-amber-400 border-amber-400/20';
-      case DisputeStatus.PendingAdminReview: return 'bg-blue-400/10 text-blue-400 border-blue-400/20';
-      case DisputeStatus.Resolved:           return 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20';
-      case DisputeStatus.PastDeadline:       return 'bg-red-400/10 text-red-400 border-red-400/20';
-      case DisputeStatus.Cancelled:          return 'bg-zinc-700 text-zinc-400 border-zinc-700';
-      default:                               return 'bg-zinc-800 text-zinc-400 border-zinc-700';
+      case DisputeStatus.AwaitingResponse:   return 'badge badge-warning';
+      case DisputeStatus.PendingAdminReview: return 'badge badge-info';
+      case DisputeStatus.Resolved:           return 'badge badge-success';
+      case DisputeStatus.PastDeadline:       return 'badge badge-danger';
+      case DisputeStatus.Cancelled:          return 'badge';
+      default:                               return 'badge';
     }
   }
 
-  getVerdictClass(verdict: string): string {
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case DisputeStatus.AwaitingResponse:   return 'Afventer svar';
+      case DisputeStatus.PendingAdminReview: return 'Under behandling';
+      case DisputeStatus.Resolved:           return 'Afgjort';
+      case DisputeStatus.PastDeadline:       return 'Overskredet';
+      case DisputeStatus.Cancelled:          return 'Annulleret';
+      default:                                return status;
+    }
+  }
+
+  getVerdictBadge(verdict: string): string {
     switch (verdict) {
-      case 'NoPenalty':         return 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20';
-      case 'OwnerPenalized':    return 'bg-amber-400/10 text-amber-400 border-amber-400/20';
-      case 'BorrowerPenalized': return 'bg-red-400/10 text-red-400 border-red-400/20';
-      case 'BothPenalized':     return 'bg-purple-400/10 text-purple-400 border-purple-400/20';
-      default:                  return 'bg-zinc-800 text-zinc-400 border-zinc-700';
+      case 'NoPenalty':         return 'badge badge-success';
+      case 'OwnerPenalized':    return 'badge badge-warning';
+      case 'BorrowerPenalized': return 'badge badge-danger';
+      case 'BothPenalized':     return 'badge badge-danger';
+      default:                  return 'badge';
+    }
+  }
+
+  getVerdictLabel(verdict: string): string {
+    switch (verdict) {
+      case 'NoPenalty':         return 'Ingen sanktion';
+      case 'OwnerPenalized':    return 'Ejer sanktioneret';
+      case 'BorrowerPenalized': return 'Låner sanktioneret';
+      case 'BothPenalized':     return 'Begge sanktioneret';
+      default:                  return verdict;
     }
   }
 }
