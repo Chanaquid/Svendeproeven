@@ -819,12 +819,47 @@
 }
 
 /* ========================================================================
+   Dispute center — list of existing disputes
+   ======================================================================== */
+.dispute-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dispute-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+}
+
+.dispute-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dispute-item-desc {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-style: italic;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ========================================================================
    Dispute notice + locked notice
    ======================================================================== */
 .dispute-notice {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: flex-start;
   gap: 8px;
   padding: 10px 12px;
   background: var(--color-danger-soft);
@@ -836,10 +871,12 @@
 
 .dispute-notice-left {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   color: var(--color-danger);
   font-weight: 500;
+  flex: 1;
+  line-height: 1.4;
 }
 
 .dispute-link {
@@ -849,6 +886,7 @@
   text-decoration: underline;
   cursor: pointer;
   white-space: nowrap;
+  align-self: flex-start;
 }
 
 .dispute-link:hover {
@@ -869,6 +907,7 @@
   border-radius: var(--radius-md);
   font-size: 12px;
   color: var(--color-text-muted);
+  line-height: 1.4;
 }
 
 .locked-notice svg {
@@ -1337,7 +1376,9 @@
   }
 }
 
-/* Dispute modal — multi-photo upload grid */
+/* ========================================================================
+   Dispute modal — multi-photo upload grid
+   ======================================================================== */
 .dispute-photo-grid {
   margin-top: 8px;
   display: grid;
@@ -1392,4 +1433,6 @@
   justify-content: center;
 }
 
-.dispute-photo-remove:hover { background: rgba(0, 0, 0, 0.8); }
+.dispute-photo-remove:hover {
+  background: rgba(0, 0, 0, 0.8);
+}

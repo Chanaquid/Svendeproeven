@@ -127,9 +127,9 @@ export class LoanDetail implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.loanChatHubService.leaveLoan(this.loanId);
     this.loanChatHubService.off();
-    this.loanChatHubService.stop();
+    this.loanChatHubService.leaveLoan(this.loanId).catch(() => {});
+    this.loanChatHubService.stop().catch(() => {});
   }
 
   private startSignalR(loanId: number): void {
@@ -642,4 +642,33 @@ export class LoanDetail implements OnInit, OnDestroy {
     if (!completedAt) return false;
     return new Date(completedAt) < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   }
+
+  get activeDispute(): any {
+    const ongoingStatuses = ['AwaitingResponse', 'PendingAdminReview', 'PastDeadline'];
+    return this.loan?.disputes?.find(d => ongoingStatuses.includes(d.status));
+  }
+
+  get hasAlreadyFiledDispute(): boolean {
+    return this.loan?.disputes?.some(d => d.filedById === this.currentUserId) ?? false;
+  }
+
+  get canUserFileNewDispute(): boolean {
+    if (!this.loan || this.effectiveRole === 'Admin') return false;
+    if (this.isDisputeLocked) return false;
+    if (this.activeDispute) return false;
+    if (this.hasAlreadyFiledDispute || (this.loan.disputes?.length ?? 0) >= 2) return false;
+    const disputableStatuses = ['Active', 'Late', 'Completed'];
+    return disputableStatuses.includes(this.loan.status);
+  }
+
+  getDisputeMiniClass(status: string): string {
+    switch (status) {
+      case 'Resolved': return 'status-chip--success';
+      case 'Cancelled': return 'status-chip--muted';
+      default: return 'status-chip--warning';
+    }
+  }
+
+
+
 }

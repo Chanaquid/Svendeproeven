@@ -17,19 +17,31 @@ export class LoanChatHubService {
   }
 
   async start(): Promise<void> {
-    await this.connection.start();
+    if (this.connection.state === signalR.HubConnectionState.Disconnected) {
+      await this.connection.start();
+    }
   }
 
   async stop(): Promise<void> {
-    await this.connection.stop();
+    try {
+      if (this.connection.state !== signalR.HubConnectionState.Disconnected) {
+        await this.connection.stop();
+      }
+    } catch {
+      //Connection already closed
+    }
   }
 
   async joinLoan(loanId: number): Promise<void> {
-    await this.connection.invoke('JoinLoan', loanId);
+    if (this.connection.state === signalR.HubConnectionState.Connected) {
+      await this.connection.invoke('JoinLoan', loanId);
+    }
   }
 
   async leaveLoan(loanId: number): Promise<void> {
-    await this.connection.invoke('LeaveLoan', loanId);
+    if (this.connection.state === signalR.HubConnectionState.Connected) {
+      await this.connection.invoke('LeaveLoan', loanId);
+    }
   }
 
   onReceiveMessage(callback: (message: any) => void): void {

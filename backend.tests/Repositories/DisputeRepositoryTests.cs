@@ -100,12 +100,21 @@ namespace backend.Tests.Repositories
         {
             var context = GetDbContext();
 
+            //Seed the user and loan that the dispute requires
+            var user = MakeUser("user1");
+            context.Users.Add(user);
+
+            var loan = MakeLoan(10, "user1");
+            context.Loans.Add(loan);
+
+            await context.SaveChangesAsync();
+
             context.Disputes.Add(new Dispute
             {
                 LoanId = 10,
                 FiledById = "user1",
                 Description = "Active",
-                Status = DisputeStatus.PendingAdminReview,
+                Status = DisputeStatus.AwaitingResponse,
                 FiledAs = DisputeFiledAs.AsBorrower,
                 ResponseDeadline = DateTime.UtcNow.AddHours(72)
             });

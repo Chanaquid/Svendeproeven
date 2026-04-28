@@ -32,9 +32,14 @@ namespace backend.Repositories
 
         public async Task<double> GetAverageResolutionDaysAsync()
         {
-            return await _context.Disputes
+            var resolvedDates = await _context.Disputes
                 .Where(x => x.ResolvedAt != null)
-                .AverageAsync(x => EF.Functions.DateDiffDay(x.CreatedAt, x.ResolvedAt!.Value));
+                .Select(x => new { x.CreatedAt, x.ResolvedAt })
+                .ToListAsync();
+
+            if (!resolvedDates.Any()) return 0;
+
+            return resolvedDates.Average(x => (x.ResolvedAt!.Value - x.CreatedAt).TotalDays);
         }
 
         public async Task<Dispute?> GetByIdAsync(int disputeId)

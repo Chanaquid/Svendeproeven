@@ -1,7 +1,6 @@
 ﻿using backend.Data;
 using backend.Models;
 using backend.Repositories;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -9,28 +8,13 @@ namespace backend.Tests.Repositories
 {
     public class FineRepositoryTests
     {
-        private SqliteConnection CreateConnection()
-        {
-            var connection = new SqliteConnection("DataSource=:memory:");
-            connection.Open();
-            return connection;
-        }
+        private ApplicationDbContext GetDbContext() =>
+            new(new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .Options);
 
-        private ApplicationDbContext GetDbContext(SqliteConnection connection)
-        {
-            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseSqlite(connection)
-                .Options;
-
-            var context = new ApplicationDbContext(options);
-            context.Database.EnsureCreated();
-            return context;
-        }
-
-        private FineRepository GetRepository(ApplicationDbContext context)
-        {
-            return new FineRepository(context);
-        }
+        private FineRepository GetRepository(ApplicationDbContext context) =>
+            new FineRepository(context);
 
         private ApplicationUser MakeUser(string id) => new ApplicationUser
         {
@@ -40,11 +24,44 @@ namespace backend.Tests.Repositories
             FullName = "Test User"
         };
 
+        private Item MakeItem(int id, string ownerId) => new Item
+        {
+            Id = id,
+            OwnerId = ownerId,
+            Title = "Test Item",
+            Description = "Test",
+            PricePerDay = 10,
+            Condition = ItemCondition.Good,
+            Status = ItemStatus.Approved,
+            RowVersion = new byte[] { 1 },
+            Slug = $"item-{id}",
+            QrCode = $"QR{id:D8}",
+            IsActive = true,
+            Availability = ItemAvailability.Available,
+            AvailableFrom = DateTime.UtcNow.AddDays(-1),
+            AvailableUntil = DateTime.UtcNow.AddDays(30),
+            PickupAddress = "Test Address",
+            CurrentValue = 100
+        };
+
+        private Loan MakeLoan(int id, string lenderId, string borrowerId, int itemId) => new Loan
+        {
+            Id = id,
+            LenderId = lenderId,
+            BorrowerId = borrowerId,
+            ItemId = itemId,
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddDays(3),
+            TotalPrice = 30,
+            PricePerDaySnapshot = 10,
+            SnapshotCondition = ItemCondition.Good,
+            Status = LoanStatus.Active
+        };
+
         [Fact]
         public async Task AddAsync_ShouldAddFine()
         {
-            using var connection = CreateConnection();
-            var context = GetDbContext(connection);
+            var context = GetDbContext();
             context.Users.Add(MakeUser("user1"));
             await context.SaveChangesAsync();
 
@@ -67,8 +84,7 @@ namespace backend.Tests.Repositories
         [Fact]
         public async Task GetByIdAsync_ShouldReturnFine()
         {
-            using var connection = CreateConnection();
-            var context = GetDbContext(connection);
+            var context = GetDbContext();
             context.Users.Add(MakeUser("user1"));
             context.Fines.Add(new Fine { Id = 1, UserId = "user1", Amount = 100, Type = FineType.Custom });
             await context.SaveChangesAsync();
@@ -83,8 +99,7 @@ namespace backend.Tests.Repositories
         [Fact]
         public async Task HasOutstandingFinesAsync_ShouldReturnTrue_WhenUnpaidExists()
         {
-            using var connection = CreateConnection();
-            var context = GetDbContext(connection);
+            var context = GetDbContext();
             context.Users.Add(MakeUser("user1"));
             context.Fines.Add(new Fine { UserId = "user1", Amount = 75, Type = FineType.Custom, Status = FineStatus.Unpaid });
             await context.SaveChangesAsync();
@@ -98,8 +113,7 @@ namespace backend.Tests.Repositories
         [Fact]
         public async Task HasOutstandingFinesAsync_ShouldReturnFalse_WhenOnlyPaidExists()
         {
-            using var connection = CreateConnection();
-            var context = GetDbContext(connection);
+            var context = GetDbContext();
             context.Users.Add(MakeUser("user1"));
             context.Fines.Add(new Fine { UserId = "user1", Amount = 75, Type = FineType.Custom, Status = FineStatus.Paid });
             await context.SaveChangesAsync();
@@ -113,10 +127,22 @@ namespace backend.Tests.Repositories
         [Fact]
         public async Task ExistsActiveFineAsync_ShouldReturnTrue_WhenUnpaidFineExists()
         {
-            using var connection = CreateConnection();
-            var context = GetDbContext(connection);
+            var context = GetDbContext();
+
             context.Users.Add(MakeUser("user1"));
-            context.Fines.Add(new Fine { UserId = "user1", LoanId = 1, DisputeId = null, Amount = 50, Type = FineType.Custom, Status = FineStatus.Unpaid });
+            context.Items.Add(MakeItem(1, "user1"));
+            context.Loans.Add(MakeLoan(1, "user1", "user1", 1));
+            await context.SaveChangesAsync();
+
+            context.Fines.Add(new Fine
+            {
+                UserId = "user1",
+                LoanId = 1,
+                DisputeId = null,
+                Amount = 50,
+                Type = FineType.Custom,
+                Status = FineStatus.Unpaid
+            });
             await context.SaveChangesAsync();
 
             var repo = GetRepository(context);
@@ -128,10 +154,22 @@ namespace backend.Tests.Repositories
         [Fact]
         public async Task ExistsActiveFineAsync_ShouldReturnFalse_WhenFineIsVoided()
         {
-            using var connection = CreateConnection();
-            var context = GetDbContext(connection);
+            var context = GetDbContext();
+
             context.Users.Add(MakeUser("user1"));
-            context.Fines.Add(new Fine { UserId = "user1", LoanId = 1, DisputeId = null, Amount = 50, Type = FineType.Custom, Status = FineStatus.Voided });
+            context.Items.Add(MakeItem(1, "user1"));
+            context.Loans.Add(MakeLoan(1, "user1", "user1", 1));
+            await context.SaveChangesAsync();
+
+            context.Fines.Add(new Fine
+            {
+                UserId = "user1",
+                LoanId = 1,
+                DisputeId = null,
+                Amount = 50,
+                Type = FineType.Custom,
+                Status = FineStatus.Voided
+            });
             await context.SaveChangesAsync();
 
             var repo = GetRepository(context);
@@ -143,13 +181,12 @@ namespace backend.Tests.Repositories
         [Fact]
         public async Task GetOutstandingTotalByUserAsync_ShouldSumUnpaidAndPendingOnly()
         {
-            using var connection = CreateConnection();
-            var context = GetDbContext(connection);
+            var context = GetDbContext();
             context.Users.Add(MakeUser("user1"));
             context.Fines.AddRange(
                 new Fine { UserId = "user1", Amount = 100, Type = FineType.Custom, Status = FineStatus.Unpaid },
                 new Fine { UserId = "user1", Amount = 50, Type = FineType.Custom, Status = FineStatus.PendingVerification },
-                new Fine { UserId = "user1", Amount = 200, Type = FineType.Custom, Status = FineStatus.Paid } // excluded
+                new Fine { UserId = "user1", Amount = 200, Type = FineType.Custom, Status = FineStatus.Paid }
             );
             await context.SaveChangesAsync();
 
@@ -162,8 +199,7 @@ namespace backend.Tests.Repositories
         [Fact]
         public async Task GetStatusCountsAsync_ShouldReturnGroupedCounts()
         {
-            using var connection = CreateConnection();
-            var context = GetDbContext(connection);
+            var context = GetDbContext();
             context.Users.Add(MakeUser("user1"));
             context.Fines.AddRange(
                 new Fine { UserId = "user1", Amount = 10, Type = FineType.Custom, Status = FineStatus.Unpaid },
@@ -182,8 +218,7 @@ namespace backend.Tests.Repositories
         [Fact]
         public async Task GetPendingProofCountAsync_ShouldReturnCorrectCount()
         {
-            using var connection = CreateConnection();
-            var context = GetDbContext(connection);
+            var context = GetDbContext();
             context.Users.Add(MakeUser("user1"));
             context.Fines.AddRange(
                 new Fine { UserId = "user1", Amount = 10, Type = FineType.Custom, Status = FineStatus.PendingVerification },
@@ -201,13 +236,12 @@ namespace backend.Tests.Repositories
         [Fact]
         public async Task GetOutstandingTotalAsync_ShouldSumAcrossAllUsers()
         {
-            using var connection = CreateConnection();
-            var context = GetDbContext(connection);
+            var context = GetDbContext();
             context.Users.AddRange(MakeUser("user1"), MakeUser("user2"));
             context.Fines.AddRange(
                 new Fine { UserId = "user1", Amount = 100, Type = FineType.Custom, Status = FineStatus.Unpaid },
                 new Fine { UserId = "user2", Amount = 200, Type = FineType.Custom, Status = FineStatus.PendingVerification },
-                new Fine { UserId = "user1", Amount = 999, Type = FineType.Custom, Status = FineStatus.Voided } // excluded
+                new Fine { UserId = "user1", Amount = 999, Type = FineType.Custom, Status = FineStatus.Voided }
             );
             await context.SaveChangesAsync();
 
@@ -220,12 +254,38 @@ namespace backend.Tests.Repositories
         [Fact]
         public async Task GetByDisputeIdAsync_ShouldReturnFinesForDispute()
         {
-            using var connection = CreateConnection();
-            var context = GetDbContext(connection);
+            var context = GetDbContext();
+
             context.Users.Add(MakeUser("user1"));
+            context.Items.Add(MakeItem(1, "user1"));
+            context.Loans.Add(MakeLoan(1, "user1", "user1", 1));
+            await context.SaveChangesAsync();
+
+            context.Disputes.AddRange(
+                new Dispute
+                {
+                    Id = 5,
+                    LoanId = 1,
+                    FiledById = "user1",
+                    Description = "Dispute 5",
+                    FiledAs = DisputeFiledAs.AsBorrower,
+                    ResponseDeadline = DateTime.UtcNow.AddHours(72)
+                },
+                new Dispute
+                {
+                    Id = 99,
+                    LoanId = 1,
+                    FiledById = "user1",
+                    Description = "Dispute 99",
+                    FiledAs = DisputeFiledAs.AsBorrower,
+                    ResponseDeadline = DateTime.UtcNow.AddHours(72)
+                }
+            );
+            await context.SaveChangesAsync();
+
             context.Fines.AddRange(
                 new Fine { UserId = "user1", Amount = 50, Type = FineType.ResultedByDispute, DisputeId = 5 },
-                new Fine { UserId = "user1", Amount = 50, Type = FineType.ResultedByDispute, DisputeId = 99 } // different dispute
+                new Fine { UserId = "user1", Amount = 50, Type = FineType.ResultedByDispute, DisputeId = 99 }
             );
             await context.SaveChangesAsync();
 
