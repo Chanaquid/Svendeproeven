@@ -156,14 +156,14 @@ netstat -ano | findstr :7183
 
 ## 📌 Bemærkning – Delt database med eksisterende data
 
-Denne guide opsætter et **friskt lokalt miljø** med en tom database.
+Vil du se systemet med rigtige data?
+En cloud-database er tilgængelig med præudfyldt data. For at bruge den skal du erstatte to filer i dit lokale projekt med de opdaterede versioner fra Google Drive mappen:
 
-Ønsker du at se systemet med rigtige data, vil en tekstfil med en ny forbindelsesstreng blive uploadet til Google Drive snarest. Du skal blot kopiere strengen fra filen og erstatte værdien af `ConnectionStrings__DefaultConnection` i din `.env` fil:
+.env
+docker-compose.yml
 
-```dotenv
-ConnectionStrings__DefaultConnection=DEN KOPIEREDE STRENG HER
-```
+Download begge filer fra mappen og erstat de eksisterende filer i dit projekt. Derefter kør:
+bashdocker compose up -d
+Det er alt — ingen andre ændringer er nødvendige.
 
-Alle andre værdier i `.env` filen forbliver uændrede. `DB_SA_PASSWORD` kan ignoreres, da den kun bruges til den lokale Docker database.
-
-Hold øje med Google Drive mappen: [Google Drive](https://drive.google.com/drive/folders/1UTy6Q6d1KqymlwMO3rA0M3oRICdaVUrZ?usp=drive_link)
+Google Drive mappen: [Google Drive](https://drive.google.com/drive/folders/1UTy6Q6d1KqymlwMO3rA0M3oRICdaVUrZ?usp=drive_link)
